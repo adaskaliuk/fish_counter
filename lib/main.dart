@@ -71,6 +71,9 @@ class CatchClickerApp extends StatelessWidget {
   );
 }
 
+// ==========================================
+// ГОЛОВНИЙ ЕКРАН
+// ==========================================
 class ClickerScreen extends StatefulWidget {
   const ClickerScreen({super.key});
   @override
@@ -85,10 +88,9 @@ class _ClickerScreenState extends State<ClickerScreen> {
       hasHistory = false;
   bool isDataHidden = false, isVibeFlash = false, isSessionActive = false;
 
-  Duration duration = Duration.zero; // Vibe Timer
-  Duration matchInterval = const Duration(hours: 5); // Session Timer
-  int resetDelay = 15, vibeInterval = 60;
-  int delayCountdown = 0; // Зворотний відлік для BUSY
+  Duration duration = Duration.zero;
+  Duration matchInterval = const Duration(hours: 5); // Default 5 hours
+  int resetDelay = 15, vibeInterval = 60, delayCountdown = 0;
 
   String realTime = "--:--:--", currentDate = "--.--.--";
   int batteryLevel = 0;
@@ -118,12 +120,10 @@ class _ClickerScreenState extends State<ClickerScreen> {
         currentDate = DateFormat('dd.MM.yy').format(now);
         batteryLevel = level;
 
-        // Загальний час сесії (не зупиняється на паузі)
         if (isSessionActive && matchInterval.inSeconds > 0) {
           matchInterval -= const Duration(seconds: 1);
         }
 
-        // Таймер Vibe (скидається на паузі, стоїть під час BUSY)
         if (!isPaused && isSessionActive && !isActionDelay) {
           duration += const Duration(seconds: 1);
           if (vibeInterval > 0 &&
@@ -149,18 +149,13 @@ class _ClickerScreenState extends State<ClickerScreen> {
 
   void handleIncrement(int type) {
     if (!isPowerOn || isActionDelay || isPaused || !isSessionActive) return;
-    String status = "orange";
     int sec = duration.inSeconds;
-    if (sec >= vibeInterval * 0.9 && sec <= vibeInterval * 1.1)
-      status = "green";
-    else if (sec < vibeInterval * 0.7)
-      status = "grey";
-    else if (sec > vibeInterval * 1.5)
-      status = "red";
-
-    String ts = DateFormat('HH:mm:ss').format(DateTime.now());
+    String status = (sec >= vibeInterval * 0.9 && sec <= vibeInterval * 1.1)
+        ? "green"
+        : (sec < vibeInterval * 0.7
+              ? "grey"
+              : (sec > vibeInterval * 1.5 ? "red" : "orange"));
     HapticFeedback.mediumImpact();
-
     setState(() {
       if (type == 1) counter1++;
       if (type == 2) counter2++;
@@ -171,18 +166,14 @@ class _ClickerScreenState extends State<ClickerScreen> {
         "status": status,
         "interval": sec,
         "target": vibeInterval,
-        "timestamp": ts,
+        "timestamp": DateFormat('HH:mm:ss').format(DateTime.now()),
       });
-
       duration = Duration.zero;
       isActionDelay = true;
       delayCountdown = resetDelay;
     });
-
     _scrollToEnd();
     _saveData();
-
-    // Запуск відліку для LCD та розблокування
     countdownTimer?.cancel();
     countdownTimer = Timer.periodic(const Duration(seconds: 1), (t) {
       if (!mounted) {
@@ -202,7 +193,6 @@ class _ClickerScreenState extends State<ClickerScreen> {
   }
 
   void togglePause() {
-    String ts = DateFormat('HH:mm:ss').format(DateTime.now());
     setState(() {
       if (!isSessionActive) isSessionActive = true;
       isPaused = !isPaused;
@@ -213,8 +203,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
           "type": 0,
           "status": "grey",
           "interval": 0,
-          "target": vibeInterval,
-          "timestamp": ts,
+          "timestamp": DateFormat('HH:mm:ss').format(DateTime.now()),
         });
         _scrollToEnd();
       } else {
@@ -224,18 +213,14 @@ class _ClickerScreenState extends State<ClickerScreen> {
     _saveData();
   }
 
-  void _scrollToEnd() {
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (_gridScrollController.hasClients)
-        _gridScrollController.jumpTo(
-          _gridScrollController.position.maxScrollExtent,
-        );
-    });
-  }
-
   // --- UI LCD ---
   Widget _buildLCD() {
     String f(int n) => n.toString().padLeft(2, '0');
+    String formatMatch(Duration d) {
+      String days = d.inDays > 0 ? "${d.inDays}d " : "";
+      return "$days${f(d.inHours % 24)}:${f(d.inMinutes % 60)}:${f(d.inSeconds % 60)}";
+    }
+
     return Expanded(
       flex: 5,
       child: AnimatedContainer(
@@ -257,7 +242,6 @@ class _ClickerScreenState extends State<ClickerScreen> {
                 ),
                 child: Column(
                   children: [
-                    // Верхній рядок: Дата, Реальний час, Батарея
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -289,7 +273,6 @@ class _ClickerScreenState extends State<ClickerScreen> {
                       ],
                     ),
                     const SizedBox(height: 4),
-                    // Показники C1, Total, C2
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -302,21 +285,14 @@ class _ClickerScreenState extends State<ClickerScreen> {
                         _lcdStat("C2", isDataHidden ? null : counter2),
                       ],
                     ),
-                    const Divider(
-                      color: Colors.black,
-                      thickness: 1,
-                      height: 10,
-                    ),
-
-                    // ЦЕНТРАЛЬНА ЧАСТИНА: ТАЙМЕР + BUSY (через Stack)
+                    const Divider(color: Colors.black, thickness: 1, height: 8),
                     Expanded(
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
-                          // Напис BUSY зверху (показується тільки при затримці)
                           if (isActionDelay)
                             Positioned(
-                              top: 0,
+                              top: 2,
                               child: Text(
                                 "BUSY ${f(delayCountdown)}s",
                                 style: const TextStyle(
@@ -324,11 +300,9 @@ class _ClickerScreenState extends State<ClickerScreen> {
                                   fontSize: 14,
                                   fontWeight: FontWeight.w900,
                                   fontFamily: 'monospace',
-                                  letterSpacing: 1,
                                 ),
                               ),
                             ),
-                          // Основний таймер Vibe
                           FittedBox(
                             fit: BoxFit.scaleDown,
                             child: Text(
@@ -339,8 +313,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
                                     : (isActionDelay
                                           ? Colors.black38
                                           : Colors.black),
-                                fontSize:
-                                    60, // Збільшено, бо FittedBox захистить від overflow
+                                fontSize: 60,
                                 fontWeight: FontWeight.w900,
                                 fontFamily: 'monospace',
                               ),
@@ -349,33 +322,16 @@ class _ClickerScreenState extends State<ClickerScreen> {
                         ],
                       ),
                     ),
-
-                    const Divider(
-                      color: Colors.black,
-                      thickness: 1,
-                      height: 10,
-                    ),
-                    // Сітка активності (зменшено висоту до 70 для безпеки)
-                    SizedBox(
-                      height: 70,
-                      child: buildActivityGrid(
-                        activityGrid,
-                        _gridScrollController,
-                      ),
-                    ),
-                    const Divider(
-                      color: Colors.black,
-                      thickness: 1,
-                      height: 10,
-                    ),
-                    // Таймер сесії (Match Duration)
+                    const Divider(color: Colors.black, thickness: 1, height: 8),
+                    SizedBox(height: 70, child: _buildGrid()),
+                    const Divider(color: Colors.black, thickness: 1, height: 8),
                     FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Text(
-                        "${f(matchInterval.inHours)}:${f(matchInterval.inMinutes % 60)}:${f(matchInterval.inSeconds % 60)}",
+                        formatMatch(matchInterval),
                         style: const TextStyle(
                           color: Colors.black,
-                          fontSize: 38,
+                          fontSize: 36,
                           fontWeight: FontWeight.w900,
                           fontFamily: 'monospace',
                         ),
@@ -389,37 +345,31 @@ class _ClickerScreenState extends State<ClickerScreen> {
     );
   }
 
-  static Widget buildActivityGrid(
-    List<Map<String, dynamic>> data,
-    ScrollController? ctrl,
-  ) {
+  Widget _buildGrid() {
     return GridView.builder(
-      controller: ctrl,
+      controller: _gridScrollController,
       scrollDirection: Axis.horizontal,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         mainAxisSpacing: 8,
         crossAxisSpacing: 4,
       ),
-      itemCount: data.length,
+      itemCount: activityGrid.length,
       itemBuilder: (context, index) {
-        final e = data[index];
-        int type = e['type'] is int
-            ? e['type']
-            : int.tryParse(e['type'].toString()) ?? 0;
+        final e = activityGrid[index];
+        int type = e['type'] is int ? e['type'] : 0;
         IconData icon = type == 0
             ? Icons.close
             : (type == 1
                   ? Icons.stop
                   : (type == 2 ? Icons.change_history : Icons.circle));
-        Color color = getStatusColor(e['status']?.toString());
-        return Icon(icon, size: 22, color: color);
+        return Icon(icon, size: 20, color: _getStatusColor(e['status']));
       },
     );
   }
 
-  static Color getStatusColor(String? status) {
-    switch (status) {
+  Color _getStatusColor(dynamic s) {
+    switch (s?.toString()) {
       case 'green':
         return Colors.green.shade900;
       case 'red':
@@ -445,7 +395,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
     ],
   );
 
-  // --- CONTROLS ---
+  // --- УПРАВЛІННЯ ---
   Widget _buildControls() {
     double mainS = 75.0;
     return Expanded(
@@ -539,11 +489,9 @@ class _ClickerScreenState extends State<ClickerScreen> {
     bool isAccent = false,
     bool isActionBtn = false,
   }) {
-    // Повне блокування логіки
     bool isDisabled =
         !isPowerOn ||
         (isActionBtn && (!isSessionActive || isPaused || isActionDelay));
-
     return GestureDetector(
       onTap: isDisabled ? null : t,
       child: AnimatedOpacity(
@@ -574,6 +522,92 @@ class _ClickerScreenState extends State<ClickerScreen> {
     );
   }
 
+  void _showSettings() {
+    if (!isPowerOn) return;
+    final rCtrl = TextEditingController(text: resetDelay.toString());
+    final vCtrl = TextEditingController(text: vibeInterval.toString());
+    final dCtrl = TextEditingController(text: matchInterval.inDays.toString());
+    final hCtrl = TextEditingController(
+      text: (matchInterval.inHours % 24).toString(),
+    );
+    final mCtrl = TextEditingController(
+      text: (matchInterval.inMinutes % 60).toString(),
+    );
+
+    showDialog(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text("Settings"),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: rCtrl,
+                decoration: const InputDecoration(
+                  labelText: "Action Delay (s)",
+                ),
+                keyboardType: TextInputType.number,
+              ),
+              TextField(
+                controller: vCtrl,
+                decoration: const InputDecoration(
+                  labelText: "Vibe Interval (s)",
+                ),
+                keyboardType: TextInputType.number,
+              ),
+              const Divider(),
+              const Text("Match Duration:"),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: dCtrl,
+                      decoration: const InputDecoration(labelText: "Days"),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  Expanded(
+                    child: TextField(
+                      controller: hCtrl,
+                      decoration: const InputDecoration(labelText: "Hrs"),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  Expanded(
+                    child: TextField(
+                      controller: mCtrl,
+                      decoration: const InputDecoration(labelText: "Mins"),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                resetDelay = int.tryParse(rCtrl.text) ?? 15;
+                vibeInterval = int.tryParse(vCtrl.text) ?? 60;
+                matchInterval = Duration(
+                  days: int.tryParse(dCtrl.text) ?? 0,
+                  hours: int.tryParse(hCtrl.text) ?? 0,
+                  minutes: int.tryParse(mCtrl.text) ?? 0,
+                );
+              });
+              _saveData();
+              Navigator.pop(c);
+            },
+            child: const Text("Save"),
+          ),
+        ],
+      ),
+    );
+  }
+
   // --- DATA ---
   Future<void> _loadData() async {
     final prefs = await SharedPreferences.getInstance();
@@ -588,7 +622,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
       vibeInterval = prefs.getInt('vibe_interval') ?? 60;
       matchInterval = Duration(seconds: prefs.getInt('match_seconds') ?? 18000);
       hasHistory = (prefs.getStringList('history_sessions') ?? []).isNotEmpty;
-      String? gridJson = prefs.getString('activity_grid_v20');
+      String? gridJson = prefs.getString('activity_grid_final');
       if (gridJson != null)
         activityGrid = List<Map<String, dynamic>>.from(jsonDecode(gridJson));
       if (isPaused) {
@@ -609,58 +643,16 @@ class _ClickerScreenState extends State<ClickerScreen> {
     await prefs.setInt('reset_delay', resetDelay);
     await prefs.setInt('vibe_interval', vibeInterval);
     await prefs.setInt('match_seconds', matchInterval.inSeconds);
-    await prefs.setString('activity_grid_v20', jsonEncode(activityGrid));
+    await prefs.setString('activity_grid_final', jsonEncode(activityGrid));
   }
 
-  void _showSettings() {
-    if (!isPowerOn) return;
-    final rCtrl = TextEditingController(text: resetDelay.toString());
-    final vCtrl = TextEditingController(text: vibeInterval.toString());
-    final mCtrl = TextEditingController(
-      text: (matchInterval.inMinutes).toString(),
-    );
-    showDialog(
-      context: context,
-      builder: (c) => AlertDialog(
-        title: const Text("Settings"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: rCtrl,
-              decoration: const InputDecoration(labelText: "Action Delay (s)"),
-              keyboardType: TextInputType.number,
-            ),
-            TextField(
-              controller: vCtrl,
-              decoration: const InputDecoration(labelText: "Vibe Interval (s)"),
-              keyboardType: TextInputType.number,
-            ),
-            TextField(
-              controller: mCtrl,
-              decoration: const InputDecoration(
-                labelText: "Match Duration (min)",
-              ),
-              keyboardType: TextInputType.number,
-            ),
-          ],
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                resetDelay = int.parse(rCtrl.text);
-                vibeInterval = int.parse(vCtrl.text);
-                matchInterval = Duration(minutes: int.parse(mCtrl.text));
-              });
-              _saveData();
-              Navigator.pop(c);
-            },
-            child: const Text("Save"),
-          ),
-        ],
-      ),
-    );
+  void _scrollToEnd() {
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (_gridScrollController.hasClients)
+        _gridScrollController.jumpTo(
+          _gridScrollController.position.maxScrollExtent,
+        );
+    });
   }
 
   Future<void> _handlePower() async {
@@ -696,7 +688,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
               final session = GameSession(
                 id: DateTime.now().millisecondsSinceEpoch.toString(),
                 name: nameCtrl.text,
-                date: DateFormat('dd.MM.yyyy HH:mm').format(DateTime.now()),
+                date: DateFormat('dd.MM.yy HH:mm').format(DateTime.now()),
                 c1: counter1,
                 c2: counter2,
                 tries: tries,
@@ -729,36 +721,35 @@ class _ClickerScreenState extends State<ClickerScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    body: SafeArea(
-      child: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 420),
-          margin: const EdgeInsets.all(12),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: const Color(0xFF333333),
-            borderRadius: BorderRadius.circular(40),
-            border: Border.all(color: Colors.black, width: 4),
-          ),
-          child: Column(
-            children: [
-              _buildLCD(),
-              const SizedBox(height: 12),
-              _buildControls(),
-            ],
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 420),
+            margin: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF333333),
+              borderRadius: BorderRadius.circular(40),
+              border: Border.all(color: Colors.black, width: 4),
+            ),
+            child: Column(
+              children: [
+                _buildLCD(),
+                const SizedBox(height: 12),
+                _buildControls(),
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
-// Екрани HistoryScreen та AnalyticsScreen (залишаються без змін)
-// ... [Додайте коди HistoryScreen та AnalyticsScreen з версії 1.9 тут] ...
-
 // ==========================================
-// ЕКРАН ІСТОРІЇ
+// ІСТОРІЯ ТА АНАЛІТИКА
 // ==========================================
 class HistoryScreen extends StatefulWidget {
   final VoidCallback onHistoryUpdate;
@@ -790,60 +781,39 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text("History")),
-    body: sessions.isEmpty
-        ? const Center(child: Text("Empty"))
-        : ListView.builder(
-            itemCount: sessions.length,
-            itemBuilder: (c, i) => Dismissible(
-              key: Key(sessions[i].id),
-              direction: DismissDirection.endToStart,
-              background: Container(
-                color: Colors.red,
-                alignment: Alignment.centerRight,
-                padding: const EdgeInsets.only(right: 20),
-                child: const Icon(Icons.delete),
-              ),
-              onDismissed: (dir) async {
-                final prefs = await SharedPreferences.getInstance();
-                List<String> data =
-                    prefs.getStringList('history_sessions') ?? [];
-                data.removeWhere(
-                  (item) =>
-                      GameSession.fromJson(jsonDecode(item)).id ==
-                      sessions[i].id,
-                );
-                await prefs.setStringList('history_sessions', data);
-                widget.onHistoryUpdate();
-                _load();
-              },
-              child: ListTile(
-                title: Text(sessions[i].name),
-                subtitle: Text(sessions[i].date),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (c) => AnalyticsScreen(session: sessions[i]),
-                  ),
-                ),
-              ),
-            ),
+    body: ListView.builder(
+      itemCount: sessions.length,
+      itemBuilder: (c, i) => ListTile(
+        title: Text(sessions[i].name),
+        subtitle: Text(sessions[i].date),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (c) => AnalyticsScreen(session: sessions[i]),
           ),
+        ),
+      ),
+    ),
   );
 }
 
 // ==========================================
-// ЕКРАН АНАЛІТИКИ (PRECISION PRO)
+// ЕКРАН АНАЛІТИКИ (ВИПРАВЛЕНО)
 // ==========================================
 class AnalyticsScreen extends StatelessWidget {
   final GameSession session;
+
+  // ВИПРАВЛЕНО: Кома замість двокрапки та додано this.session
   const AnalyticsScreen({super.key, required this.session});
 
   @override
   Widget build(BuildContext context) {
+    // 1. Розрахунок статистики
     final validClicks = session.grid
         .where((e) => _toInt(e['type']) != 0)
         .toList();
+
     double avgInterval = 0;
     double avgDeviation = 0;
 
@@ -852,7 +822,7 @@ class AnalyticsScreen extends StatelessWidget {
       double sumDiff = 0;
       for (var e in validClicks) {
         double actual = _toDouble(e['interval']);
-        double target = _toDouble(e['target'] ?? actual);
+        double target = _toDouble(e['target'] ?? 60.0);
         sumInt += actual;
         sumDiff += (actual - target);
       }
@@ -876,19 +846,21 @@ class AnalyticsScreen extends StatelessWidget {
               ),
             ),
             Text(
-              session.date,
+              "Дата: ${session.date} | Тривалість: ${session.matchDuration}",
               style: const TextStyle(color: Colors.grey, fontSize: 12),
             ),
             const Divider(height: 30),
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _stat("C1", session.c1),
-                _stat("TOTAL", session.total, isHero: true),
-                _stat("C2", session.c2),
+                _statBox("C1", session.c1),
+                _statBox("TOTAL", session.total, isHero: true),
+                _statBox("C2", session.c2),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 25),
+
             Container(
               padding: const EdgeInsets.all(15),
               decoration: BoxDecoration(
@@ -897,156 +869,88 @@ class AnalyticsScreen extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  _avgBox(
+                  _avgIndicator(
                     "AVG VIBE",
                     "${avgInterval.toStringAsFixed(1)}s",
                     Colors.white,
                   ),
                   Container(width: 1, height: 30, color: Colors.white24),
-                  _avgBox(
+                  _avgIndicator(
                     "DEVIATION",
                     "${avgDeviation > 0 ? '+' : ''}${avgDeviation.toStringAsFixed(2)}s",
-                    avgDeviation.abs() < 1
+                    avgDeviation.abs() < 1.5
                         ? Colors.green
-                        : (avgDeviation.abs() < 3 ? Colors.orange : Colors.red),
+                        : (avgDeviation.abs() < 4 ? Colors.orange : Colors.red),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 30),
+
             const Text(
-              "Timeline & Target Shifts:",
+              "Activity Timeline:",
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Colors.orange,
               ),
             ),
             const SizedBox(height: 10),
+
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: session.grid.length,
               itemBuilder: (c, i) {
                 final e = session.grid[i];
-                final prev = i > 0 ? session.grid[i - 1] : null;
                 int type = _toInt(e['type']);
-                int curTarget = _toInt(e['target'] ?? 0);
-                int prevTarget = prev != null
-                    ? _toInt(prev['target'] ?? 0)
-                    : curTarget;
-                bool targetShifted =
-                    i == 0 || (curTarget != prevTarget && curTarget != 0);
 
-                return Column(
-                  children: [
-                    if (targetShifted) _buildTargetBanner(curTarget),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Row(
-                        children: [
-                          Icon(
-                            _getIcon(type),
-                            size: 20,
-                            color: _getColor(e['status']),
+                IconData icon;
+                String label;
+                if (type == 0) {
+                  icon = Icons.pause_circle_filled;
+                  label = "PAUSE / RESET";
+                } else if (type == 1) {
+                  icon = Icons.stop;
+                  label = "C1 Click";
+                } else if (type == 2) {
+                  icon = Icons.change_history;
+                  label = "C2 Click";
+                } else {
+                  icon = Icons.circle;
+                  label = "Try Error";
+                }
+
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(icon, color: _getColor(e['status'])),
+                  title: Text(label, style: const TextStyle(fontSize: 14)),
+                  subtitle: Text(
+                    e['timestamp'] ?? "--:--:--",
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                  trailing: type != 0
+                      ? Text(
+                          "${e['interval']}s",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
                           ),
-                          const SizedBox(width: 15),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  _getLabel(type),
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Text(
-                                  e['timestamp']?.toString() ?? "--:--:--",
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (type != 0)
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  "${e['interval']}s",
-                                  style: TextStyle(
-                                    color: _getColor(e['status']),
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                const Text(
-                                  "vibe",
-                                  style: TextStyle(
-                                    fontSize: 8,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ],
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
+                        )
+                      : const Text("-", style: TextStyle(color: Colors.grey)),
                 );
               },
             ),
-            const SizedBox(height: 50),
+            const SizedBox(height: 40),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTargetBanner(int target) => Container(
-    width: double.infinity,
-    margin: const EdgeInsets.symmetric(vertical: 10),
-    padding: const EdgeInsets.all(8),
-    decoration: BoxDecoration(
-      color: Colors.orange.withOpacity(0.1),
-      borderRadius: BorderRadius.circular(8),
-      border: Border.all(color: Colors.orange.withOpacity(0.3)),
-    ),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        const Text(
-          "TARGET SHIFTED",
-          style: TextStyle(
-            fontSize: 9,
-            fontWeight: FontWeight.bold,
-            color: Colors.orange,
-          ),
-        ),
-        Text(
-          "${target}s",
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w900,
-            color: Colors.orange,
-          ),
-        ),
-      ],
-    ),
-  );
-
   int _toInt(dynamic v) => v is int ? v : int.tryParse(v.toString()) ?? 0;
   double _toDouble(dynamic v) =>
       v is num ? v.toDouble() : double.tryParse(v.toString()) ?? 0.0;
-  IconData _getIcon(int t) => t == 0
-      ? Icons.pause_circle_filled
-      : (t == 1 ? Icons.stop : (t == 2 ? Icons.change_history : Icons.circle));
-  String _getLabel(int t) => t == 0
-      ? "PAUSE"
-      : (t == 1 ? "C1 Click" : (t == 2 ? "C2 Click" : "Try Error"));
+
   Color _getColor(dynamic s) {
     switch (s?.toString()) {
       case 'green':
@@ -1060,19 +964,20 @@ class AnalyticsScreen extends StatelessWidget {
     }
   }
 
-  Widget _stat(String l, int v, {bool isHero = false}) => Column(
+  Widget _statBox(String l, int v, {bool isHero = false}) => Column(
     children: [
       Text(l, style: const TextStyle(fontSize: 10, color: Colors.grey)),
       Text(
         "$v",
         style: TextStyle(
-          fontSize: isHero ? 30 : 22,
+          fontSize: isHero ? 32 : 24,
           fontWeight: FontWeight.bold,
         ),
       ),
     ],
   );
-  Widget _avgBox(String l, String v, Color c) => Expanded(
+
+  Widget _avgIndicator(String l, String v, Color c) => Expanded(
     child: Column(
       children: [
         Text(l, style: const TextStyle(fontSize: 9, color: Colors.grey)),
