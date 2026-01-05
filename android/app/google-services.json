@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "662723388518",
+    "project_id": "fish-counter-55a99",
+    "storage_bucket": "fish-counter-55a99.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:662723388518:android:3a9c01d8a06d5cc66079a7",
+        "android_client_info": {
+          "package_name": "com.yukon.fishcounter"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDnAMzK_M7p1JmKj3fi-xhmlT0uRq1bziQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
