@@ -12,6 +12,7 @@ dependencies:
   intl: ^0.20.2
   shared_preferences: ^2.2.2
   battery_plus: ^6.0.0
+  firebase_core: ^4.3.0
 
 dev_dependencies:
   flutter_test:
