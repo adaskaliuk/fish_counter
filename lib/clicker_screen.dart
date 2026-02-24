@@ -12,28 +12,76 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+// ==========================================
+// CONSTANTS
+// ==========================================
+class _PrefsKeys {
+  static const String counter1 = 'counter1';
+  static const String counter2 = 'counter2';
+  static const String tries = 'tries';
+  static const String total = 'total';
+  static const String power = 'power';
+  static const String paused = 'paused';
+  static const String resetDelay = 'reset_delay';
+  static const String vibeInterval = 'vibe_interval';
+  static const String matchSeconds = 'match_seconds';
+  static const String activityGrid = 'activity_grid_final';
+  static const String historySessions = 'history_sessions';
+}
+
+class _Defaults {
+  static const int resetDelaySeconds = 15;
+  static const int vibeIntervalSeconds = 60;
+  static const int matchDurationSeconds = 18000; // 5 hours
+  static const int actionDelayMs = 600;
+  static const int scrollDelayMs = 100;
+}
+
+// ==========================================
+// MAIN WIDGET
+// ==========================================
 class ClickerScreen extends StatefulWidget {
   const ClickerScreen({super.key});
+
   @override
   State<ClickerScreen> createState() => _ClickerScreenState();
 }
 
 class _ClickerScreenState extends State<ClickerScreen> {
-  int counter1 = 0, counter2 = 0, tries = 0, total = 0;
-  bool isPowerOn = true,
-      isPaused = true,
-      isActionDelay = false,
-      hasHistory = false;
-  bool isDataHidden = false, isVibeFlash = false, isSessionActive = false;
+  // Counters
+  int counter1 = 0;
+  int counter2 = 0;
+  int tries = 0;
+  int total = 0;
 
+  // State flags
+  bool isPowerOn = true;
+  bool isPaused = true;
+  bool isActionDelay = false;
+  bool hasHistory = false;
+  bool isDataHidden = false;
+  bool isVibeFlash = false;
+  bool isSessionActive = false;
+
+  // Timers
   Duration duration = Duration.zero;
-  Duration matchInterval = const Duration(hours: 5); // Default 5 hours
-  int resetDelay = 15, vibeInterval = 60, delayCountdown = 0;
+  Duration matchInterval =
+      const Duration(seconds: _Defaults.matchDurationSeconds);
+  int resetDelay = _Defaults.resetDelaySeconds;
+  int vibeInterval = _Defaults.vibeIntervalSeconds;
+  int delayCountdown = 0;
 
-  String realTime = "--:--:--", currentDate = "--.--.--";
+  // Display
+  String realTime = '--:--:--';
+  String currentDate = '--.--.--';
   int batteryLevel = 0;
+
+  // Services
   final Battery _battery = Battery();
-  Timer? timer, countdownTimer;
+  Timer? _timer;
+  Timer? _countdownTimer;
+
+  // Activity grid
   List<Map<String, dynamic>> activityGrid = [];
   final ScrollController _gridScrollController = ScrollController();
 
@@ -44,76 +92,97 @@ class _ClickerScreenState extends State<ClickerScreen> {
     _startGlobalTimer();
   }
 
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _countdownTimer?.cancel();
+    _gridScrollController.dispose();
+    super.dispose();
+  }
+
   void _startGlobalTimer() {
-    timer = Timer.periodic(const Duration(seconds: 1), (t) async {
+    _timer = Timer.periodic(const Duration(seconds: 1), (t) async {
       if (!mounted || !isPowerOn) return;
-      final now = DateTime.now();
-      int level = 0;
+
       try {
-        level = await _battery.batteryLevel;
-      } catch (_) {}
-
-      setState(() {
-        realTime = DateFormat('HH:mm:ss').format(now);
-        currentDate = DateFormat('dd.MM.yy').format(now);
-        batteryLevel = level;
-
-        if (isSessionActive && matchInterval.inSeconds > 0) {
-          matchInterval -= const Duration(seconds: 1);
+        final now = DateTime.now();
+        int level = 0;
+        try {
+          level = await _battery.batteryLevel;
+        } catch (e) {
+          debugPrint('Battery level error: $e');
         }
 
-        if (!isPaused && isSessionActive && !isActionDelay) {
-          duration += const Duration(seconds: 1);
-          if (vibeInterval > 0 &&
-              duration.inSeconds != 0 &&
-              duration.inSeconds % vibeInterval == 0) {
-            _triggerVibeFeedback();
+        if (!mounted) return;
+
+        setState(() {
+          realTime = DateFormat('HH:mm:ss').format(now);
+          currentDate = DateFormat('dd.MM.yy').format(now);
+          batteryLevel = level;
+
+          if (isSessionActive && matchInterval.inSeconds > 0) {
+            matchInterval -= const Duration(seconds: 1);
           }
-        }
-      });
+
+          if (!isPaused && isSessionActive && !isActionDelay) {
+            duration += const Duration(seconds: 1);
+            if (vibeInterval > 0 &&
+                duration.inSeconds != 0 &&
+                duration.inSeconds % vibeInterval == 0) {
+              _triggerVibeFeedback();
+            }
+          }
+        });
+      } catch (e) {
+        debugPrint('Timer error: $e');
+      }
     });
   }
 
   void _triggerVibeFeedback() {
     HapticFeedback.vibrate();
+    if (!mounted) return;
     setState(() => isVibeFlash = true);
-    Future.delayed(const Duration(milliseconds: 600), () {
-      if (mounted) {
-        HapticFeedback.vibrate();
-        setState(() => isVibeFlash = false);
-      }
+
+    Future.delayed(const Duration(milliseconds: _Defaults.actionDelayMs), () {
+      if (!mounted) return;
+      HapticFeedback.vibrate();
+      setState(() => isVibeFlash = false);
     });
   }
 
   void handleIncrement(int type) {
     if (!isPowerOn || isActionDelay || isPaused || !isSessionActive) return;
-    int sec = duration.inSeconds;
-    String status = (sec >= vibeInterval * 0.9 && sec <= vibeInterval * 1.1)
-        ? "green"
-        : (sec < vibeInterval * 0.7
-              ? "grey"
-              : (sec > vibeInterval * 1.5 ? "red" : "orange"));
+
+    final sec = duration.inSeconds;
+    final status = _calculateStatus(sec);
+
     HapticFeedback.mediumImpact();
+
     setState(() {
       if (type == 1) counter1++;
       if (type == 2) counter2++;
       if (type == 3) tries++;
       total = counter1 + counter2;
+
       activityGrid.add({
-        "type": type,
-        "status": status,
-        "interval": sec,
-        "target": vibeInterval,
-        "timestamp": DateFormat('HH:mm:ss').format(DateTime.now()),
+        'type': type,
+        'status': status,
+        'interval': sec,
+        'target': vibeInterval,
+        'timestamp': DateFormat('HH:mm:ss').format(DateTime.now()),
       });
+
       duration = Duration.zero;
       isActionDelay = true;
       delayCountdown = resetDelay;
     });
+
     _scrollToEnd();
     _saveData();
-    countdownTimer?.cancel();
-    countdownTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+
+    _countdownTimer?.cancel();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (t) {
       if (!mounted) {
         t.cancel();
         return;
@@ -130,18 +199,31 @@ class _ClickerScreenState extends State<ClickerScreen> {
     });
   }
 
+  String _calculateStatus(int seconds) {
+    if (seconds >= vibeInterval * 0.9 && seconds <= vibeInterval * 1.1) {
+      return 'green';
+    } else if (seconds < vibeInterval * 0.7) {
+      return 'grey';
+    } else if (seconds > vibeInterval * 1.5) {
+      return 'red';
+    } else {
+      return 'orange';
+    }
+  }
+
   void togglePause() {
     setState(() {
       if (!isSessionActive) isSessionActive = true;
       isPaused = !isPaused;
+
       if (isPaused) {
         isDataHidden = true;
         duration = Duration.zero;
         activityGrid.add({
-          "type": 0,
-          "status": "grey",
-          "interval": 0,
-          "timestamp": DateFormat('HH:mm:ss').format(DateTime.now()),
+          'type': 0,
+          'status': 'grey',
+          'interval': 0,
+          'timestamp': DateFormat('HH:mm:ss').format(DateTime.now()),
         });
         _scrollToEnd();
       } else {
@@ -151,12 +233,15 @@ class _ClickerScreenState extends State<ClickerScreen> {
     _saveData();
   }
 
-  // --- UI LCD ---
+  // ==========================================
+  // UI: LCD DISPLAY
+  // ==========================================
   Widget _buildLCD() {
     String f(int n) => n.toString().padLeft(2, '0');
+
     String formatMatch(Duration d) {
-      String days = d.inDays > 0 ? "${d.inDays}d " : "";
-      return "$days${f(d.inHours % 24)}:${f(d.inMinutes % 60)}:${f(d.inSeconds % 60)}";
+      final days = d.inDays > 0 ? '${d.inDays}d ' : '';
+      return '$days${f(d.inHours % 24)}:${f(d.inMinutes % 60)}:${f(d.inSeconds % 60)}';
     }
 
     return Expanded(
@@ -167,17 +252,15 @@ class _ClickerScreenState extends State<ClickerScreen> {
           color: !isPowerOn
               ? const Color(0xFF1A1C14)
               : (isVibeFlash
-                    ? const Color(0xFFDAE0B0)
-                    : const Color(0xFFC0C7B0)),
+                  ? const Color(0xFFDAE0B0)
+                  : const Color(0xFFC0C7B0)),
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: Colors.black87, width: 3),
         ),
         child: isPowerOn
             ? Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 child: Column(
                   children: [
                     Row(
@@ -201,7 +284,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
                           ),
                         ),
                         Text(
-                          "$batteryLevel%",
+                          '$batteryLevel%',
                           style: const TextStyle(
                             color: Colors.black87,
                             fontSize: 10,
@@ -214,16 +297,17 @@ class _ClickerScreenState extends State<ClickerScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _lcdStat("C1", isDataHidden ? null : counter1),
-                        _lcdStat(
-                          "TOTAL",
-                          isDataHidden ? null : total,
-                          isBold: true,
-                        ),
-                        _lcdStat("C2", isDataHidden ? null : counter2),
+                        _lcdStat('C1', isDataHidden ? null : counter1),
+                        _lcdStat('TOTAL', isDataHidden ? null : total,
+                            isBold: true),
+                        _lcdStat('C2', isDataHidden ? null : counter2),
                       ],
                     ),
-                    const Divider(color: Colors.black, thickness: 1, height: 8),
+                    const Divider(
+                      color: Colors.black,
+                      thickness: 1,
+                      height: 8,
+                    ),
                     Expanded(
                       child: Stack(
                         alignment: Alignment.center,
@@ -232,7 +316,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
                             Positioned(
                               top: 2,
                               child: Text(
-                                "BUSY ${f(delayCountdown)}s",
+                                'BUSY ${f(delayCountdown)}s',
                                 style: const TextStyle(
                                   color: Colors.red,
                                   fontSize: 14,
@@ -244,13 +328,13 @@ class _ClickerScreenState extends State<ClickerScreen> {
                           FittedBox(
                             fit: BoxFit.scaleDown,
                             child: Text(
-                              "${f(duration.inHours)}:${f(duration.inMinutes % 60)}:${f(duration.inSeconds % 60)}",
+                              '${f(duration.inHours)}:${f(duration.inMinutes % 60)}:${f(duration.inSeconds % 60)}',
                               style: TextStyle(
                                 color: isPaused
                                     ? Colors.black26
                                     : (isActionDelay
-                                          ? Colors.black38
-                                          : Colors.black),
+                                        ? Colors.black38
+                                        : Colors.black),
                                 fontSize: 60,
                                 fontWeight: FontWeight.w900,
                                 fontFamily: 'monospace',
@@ -260,9 +344,17 @@ class _ClickerScreenState extends State<ClickerScreen> {
                         ],
                       ),
                     ),
-                    const Divider(color: Colors.black, thickness: 1, height: 8),
+                    const Divider(
+                      color: Colors.black,
+                      thickness: 1,
+                      height: 8,
+                    ),
                     SizedBox(height: 70, child: _buildGrid()),
-                    const Divider(color: Colors.black, thickness: 1, height: 8),
+                    const Divider(
+                      color: Colors.black,
+                      thickness: 1,
+                      height: 8,
+                    ),
                     FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Text(
@@ -295,12 +387,19 @@ class _ClickerScreenState extends State<ClickerScreen> {
       itemCount: activityGrid.length,
       itemBuilder: (context, index) {
         final e = activityGrid[index];
-        int type = e['type'] is int ? e['type'] : 0;
-        IconData icon = type == 0
-            ? Icons.close
-            : (type == 1
-                  ? Icons.stop
-                  : (type == 2 ? Icons.change_history : Icons.circle));
+        final type = _safeInt(e['type']);
+        final IconData icon;
+
+        if (type == 0) {
+          icon = Icons.close;
+        } else if (type == 1) {
+          icon = Icons.stop;
+        } else if (type == 2) {
+          icon = Icons.change_history;
+        } else {
+          icon = Icons.circle;
+        }
+
         return Icon(icon, size: 20, color: _getStatusColor(e['status']));
       },
     );
@@ -319,23 +418,27 @@ class _ClickerScreenState extends State<ClickerScreen> {
     }
   }
 
-  Widget _lcdStat(String l, int? v, {bool isBold = false}) => Column(
-    children: [
-      Text(l, style: const TextStyle(color: Colors.black, fontSize: 9)),
-      Text(
-        v == null ? "--" : "$v",
-        style: TextStyle(
-          color: Colors.black,
-          fontSize: 18,
-          fontWeight: isBold ? FontWeight.w900 : FontWeight.bold,
-        ),
-      ),
-    ],
-  );
+  Widget _lcdStat(String label, int? value, {bool isBold = false}) => Column(
+        children: [
+          Text(label,
+              style: const TextStyle(color: Colors.black, fontSize: 9)),
+          Text(
+            value == null ? '--' : '$value',
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: 18,
+              fontWeight: isBold ? FontWeight.w900 : FontWeight.bold,
+            ),
+          ),
+        ],
+      );
 
-  // --- УПРАВЛІННЯ ---
+  // ==========================================
+  // UI: CONTROLS
+  // ==========================================
   Widget _buildControls() {
-    double mainS = 75.0;
+    const double mainSize = 75.0;
+
     return Expanded(
       flex: 5,
       child: Column(
@@ -344,27 +447,20 @@ class _ClickerScreenState extends State<ClickerScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _btn("C 1", () => handleIncrement(1), mainS, isActionBtn: true),
-              _btn(
-                "Try",
-                () => handleIncrement(3),
-                55,
-                isSmall: true,
-                isActionBtn: true,
-              ),
-              _btn("C 2", () => handleIncrement(2), mainS, isActionBtn: true),
+              _btn('C 1', () => handleIncrement(1), mainSize,
+                  isActionBtn: true),
+              _btn('Try', () => handleIncrement(3), 55,
+                  isSmall: true, isActionBtn: true),
+              _btn('C 2', () => handleIncrement(2), mainSize,
+                  isActionBtn: true),
             ],
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _btn(
-                isPaused ? "START" : "PAUSE",
-                togglePause,
-                mainS,
-                isAccent: true,
-              ),
-              _btn("SETTINGS", _showSettings, mainS, isSmall: true),
+              _btn(isPaused ? 'START' : 'PAUSE', togglePause, mainSize,
+                  isAccent: true),
+              _btn('SETTINGS', _showSettings, mainSize, isSmall: true),
             ],
           ),
           Row(
@@ -420,24 +516,24 @@ class _ClickerScreenState extends State<ClickerScreen> {
   }
 
   Widget _btn(
-    String l,
-    VoidCallback t,
-    double s, {
+    String label,
+    VoidCallback onTap,
+    double size, {
     bool isSmall = false,
     bool isAccent = false,
     bool isActionBtn = false,
   }) {
-    bool isDisabled =
-        !isPowerOn ||
+    final isDisabled = !isPowerOn ||
         (isActionBtn && (!isSessionActive || isPaused || isActionDelay));
+
     return GestureDetector(
-      onTap: isDisabled ? null : t,
+      onTap: isDisabled ? null : onTap,
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 200),
         opacity: isDisabled ? 0.12 : 1.0,
         child: Container(
-          width: s,
-          height: s,
+          width: size,
+          height: size,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: isAccent
@@ -447,7 +543,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
             border: Border.all(width: 3, color: Colors.black),
           ),
           child: Text(
-            l,
+            label,
             textAlign: TextAlign.center,
             style: TextStyle(
               color: Colors.black,
@@ -462,6 +558,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
 
   void _showSettings() {
     if (!isPowerOn) return;
+
     final rCtrl = TextEditingController(text: resetDelay.toString());
     final vCtrl = TextEditingController(text: vibeInterval.toString());
     final dCtrl = TextEditingController(text: matchInterval.inDays.toString());
@@ -475,47 +572,44 @@ class _ClickerScreenState extends State<ClickerScreen> {
     showDialog(
       context: context,
       builder: (c) => AlertDialog(
-        title: const Text("Settings"),
+        title: const Text('Settings'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: rCtrl,
-                decoration: const InputDecoration(
-                  labelText: "Action Delay (s)",
-                ),
+                decoration: const InputDecoration(labelText: 'Action Delay (s)'),
                 keyboardType: TextInputType.number,
               ),
               TextField(
                 controller: vCtrl,
-                decoration: const InputDecoration(
-                  labelText: "Vibe Interval (s)",
-                ),
+                decoration:
+                    const InputDecoration(labelText: 'Vibe Interval (s)'),
                 keyboardType: TextInputType.number,
               ),
               const Divider(),
-              const Text("Match Duration:"),
+              const Text('Match Duration:'),
               Row(
                 children: [
                   Expanded(
                     child: TextField(
                       controller: dCtrl,
-                      decoration: const InputDecoration(labelText: "Days"),
+                      decoration: const InputDecoration(labelText: 'Days'),
                       keyboardType: TextInputType.number,
                     ),
                   ),
                   Expanded(
                     child: TextField(
                       controller: hCtrl,
-                      decoration: const InputDecoration(labelText: "Hrs"),
+                      decoration: const InputDecoration(labelText: 'Hrs'),
                       keyboardType: TextInputType.number,
                     ),
                   ),
                   Expanded(
                     child: TextField(
                       controller: mCtrl,
-                      decoration: const InputDecoration(labelText: "Mins"),
+                      decoration: const InputDecoration(labelText: 'Mins'),
                       keyboardType: TextInputType.number,
                     ),
                   ),
@@ -528,8 +622,8 @@ class _ClickerScreenState extends State<ClickerScreen> {
           ElevatedButton(
             onPressed: () {
               setState(() {
-                resetDelay = int.tryParse(rCtrl.text) ?? 15;
-                vibeInterval = int.tryParse(vCtrl.text) ?? 60;
+                resetDelay = int.tryParse(rCtrl.text) ?? _Defaults.resetDelaySeconds;
+                vibeInterval = int.tryParse(vCtrl.text) ?? _Defaults.vibeIntervalSeconds;
                 matchInterval = Duration(
                   days: int.tryParse(dCtrl.text) ?? 0,
                   hours: int.tryParse(hCtrl.text) ?? 0,
@@ -539,57 +633,81 @@ class _ClickerScreenState extends State<ClickerScreen> {
               _saveData();
               Navigator.pop(c);
             },
-            child: const Text("Save"),
+            child: const Text('Save'),
           ),
         ],
       ),
     );
   }
 
-  // --- DATA ---
+  // ==========================================
+  // DATA PERSISTENCE
+  // ==========================================
   Future<void> _loadData() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      counter1 = prefs.getInt('counter1') ?? 0;
-      counter2 = prefs.getInt('counter2') ?? 0;
-      tries = prefs.getInt('tries') ?? 0;
-      total = prefs.getInt('total') ?? 0;
-      isPowerOn = prefs.getBool('power') ?? true;
-      isPaused = prefs.getBool('paused') ?? true;
-      resetDelay = prefs.getInt('reset_delay') ?? 15;
-      vibeInterval = prefs.getInt('vibe_interval') ?? 60;
-      matchInterval = Duration(seconds: prefs.getInt('match_seconds') ?? 18000);
-      hasHistory = (prefs.getStringList('history_sessions') ?? []).isNotEmpty;
-      String? gridJson = prefs.getString('activity_grid_final');
-      if (gridJson != null)
-        activityGrid = List<Map<String, dynamic>>.from(jsonDecode(gridJson));
-      if (isPaused) {
-        isDataHidden = true;
-        duration = Duration.zero;
-      }
-    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (!mounted) return;
+
+      setState(() {
+        counter1 = prefs.getInt(_PrefsKeys.counter1) ?? 0;
+        counter2 = prefs.getInt(_PrefsKeys.counter2) ?? 0;
+        tries = prefs.getInt(_PrefsKeys.tries) ?? 0;
+        total = prefs.getInt(_PrefsKeys.total) ?? 0;
+        isPowerOn = prefs.getBool(_PrefsKeys.power) ?? true;
+        isPaused = prefs.getBool(_PrefsKeys.paused) ?? true;
+        resetDelay = prefs.getInt(_PrefsKeys.resetDelay) ?? _Defaults.resetDelaySeconds;
+        vibeInterval = prefs.getInt(_PrefsKeys.vibeInterval) ?? _Defaults.vibeIntervalSeconds;
+        matchInterval = Duration(
+            seconds: prefs.getInt(_PrefsKeys.matchSeconds) ?? _Defaults.matchDurationSeconds);
+        hasHistory =
+            (prefs.getStringList(_PrefsKeys.historySessions) ?? []).isNotEmpty;
+
+        final String? gridJson = prefs.getString(_PrefsKeys.activityGrid);
+        if (gridJson != null) {
+          try {
+            activityGrid =
+                List<Map<String, dynamic>>.from(jsonDecode(gridJson));
+          } catch (e) {
+            debugPrint('Error parsing activity grid: $e');
+            activityGrid = [];
+          }
+        }
+
+        if (isPaused) {
+          isDataHidden = true;
+          duration = Duration.zero;
+        }
+      });
+    } catch (e) {
+      debugPrint('Error loading data: $e');
+    }
   }
 
   Future<void> _saveData() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('counter1', counter1);
-    await prefs.setInt('counter2', counter2);
-    await prefs.setInt('tries', tries);
-    await prefs.setInt('total', total);
-    await prefs.setBool('power', isPowerOn);
-    await prefs.setBool('paused', isPaused);
-    await prefs.setInt('reset_delay', resetDelay);
-    await prefs.setInt('vibe_interval', vibeInterval);
-    await prefs.setInt('match_seconds', matchInterval.inSeconds);
-    await prefs.setString('activity_grid_final', jsonEncode(activityGrid));
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_PrefsKeys.counter1, counter1);
+      await prefs.setInt(_PrefsKeys.counter2, counter2);
+      await prefs.setInt(_PrefsKeys.tries, tries);
+      await prefs.setInt(_PrefsKeys.total, total);
+      await prefs.setBool(_PrefsKeys.power, isPowerOn);
+      await prefs.setBool(_PrefsKeys.paused, isPaused);
+      await prefs.setInt(_PrefsKeys.resetDelay, resetDelay);
+      await prefs.setInt(_PrefsKeys.vibeInterval, vibeInterval);
+      await prefs.setInt(_PrefsKeys.matchSeconds, matchInterval.inSeconds);
+      await prefs.setString(_PrefsKeys.activityGrid, jsonEncode(activityGrid));
+    } catch (e) {
+      debugPrint('Error saving data: $e');
+    }
   }
 
   void _scrollToEnd() {
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (_gridScrollController.hasClients)
+    Future.delayed(const Duration(milliseconds: _Defaults.scrollDelayMs), () {
+      if (mounted && _gridScrollController.hasClients) {
         _gridScrollController.jumpTo(
           _gridScrollController.position.maxScrollExtent,
         );
+      }
     });
   }
 
@@ -598,14 +716,16 @@ class _ClickerScreenState extends State<ClickerScreen> {
       setState(() => isPowerOn = true);
       return;
     }
+
     final nameCtrl = TextEditingController(
-      text: "Session ${DateFormat('HH:mm').format(DateTime.now())}",
+      text: 'Session ${DateFormat('HH:mm').format(DateTime.now())}',
     );
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text("Save Session?"),
+        title: const Text('Save Session?'),
         content: TextField(controller: nameCtrl),
         actions: [
           TextButton(
@@ -616,46 +736,76 @@ class _ClickerScreenState extends State<ClickerScreen> {
                 isSessionActive = false;
               });
             },
-            child: const Text("Off"),
+            child: const Text('Off'),
           ),
           ElevatedButton(
             onPressed: () async {
-              final prefs = await SharedPreferences.getInstance();
-              List<String> history =
-                  prefs.getStringList('history_sessions') ?? [];
-              final session = GameSession(
-                id: DateTime.now().millisecondsSinceEpoch.toString(),
-                name: nameCtrl.text,
-                date: DateFormat('dd.MM.yy HH:mm').format(DateTime.now()),
-                c1: counter1,
-                c2: counter2,
-                tries: tries,
-                total: total,
-                matchDuration:
-                    "${matchInterval.inHours}:${matchInterval.inMinutes % 60}",
-                grid: List.from(activityGrid),
-              );
-              history.add(jsonEncode(session.toJson()));
-              await prefs.setStringList('history_sessions', history);
-              setState(() {
-                counter1 = 0;
-                counter2 = 0;
-                tries = 0;
-                total = 0;
-                activityGrid = [];
-                isPowerOn = false;
-                hasHistory = true;
-                isPaused = true;
-                isSessionActive = false;
-              });
-              _saveData();
-              Navigator.pop(context);
+              final navigator = Navigator.of(context);
+              final messenger = ScaffoldMessenger.of(context);
+
+              try {
+                final prefs = await SharedPreferences.getInstance();
+                final List<String> history =
+                    prefs.getStringList(_PrefsKeys.historySessions) ?? [];
+
+                final session = GameSession(
+                  id: DateTime.now().millisecondsSinceEpoch.toString(),
+                  name: nameCtrl.text,
+                  date: DateFormat('dd.MM.yy HH:mm').format(DateTime.now()),
+                  c1: counter1,
+                  c2: counter2,
+                  tries: tries,
+                  total: total,
+                  matchDuration:
+                      '${matchInterval.inHours}:${matchInterval.inMinutes % 60}',
+                  grid: List.from(activityGrid),
+                );
+
+                history.add(jsonEncode(session.toJson()));
+                await prefs.setStringList(_PrefsKeys.historySessions, history);
+
+                if (!mounted) return;
+
+                setState(() {
+                  counter1 = 0;
+                  counter2 = 0;
+                  tries = 0;
+                  total = 0;
+                  activityGrid = [];
+                  isPowerOn = false;
+                  hasHistory = true;
+                  isPaused = true;
+                  isSessionActive = false;
+                });
+
+                await _saveData();
+
+                if (!mounted) return;
+                navigator.pop();
+              } catch (e) {
+                debugPrint('Error saving session: $e');
+                if (!mounted) return;
+                navigator.pop();
+                messenger.showSnackBar(
+                  SnackBar(content: Text('Error saving session: $e')),
+                );
+              }
             },
-            child: const Text("Save"),
+            child: const Text('Save'),
           ),
         ],
       ),
     );
+  }
+
+  // ==========================================
+  // UTILS
+  // ==========================================
+  static int _safeInt(dynamic value, {int defaultValue = 0}) {
+    if (value == null) return defaultValue;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value.toString()) ?? defaultValue;
   }
 
   @override
