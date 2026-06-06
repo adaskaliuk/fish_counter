@@ -1,41 +1,23 @@
 // ==========================================
-// ГОЛОВНИЙ ЕКРАН
+// MAIN SCREEN
 // ==========================================
 import 'dart:async';
-import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:battery_plus/battery_plus.dart';
-import 'package:fish_counter/game_session.dart';
+import 'package:fish_counter/constants.dart';
+import 'package:fish_counter/controllers/clicker_controller.dart';
 import 'package:fish_counter/history_screen.dart';
+import 'package:fish_counter/l10n/app_localizations.dart';
+import 'package:fish_counter/models/weather_snapshot.dart';
+import 'package:fish_counter/services/prefs_repository.dart';
+import 'package:fish_counter/services/weather_service.dart';
+import 'package:fish_counter/shake_undo_settings.dart';
+import 'package:fish_counter/undo_manager.dart' as app_undo;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
-// ==========================================
-// CONSTANTS
-// ==========================================
-class _PrefsKeys {
-  static const String counter1 = 'counter1';
-  static const String counter2 = 'counter2';
-  static const String tries = 'tries';
-  static const String total = 'total';
-  static const String power = 'power';
-  static const String paused = 'paused';
-  static const String resetDelay = 'reset_delay';
-  static const String vibeInterval = 'vibe_interval';
-  static const String matchSeconds = 'match_seconds';
-  static const String activityGrid = 'activity_grid_final';
-  static const String historySessions = 'history_sessions';
-}
-
-class _Defaults {
-  static const int resetDelaySeconds = 15;
-  static const int vibeIntervalSeconds = 60;
-  static const int matchDurationSeconds = 18000; // 5 hours
-  static const int actionDelayMs = 600;
-  static const int scrollDelayMs = 100;
-}
+import 'package:sensors_plus/sensors_plus.dart';
 
 // ==========================================
 // MAIN WIDGET
@@ -62,13 +44,16 @@ class _ClickerScreenState extends State<ClickerScreen> {
   bool isDataHidden = false;
   bool isVibeFlash = false;
   bool isSessionActive = false;
+  bool isShakeUndoEnabled = Defaults.defaultShakeUndoEnabled;
+  ShakeSensitivity shakeSensitivity = ShakeSensitivity.medium;
 
   // Timers
   Duration duration = Duration.zero;
-  Duration matchInterval =
-      const Duration(seconds: _Defaults.matchDurationSeconds);
-  int resetDelay = _Defaults.resetDelaySeconds;
-  int vibeInterval = _Defaults.vibeIntervalSeconds;
+  Duration matchInterval = const Duration(
+    seconds: Defaults.defaultMatchDurationSeconds,
+  );
+  int resetDelay = Defaults.defaultResetDelaySeconds;
+  int vibeInterval = Defaults.defaultVibeIntervalSeconds;
   int delayCountdown = 0;
 
   // Display
@@ -80,6 +65,9 @@ class _ClickerScreenState extends State<ClickerScreen> {
   final Battery _battery = Battery();
   Timer? _timer;
   Timer? _countdownTimer;
+  StreamSubscription<AccelerometerEvent>? _shakeSubscription;
+  int _batteryPollTick = 0;
+  DateTime? _lastShakeUndoAt;
 
   // Activity grid
   List<Map<String, dynamic>> activityGrid = [];
@@ -90,12 +78,14 @@ class _ClickerScreenState extends State<ClickerScreen> {
     super.initState();
     _loadData();
     _startGlobalTimer();
+    _startShakeListener();
   }
 
   @override
   void dispose() {
     _timer?.cancel();
     _countdownTimer?.cancel();
+    _shakeSubscription?.cancel();
     _gridScrollController.dispose();
     super.dispose();
   }
@@ -106,14 +96,21 @@ class _ClickerScreenState extends State<ClickerScreen> {
 
       try {
         final now = DateTime.now();
-        int level = 0;
-        try {
-          level = await _battery.batteryLevel;
-        } catch (e) {
-          debugPrint('Battery level error: $e');
+        var level = batteryLevel;
+        final shouldPollBattery = _batteryPollTick == 0;
+        _batteryPollTick = (_batteryPollTick + 1) % 30;
+
+        if (shouldPollBattery) {
+          try {
+            level = await _battery.batteryLevel;
+          } catch (e) {
+            debugPrint('Battery level error: $e');
+          }
         }
 
         if (!mounted) return;
+
+        var shouldTriggerVibe = false;
 
         setState(() {
           realTime = DateFormat('HH:mm:ss').format(now);
@@ -126,13 +123,16 @@ class _ClickerScreenState extends State<ClickerScreen> {
 
           if (!isPaused && isSessionActive && !isActionDelay) {
             duration += const Duration(seconds: 1);
-            if (vibeInterval > 0 &&
+            shouldTriggerVibe =
+                vibeInterval > 0 &&
                 duration.inSeconds != 0 &&
-                duration.inSeconds % vibeInterval == 0) {
-              _triggerVibeFeedback();
-            }
+                duration.inSeconds % vibeInterval == 0;
           }
         });
+
+        if (shouldTriggerVibe) {
+          _triggerVibeFeedback();
+        }
       } catch (e) {
         debugPrint('Timer error: $e');
       }
@@ -144,34 +144,118 @@ class _ClickerScreenState extends State<ClickerScreen> {
     if (!mounted) return;
     setState(() => isVibeFlash = true);
 
-    Future.delayed(const Duration(milliseconds: _Defaults.actionDelayMs), () {
-      if (!mounted) return;
-      HapticFeedback.vibrate();
-      setState(() => isVibeFlash = false);
+    Future.delayed(
+      const Duration(milliseconds: Defaults.defaultActivityDelayMs),
+      () {
+        if (!mounted) return;
+        HapticFeedback.vibrate();
+        setState(() => isVibeFlash = false);
+      },
+    );
+  }
+
+  void _startShakeListener() {
+    _shakeSubscription = accelerometerEventStream().listen(
+      (event) {
+        final acceleration = math.sqrt(
+          event.x * event.x + event.y * event.y + event.z * event.z,
+        );
+
+        if (!isShakeUndoEnabled || acceleration < shakeSensitivity.threshold) {
+          return;
+        }
+
+        final now = DateTime.now();
+        final lastShake = _lastShakeUndoAt;
+        if (lastShake != null &&
+            now.difference(lastShake).inMilliseconds < 1500) {
+          return;
+        }
+
+        _lastShakeUndoAt = now;
+        _undoLastAction(fromShake: true);
+      },
+      onError: (Object error) {
+        debugPrint('Shake listener error: $error');
+      },
+    );
+  }
+
+  bool get _canUndo => activityGrid.isNotEmpty;
+
+  Future<void> _undoLastAction({bool fromShake = false}) async {
+    if (!_canUndo) {
+      if (fromShake && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context).nothingToUndo)),
+        );
+      }
+      return;
+    }
+
+    HapticFeedback.mediumImpact();
+    _countdownTimer?.cancel();
+
+    setState(() {
+      final result = app_undo.UndoManager.undoLastAction(
+        app_undo.UndoState(
+          counter1: counter1,
+          counter2: counter2,
+          tries: tries,
+          total: total,
+          isActionDelay: isActionDelay,
+          delayCountdown: delayCountdown,
+          activityGrid: activityGrid,
+        ),
+      );
+      final updatedState = result.state;
+
+      counter1 = updatedState.counter1;
+      counter2 = updatedState.counter2;
+      tries = updatedState.tries;
+      total = updatedState.total;
+      isActionDelay = updatedState.isActionDelay;
+      delayCountdown = updatedState.delayCountdown;
+      activityGrid = updatedState.activityGrid;
     });
+
+    await _saveData();
   }
 
   void handleIncrement(int type) {
-    if (!isPowerOn || isActionDelay || isPaused || !isSessionActive) return;
+    if (!ClickerController.canIncrement(
+      isPowerOn: isPowerOn,
+      isActionDelay: isActionDelay,
+      isPaused: isPaused,
+      isSessionActive: isSessionActive,
+    )) {
+      return;
+    }
 
     final sec = duration.inSeconds;
-    final status = _calculateStatus(sec);
 
     HapticFeedback.mediumImpact();
 
     setState(() {
-      if (type == 1) counter1++;
-      if (type == 2) counter2++;
-      if (type == 3) tries++;
-      total = counter1 + counter2;
+      final counters = ClickerController.incrementCounters(
+        counter1: counter1,
+        counter2: counter2,
+        tries: tries,
+        type: type,
+      );
+      counter1 = counters.counter1;
+      counter2 = counters.counter2;
+      tries = counters.tries;
+      total = counters.total;
 
-      activityGrid.add({
-        'type': type,
-        'status': status,
-        'interval': sec,
-        'target': vibeInterval,
-        'timestamp': DateFormat('HH:mm:ss').format(DateTime.now()),
-      });
+      activityGrid.add(
+        ClickerController.buildActivityEntry(
+          type: type,
+          intervalSeconds: sec,
+          targetInterval: vibeInterval,
+          timestamp: DateFormat('HH:mm:ss').format(DateTime.now()),
+        ),
+      );
 
       duration = Duration.zero;
       isActionDelay = true;
@@ -199,37 +283,36 @@ class _ClickerScreenState extends State<ClickerScreen> {
     });
   }
 
-  String _calculateStatus(int seconds) {
-    if (seconds >= vibeInterval * 0.9 && seconds <= vibeInterval * 1.1) {
-      return 'green';
-    } else if (seconds < vibeInterval * 0.7) {
-      return 'grey';
-    } else if (seconds > vibeInterval * 1.5) {
-      return 'red';
-    } else {
-      return 'orange';
-    }
-  }
-
   void togglePause() {
-    setState(() {
-      if (!isSessionActive) isSessionActive = true;
-      isPaused = !isPaused;
+    var shouldScrollToEnd = false;
 
-      if (isPaused) {
-        isDataHidden = true;
+    setState(() {
+      final pauseState = ClickerController.togglePause(
+        isSessionActive: isSessionActive,
+        isPaused: isPaused,
+      );
+
+      isSessionActive = pauseState.isSessionActive;
+      isPaused = pauseState.isPaused;
+      isDataHidden = pauseState.isDataHidden;
+
+      if (pauseState.shouldResetDuration) {
         duration = Duration.zero;
-        activityGrid.add({
-          'type': 0,
-          'status': 'grey',
-          'interval': 0,
-          'timestamp': DateFormat('HH:mm:ss').format(DateTime.now()),
-        });
-        _scrollToEnd();
-      } else {
-        isDataHidden = false;
+      }
+
+      if (pauseState.shouldAddPauseMarker) {
+        activityGrid.add(
+          ClickerController.buildPauseEntry(
+            timestamp: DateFormat('HH:mm:ss').format(DateTime.now()),
+          ),
+        );
+        shouldScrollToEnd = true;
       }
     });
+
+    if (shouldScrollToEnd) {
+      _scrollToEnd();
+    }
     _saveData();
   }
 
@@ -252,15 +335,17 @@ class _ClickerScreenState extends State<ClickerScreen> {
           color: !isPowerOn
               ? const Color(0xFF1A1C14)
               : (isVibeFlash
-                  ? const Color(0xFFDAE0B0)
-                  : const Color(0xFFC0C7B0)),
+                    ? const Color(0xFFDAE0B0)
+                    : const Color(0xFFC0C7B0)),
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: Colors.black87, width: 3),
         ),
         child: isPowerOn
             ? Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 child: Column(
                   children: [
                     Row(
@@ -298,16 +383,15 @@ class _ClickerScreenState extends State<ClickerScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         _lcdStat('C1', isDataHidden ? null : counter1),
-                        _lcdStat('TOTAL', isDataHidden ? null : total,
-                            isBold: true),
+                        _lcdStat(
+                          'TOTAL',
+                          isDataHidden ? null : total,
+                          isBold: true,
+                        ),
                         _lcdStat('C2', isDataHidden ? null : counter2),
                       ],
                     ),
-                    const Divider(
-                      color: Colors.black,
-                      thickness: 1,
-                      height: 8,
-                    ),
+                    const Divider(color: Colors.black, thickness: 1, height: 8),
                     Expanded(
                       child: Stack(
                         alignment: Alignment.center,
@@ -316,7 +400,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
                             Positioned(
                               top: 2,
                               child: Text(
-                                'BUSY ${f(delayCountdown)}s',
+                                '${AppLocalizations.of(context).busy} ${f(delayCountdown)}s',
                                 style: const TextStyle(
                                   color: Colors.red,
                                   fontSize: 14,
@@ -333,8 +417,8 @@ class _ClickerScreenState extends State<ClickerScreen> {
                                 color: isPaused
                                     ? Colors.black26
                                     : (isActionDelay
-                                        ? Colors.black38
-                                        : Colors.black),
+                                          ? Colors.black38
+                                          : Colors.black),
                                 fontSize: 60,
                                 fontWeight: FontWeight.w900,
                                 fontFamily: 'monospace',
@@ -344,17 +428,9 @@ class _ClickerScreenState extends State<ClickerScreen> {
                         ],
                       ),
                     ),
-                    const Divider(
-                      color: Colors.black,
-                      thickness: 1,
-                      height: 8,
-                    ),
+                    const Divider(color: Colors.black, thickness: 1, height: 8),
                     SizedBox(height: 70, child: _buildGrid()),
-                    const Divider(
-                      color: Colors.black,
-                      thickness: 1,
-                      height: 8,
-                    ),
+                    const Divider(color: Colors.black, thickness: 1, height: 8),
                     FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Text(
@@ -419,24 +495,24 @@ class _ClickerScreenState extends State<ClickerScreen> {
   }
 
   Widget _lcdStat(String label, int? value, {bool isBold = false}) => Column(
-        children: [
-          Text(label,
-              style: const TextStyle(color: Colors.black, fontSize: 9)),
-          Text(
-            value == null ? '--' : '$value',
-            style: TextStyle(
-              color: Colors.black,
-              fontSize: 18,
-              fontWeight: isBold ? FontWeight.w900 : FontWeight.bold,
-            ),
-          ),
-        ],
-      );
+    children: [
+      Text(label, style: const TextStyle(color: Colors.black, fontSize: 9)),
+      Text(
+        value == null ? '--' : '$value',
+        style: TextStyle(
+          color: Colors.black,
+          fontSize: 18,
+          fontWeight: isBold ? FontWeight.w900 : FontWeight.bold,
+        ),
+      ),
+    ],
+  );
 
   // ==========================================
   // UI: CONTROLS
   // ==========================================
   Widget _buildControls() {
+    final l10n = AppLocalizations.of(context);
     const double mainSize = 75.0;
 
     return Expanded(
@@ -447,20 +523,51 @@ class _ClickerScreenState extends State<ClickerScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _btn('C 1', () => handleIncrement(1), mainSize,
-                  isActionBtn: true),
-              _btn('Try', () => handleIncrement(3), 55,
-                  isSmall: true, isActionBtn: true),
-              _btn('C 2', () => handleIncrement(2), mainSize,
-                  isActionBtn: true),
+              _btn(
+                'C 1',
+                () => handleIncrement(1),
+                mainSize,
+                isActionBtn: true,
+              ),
+              _btn(
+                l10n.tryButton,
+                () => handleIncrement(3),
+                55,
+                isSmall: true,
+                isActionBtn: true,
+              ),
+              _btn(
+                'C 2',
+                () => handleIncrement(2),
+                mainSize,
+                isActionBtn: true,
+              ),
             ],
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _btn(isPaused ? 'START' : 'PAUSE', togglePause, mainSize,
-                  isAccent: true),
-              _btn('SETTINGS', _showSettings, mainSize, isSmall: true),
+              _btn(
+                isPaused ? l10n.start : l10n.pause,
+                togglePause,
+                mainSize,
+                isAccent: true,
+              ),
+              _btn(
+                l10n.undo,
+                () => _undoLastAction(),
+                55,
+                isSmall: true,
+                isUndoBtn: true,
+                enabledWhenPowerOff: true,
+              ),
+              _btn(
+                l10n.settings,
+                _showSettings,
+                mainSize,
+                isSmall: true,
+                enabledWhenPowerOff: true,
+              ),
             ],
           ),
           Row(
@@ -522,9 +629,13 @@ class _ClickerScreenState extends State<ClickerScreen> {
     bool isSmall = false,
     bool isAccent = false,
     bool isActionBtn = false,
+    bool isUndoBtn = false,
+    bool enabledWhenPowerOff = false,
   }) {
-    final isDisabled = !isPowerOn ||
-        (isActionBtn && (!isSessionActive || isPaused || isActionDelay));
+    final isDisabled =
+        (!isPowerOn && !enabledWhenPowerOff) ||
+        (isActionBtn && (!isSessionActive || isPaused || isActionDelay)) ||
+        (isUndoBtn && !_canUndo);
 
     return GestureDetector(
       onTap: isDisabled ? null : onTap,
@@ -557,8 +668,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
   }
 
   void _showSettings() {
-    if (!isPowerOn) return;
-
+    final l10n = AppLocalizations.of(context);
     final rCtrl = TextEditingController(text: resetDelay.toString());
     final vCtrl = TextEditingController(text: vibeInterval.toString());
     final dCtrl = TextEditingController(text: matchInterval.inDays.toString());
@@ -568,74 +678,119 @@ class _ClickerScreenState extends State<ClickerScreen> {
     final mCtrl = TextEditingController(
       text: (matchInterval.inMinutes % 60).toString(),
     );
+    var dialogShakeUndoEnabled = isShakeUndoEnabled;
+    var dialogShakeSensitivity = shakeSensitivity;
 
     showDialog(
       context: context,
-      builder: (c) => AlertDialog(
-        title: const Text('Settings'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: rCtrl,
-                decoration: const InputDecoration(labelText: 'Action Delay (s)'),
-                keyboardType: TextInputType.number,
-              ),
-              TextField(
-                controller: vCtrl,
-                decoration:
-                    const InputDecoration(labelText: 'Vibe Interval (s)'),
-                keyboardType: TextInputType.number,
-              ),
-              const Divider(),
-              const Text('Match Duration:'),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: dCtrl,
-                      decoration: const InputDecoration(labelText: 'Days'),
-                      keyboardType: TextInputType.number,
+      builder: (c) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(l10n.settingsTitle),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: rCtrl,
+                  decoration: InputDecoration(labelText: l10n.actionDelay),
+                  keyboardType: TextInputType.number,
+                ),
+                TextField(
+                  controller: vCtrl,
+                  decoration: InputDecoration(labelText: l10n.vibeInterval),
+                  keyboardType: TextInputType.number,
+                ),
+                const Divider(),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(l10n.shakeUndo),
+                  value: dialogShakeUndoEnabled,
+                  onChanged: (value) {
+                    setDialogState(() => dialogShakeUndoEnabled = value);
+                  },
+                ),
+                DropdownButtonFormField<ShakeSensitivity>(
+                  initialValue: dialogShakeSensitivity,
+                  decoration: InputDecoration(labelText: l10n.shakeSensitivity),
+                  items: ShakeSensitivity.values
+                      .map(
+                        (sensitivity) => DropdownMenuItem(
+                          value: sensitivity,
+                          child: Text(
+                            _shakeSensitivityLabel(l10n, sensitivity),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: dialogShakeUndoEnabled
+                      ? (value) {
+                          if (value == null) return;
+                          setDialogState(() => dialogShakeSensitivity = value);
+                        }
+                      : null,
+                ),
+                const Divider(),
+                Text(l10n.matchDuration),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: dCtrl,
+                        decoration: InputDecoration(labelText: l10n.days),
+                        keyboardType: TextInputType.number,
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: TextField(
-                      controller: hCtrl,
-                      decoration: const InputDecoration(labelText: 'Hrs'),
-                      keyboardType: TextInputType.number,
+                    Expanded(
+                      child: TextField(
+                        controller: hCtrl,
+                        decoration: InputDecoration(labelText: l10n.hours),
+                        keyboardType: TextInputType.number,
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: TextField(
-                      controller: mCtrl,
-                      decoration: const InputDecoration(labelText: 'Mins'),
-                      keyboardType: TextInputType.number,
+                    Expanded(
+                      child: TextField(
+                        controller: mCtrl,
+                        decoration: InputDecoration(labelText: l10n.minutes),
+                        keyboardType: TextInputType.number,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  resetDelay = _clampInt(
+                    int.tryParse(rCtrl.text),
+                    min: 0,
+                    fallback: Defaults.defaultResetDelaySeconds,
+                  );
+                  vibeInterval = _clampInt(
+                    int.tryParse(vCtrl.text),
+                    min: 1,
+                    fallback: Defaults.defaultVibeIntervalSeconds,
+                  );
+                  final days = _clampInt(int.tryParse(dCtrl.text), min: 0);
+                  final hours = _clampInt(int.tryParse(hCtrl.text), min: 0);
+                  final minutes = _clampInt(int.tryParse(mCtrl.text), min: 0);
+                  matchInterval = Duration(
+                    days: days,
+                    hours: hours,
+                    minutes: minutes,
+                  );
+                  isShakeUndoEnabled = dialogShakeUndoEnabled;
+                  shakeSensitivity = dialogShakeSensitivity;
+                });
+                _saveData();
+                Navigator.pop(c);
+              },
+              child: Text(l10n.save),
+            ),
+          ],
         ),
-        actions: [
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                resetDelay = int.tryParse(rCtrl.text) ?? _Defaults.resetDelaySeconds;
-                vibeInterval = int.tryParse(vCtrl.text) ?? _Defaults.vibeIntervalSeconds;
-                matchInterval = Duration(
-                  days: int.tryParse(dCtrl.text) ?? 0,
-                  hours: int.tryParse(hCtrl.text) ?? 0,
-                  minutes: int.tryParse(mCtrl.text) ?? 0,
-                );
-              });
-              _saveData();
-              Navigator.pop(c);
-            },
-            child: const Text('Save'),
-          ),
-        ],
       ),
     );
   }
@@ -645,33 +800,25 @@ class _ClickerScreenState extends State<ClickerScreen> {
   // ==========================================
   Future<void> _loadData() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final state = await PrefsRepository.loadState();
       if (!mounted) return;
 
       setState(() {
-        counter1 = prefs.getInt(_PrefsKeys.counter1) ?? 0;
-        counter2 = prefs.getInt(_PrefsKeys.counter2) ?? 0;
-        tries = prefs.getInt(_PrefsKeys.tries) ?? 0;
-        total = prefs.getInt(_PrefsKeys.total) ?? 0;
-        isPowerOn = prefs.getBool(_PrefsKeys.power) ?? true;
-        isPaused = prefs.getBool(_PrefsKeys.paused) ?? true;
-        resetDelay = prefs.getInt(_PrefsKeys.resetDelay) ?? _Defaults.resetDelaySeconds;
-        vibeInterval = prefs.getInt(_PrefsKeys.vibeInterval) ?? _Defaults.vibeIntervalSeconds;
-        matchInterval = Duration(
-            seconds: prefs.getInt(_PrefsKeys.matchSeconds) ?? _Defaults.matchDurationSeconds);
-        hasHistory =
-            (prefs.getStringList(_PrefsKeys.historySessions) ?? []).isNotEmpty;
-
-        final String? gridJson = prefs.getString(_PrefsKeys.activityGrid);
-        if (gridJson != null) {
-          try {
-            activityGrid =
-                List<Map<String, dynamic>>.from(jsonDecode(gridJson));
-          } catch (e) {
-            debugPrint('Error parsing activity grid: $e');
-            activityGrid = [];
-          }
-        }
+        counter1 = state.c1;
+        counter2 = state.c2;
+        tries = state.tries;
+        total = state.total;
+        isPowerOn = state.powerOn;
+        isPaused = state.paused;
+        isSessionActive = state.sessionActive;
+        isDataHidden = state.dataHidden;
+        resetDelay = state.resetDelay;
+        vibeInterval = state.vibeInterval;
+        matchInterval = Duration(seconds: state.matchSeconds);
+        isShakeUndoEnabled = state.shakeUndoEnabled;
+        shakeSensitivity = ShakeSensitivity.fromValue(state.shakeSensitivity);
+        hasHistory = state.historySessions.isNotEmpty;
+        activityGrid = state.rawActivityGrid;
 
         if (isPaused) {
           isDataHidden = true;
@@ -685,117 +832,287 @@ class _ClickerScreenState extends State<ClickerScreen> {
 
   Future<void> _saveData() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt(_PrefsKeys.counter1, counter1);
-      await prefs.setInt(_PrefsKeys.counter2, counter2);
-      await prefs.setInt(_PrefsKeys.tries, tries);
-      await prefs.setInt(_PrefsKeys.total, total);
-      await prefs.setBool(_PrefsKeys.power, isPowerOn);
-      await prefs.setBool(_PrefsKeys.paused, isPaused);
-      await prefs.setInt(_PrefsKeys.resetDelay, resetDelay);
-      await prefs.setInt(_PrefsKeys.vibeInterval, vibeInterval);
-      await prefs.setInt(_PrefsKeys.matchSeconds, matchInterval.inSeconds);
-      await prefs.setString(_PrefsKeys.activityGrid, jsonEncode(activityGrid));
+      final repo = await PrefsRepository.create();
+      await repo.saveClickerState(
+        c1: counter1,
+        c2: counter2,
+        tries: tries,
+        total: total,
+        powerOn: isPowerOn,
+        paused: isPaused,
+        sessionActive: isSessionActive,
+        dataHidden: isDataHidden,
+        resetDelay: resetDelay,
+        vibeInterval: vibeInterval,
+        matchSeconds: matchInterval.inSeconds,
+        shakeUndoEnabled: isShakeUndoEnabled,
+        shakeSensitivity: shakeSensitivity.value,
+        activityGrid: activityGrid,
+      );
     } catch (e) {
       debugPrint('Error saving data: $e');
     }
   }
 
   void _scrollToEnd() {
-    Future.delayed(const Duration(milliseconds: _Defaults.scrollDelayMs), () {
-      if (mounted && _gridScrollController.hasClients) {
-        _gridScrollController.jumpTo(
-          _gridScrollController.position.maxScrollExtent,
-        );
-      }
-    });
+    Future.delayed(
+      const Duration(milliseconds: Defaults.defaultScrollDelayMs),
+      () {
+        if (mounted && _gridScrollController.hasClients) {
+          _gridScrollController.jumpTo(
+            _gridScrollController.position.maxScrollExtent,
+          );
+        }
+      },
+    );
   }
 
   Future<void> _handlePower() async {
     if (!isPowerOn) {
-      setState(() => isPowerOn = true);
+      _applyPowerState(ClickerController.turnPowerOn());
+      await _saveData();
       return;
     }
 
+    final l10n = AppLocalizations.of(context);
     final nameCtrl = TextEditingController(
-      text: 'Session ${DateFormat('HH:mm').format(DateTime.now())}',
+      text:
+          '${l10n.sessionDefaultName} ${DateFormat('HH:mm').format(DateTime.now())}',
     );
+    final athleteNameCtrl = TextEditingController();
+    final coachNameCtrl = TextEditingController();
+    final venueCtrl = TextEditingController();
+    final sectorPegCtrl = TextEditingController();
+    final trainingTypeCtrl = TextEditingController();
+    final fishingMethodCtrl = TextEditingController();
+    final targetPaceCtrl = TextEditingController();
+    final conditionsCtrl = TextEditingController();
+    final baitNotesCtrl = TextEditingController();
+    WeatherSnapshot? weatherSnapshot;
+    var isLoadingWeather = false;
+    final athleteNoteCtrl = TextEditingController();
+    final coachCommentCtrl = TextEditingController();
 
-    showDialog(
+    await showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text('Save Session?'),
-        content: TextField(controller: nameCtrl),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              setState(() {
-                isPowerOn = false;
-                isSessionActive = false;
-              });
-            },
-            child: const Text('Off'),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(l10n.saveSessionTitle),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(controller: nameCtrl),
+                const SizedBox(height: 8),
+                Text(l10n.trainingContext),
+                TextField(
+                  controller: athleteNameCtrl,
+                  decoration: InputDecoration(labelText: l10n.athleteName),
+                ),
+                TextField(
+                  controller: coachNameCtrl,
+                  decoration: InputDecoration(labelText: l10n.coachName),
+                ),
+                TextField(
+                  controller: venueCtrl,
+                  decoration: InputDecoration(labelText: l10n.venue),
+                ),
+                TextField(
+                  controller: sectorPegCtrl,
+                  decoration: InputDecoration(labelText: l10n.sectorPeg),
+                ),
+                TextField(
+                  controller: trainingTypeCtrl,
+                  decoration: InputDecoration(labelText: l10n.trainingType),
+                ),
+                TextField(
+                  controller: fishingMethodCtrl,
+                  decoration: InputDecoration(labelText: l10n.fishingMethod),
+                ),
+                TextField(
+                  controller: targetPaceCtrl,
+                  decoration: InputDecoration(labelText: l10n.targetPace),
+                ),
+                TextField(
+                  controller: conditionsCtrl,
+                  decoration: InputDecoration(labelText: l10n.conditions),
+                  minLines: 1,
+                  maxLines: 2,
+                ),
+                TextField(
+                  controller: baitNotesCtrl,
+                  decoration: InputDecoration(labelText: l10n.baitNotes),
+                  minLines: 1,
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: isLoadingWeather
+                      ? null
+                      : () async {
+                          setDialogState(() => isLoadingWeather = true);
+                          try {
+                            final snapshot = await SessionWeatherService()
+                                .fetchCurrentWeather();
+                            if (!mounted) return;
+                            setDialogState(() => weatherSnapshot = snapshot);
+                          } catch (e) {
+                            debugPrint('Weather load error: $e');
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('${l10n.weatherLoadFailed}: $e'),
+                              ),
+                            );
+                          } finally {
+                            if (mounted) {
+                              setDialogState(() => isLoadingWeather = false);
+                            }
+                          }
+                        },
+                  icon: isLoadingWeather
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.cloud),
+                  label: Text(l10n.autoFillWeather),
+                ),
+                if (weatherSnapshot != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      '${l10n.weatherSummary}: ${weatherSnapshot!.summary}',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ),
+                const Divider(),
+                TextField(
+                  controller: athleteNoteCtrl,
+                  decoration: InputDecoration(labelText: l10n.athleteNote),
+                  minLines: 1,
+                  maxLines: 3,
+                ),
+                TextField(
+                  controller: coachCommentCtrl,
+                  decoration: InputDecoration(labelText: l10n.coachComment),
+                  minLines: 1,
+                  maxLines: 3,
+                ),
+              ],
+            ),
           ),
-          ElevatedButton(
-            onPressed: () async {
-              final navigator = Navigator.of(context);
-              final messenger = ScaffoldMessenger.of(context);
-
-              try {
-                final prefs = await SharedPreferences.getInstance();
-                final List<String> history =
-                    prefs.getStringList(_PrefsKeys.historySessions) ?? [];
-
-                final session = GameSession(
-                  id: DateTime.now().millisecondsSinceEpoch.toString(),
-                  name: nameCtrl.text,
-                  date: DateFormat('dd.MM.yy HH:mm').format(DateTime.now()),
-                  c1: counter1,
-                  c2: counter2,
-                  tries: tries,
-                  total: total,
-                  matchDuration:
-                      '${matchInterval.inHours}:${matchInterval.inMinutes % 60}',
-                  grid: List.from(activityGrid),
-                );
-
-                history.add(jsonEncode(session.toJson()));
-                await prefs.setStringList(_PrefsKeys.historySessions, history);
-
-                if (!mounted) return;
-
-                setState(() {
-                  counter1 = 0;
-                  counter2 = 0;
-                  tries = 0;
-                  total = 0;
-                  activityGrid = [];
-                  isPowerOn = false;
-                  hasHistory = true;
-                  isPaused = true;
-                  isSessionActive = false;
-                });
-
+          actions: [
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                _countdownTimer?.cancel();
+                _applyPowerState(ClickerController.turnPowerOffWithoutSaving());
                 await _saveData();
+              },
+              child: Text(l10n.off),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final navigator = Navigator.of(context);
+                final messenger = ScaffoldMessenger.of(context);
 
-                if (!mounted) return;
-                navigator.pop();
-              } catch (e) {
-                debugPrint('Error saving session: $e');
-                if (!mounted) return;
-                navigator.pop();
-                messenger.showSnackBar(
-                  SnackBar(content: Text('Error saving session: $e')),
-                );
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
+                try {
+                  final repo = await PrefsRepository.create();
+                  final session = ClickerController.buildSession(
+                    id: DateTime.now().millisecondsSinceEpoch.toString(),
+                    name: nameCtrl.text,
+                    date: DateFormat('dd.MM.yy HH:mm').format(DateTime.now()),
+                    counter1: counter1,
+                    counter2: counter2,
+                    tries: tries,
+                    total: total,
+                    matchInterval: matchInterval,
+                    activityGrid: activityGrid,
+                    athleteName: athleteNameCtrl.text,
+                    coachName: coachNameCtrl.text,
+                    venue: venueCtrl.text,
+                    sectorPeg: sectorPegCtrl.text,
+                    trainingType: trainingTypeCtrl.text,
+                    fishingMethod: fishingMethodCtrl.text,
+                    targetPace: targetPaceCtrl.text,
+                    conditions: conditionsCtrl.text,
+                    baitNotes: baitNotesCtrl.text,
+                    weather: weatherSnapshot,
+                    athleteNote: athleteNoteCtrl.text,
+                    coachComment: coachCommentCtrl.text,
+                  );
+
+                  await repo.addHistorySession(session);
+
+                  if (!mounted) return;
+
+                  _countdownTimer?.cancel();
+                  _applyPowerState(ClickerController.resetAfterSessionSaved());
+
+                  await _saveData();
+
+                  if (!mounted) return;
+                  navigator.pop();
+                } catch (e) {
+                  debugPrint('Error saving session: $e');
+                  if (!mounted) return;
+                  navigator.pop();
+                  messenger.showSnackBar(
+                    SnackBar(content: Text('${l10n.errorSavingSession}: $e')),
+                  );
+                }
+              },
+              child: Text(l10n.save),
+            ),
+          ],
+        ),
       ),
     );
+
+    nameCtrl.dispose();
+    athleteNameCtrl.dispose();
+    coachNameCtrl.dispose();
+    venueCtrl.dispose();
+    sectorPegCtrl.dispose();
+    trainingTypeCtrl.dispose();
+    fishingMethodCtrl.dispose();
+    targetPaceCtrl.dispose();
+    conditionsCtrl.dispose();
+    baitNotesCtrl.dispose();
+    athleteNoteCtrl.dispose();
+    coachCommentCtrl.dispose();
+  }
+
+  void _applyPowerState(ClickerPowerState powerState) {
+    setState(() {
+      if (powerState.shouldResetCounters) {
+        counter1 = 0;
+        counter2 = 0;
+        tries = 0;
+        total = 0;
+      }
+
+      if (powerState.shouldClearActivity) {
+        activityGrid = [];
+      }
+
+      isPowerOn = powerState.isPowerOn;
+      isPaused = powerState.isPaused;
+      isSessionActive = powerState.isSessionActive;
+      isDataHidden = powerState.isDataHidden;
+      isActionDelay = powerState.isActionDelay;
+      delayCountdown = powerState.delayCountdown;
+      duration = powerState.duration;
+      hasHistory = hasHistory || powerState.hasHistory;
+
+      final updatedMatchInterval = powerState.matchInterval;
+      if (updatedMatchInterval != null) {
+        matchInterval = updatedMatchInterval;
+      }
+    });
   }
 
   // ==========================================
@@ -806,6 +1123,25 @@ class _ClickerScreenState extends State<ClickerScreen> {
     if (value is int) return value;
     if (value is num) return value.toInt();
     return int.tryParse(value.toString()) ?? defaultValue;
+  }
+
+  String _shakeSensitivityLabel(
+    AppLocalizations l10n,
+    ShakeSensitivity sensitivity,
+  ) {
+    switch (sensitivity) {
+      case ShakeSensitivity.low:
+        return l10n.shakeSensitivityLow;
+      case ShakeSensitivity.medium:
+        return l10n.shakeSensitivityMedium;
+      case ShakeSensitivity.high:
+        return l10n.shakeSensitivityHigh;
+    }
+  }
+
+  static int _clampInt(int? value, {int min = 0, int fallback = 0}) {
+    final parsed = value ?? fallback;
+    return parsed < min ? min : parsed;
   }
 
   @override

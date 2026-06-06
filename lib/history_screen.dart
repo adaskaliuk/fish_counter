@@ -1,12 +1,11 @@
 // ==========================================
-// ІСТОРІЯ ТА АНАЛІТИКА
+// HISTORY AND ANALYTICS
 // ==========================================
-import 'dart:convert';
-
 import 'package:fish_counter/analytics_screen.dart';
 import 'package:fish_counter/game_session.dart';
+import 'package:fish_counter/l10n/app_localizations.dart';
+import 'package:fish_counter/services/prefs_repository.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class HistoryScreen extends StatefulWidget {
   final VoidCallback onHistoryUpdate;
@@ -35,25 +34,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
     });
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final data = prefs.getStringList('history_sessions') ?? [];
+      final container = await PrefsRepository.loadState();
 
       if (!mounted) return;
 
-      final sessions = data
-          .map((e) => GameSession.fromJson(jsonDecode(e)))
-          .toList()
-          .reversed
-          .toList();
+      // The container already ensures the history is loaded.
+      final sessions = container.historySessions.cast<GameSession>().toList();
 
       setState(() {
-        _sessions = sessions;
+        _sessions = sessions.reversed.toList(); // Display newest first
         _isLoading = false;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = 'Error loading history: $e';
+        _error =
+            '${AppLocalizations.of(context).errorLoadingHistory}: ${e.toString()}';
         _isLoading = false;
       });
       debugPrint('Error loading history: $e');
@@ -64,7 +60,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('History'),
+        title: Text(AppLocalizations.of(context).history),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -96,7 +92,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _loadSessions,
-              child: const Text('Retry'),
+              child: Text(AppLocalizations.of(context).retry),
             ),
           ],
         ),
@@ -111,11 +107,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
             Icon(Icons.history, size: 48, color: Colors.grey.shade600),
             const SizedBox(height: 16),
             Text(
-              'No sessions yet',
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 16,
-              ),
+              AppLocalizations.of(context).noSessionsYet,
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
             ),
           ],
         ),
@@ -124,17 +117,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     return ListView.builder(
       itemCount: _sessions.length,
-      itemBuilder: (context, index) => ListTile(
-        title: Text(_sessions[index].name),
-        subtitle: Text(_sessions[index].date),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (c) => AnalyticsScreen(session: _sessions[index]),
+      itemBuilder: (context, index) {
+        final session = _sessions[index];
+        return ListTile(
+          title: Text(session.name),
+          subtitle: Text(
+            '${AppLocalizations.of(context).date}: ${session.date} | ${AppLocalizations.of(context).duration}: ${session.matchDuration}',
           ),
-        ),
-      ),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (c) => AnalyticsScreen(session: session),
+            ),
+          ),
+        );
+      },
     );
   }
 }

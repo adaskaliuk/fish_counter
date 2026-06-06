@@ -1,8 +1,14 @@
 // ==========================================
-// ЕКРАН АНАЛІТИКИ
+// ANALYTICS SCREEN
 // ==========================================
+import 'package:fish_counter/constants.dart';
 import 'package:fish_counter/game_session.dart';
+import 'package:fish_counter/l10n/app_localizations.dart';
+import 'package:fish_counter/models/analytics_report.dart';
+import 'package:fish_counter/services/report_exporter.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 
 class AnalyticsScreen extends StatelessWidget {
   final GameSession session;
@@ -11,31 +17,17 @@ class AnalyticsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Calculate statistics
-    final validClicks = session.grid
-        .where((e) => _toInt(e['type']) != 0)
-        .toList();
-
-    double avgInterval = 0;
-    double avgDeviation = 0;
-
-    if (validClicks.isNotEmpty) {
-      double sumInt = 0;
-      double sumDiff = 0;
-      for (var e in validClicks) {
-        final actual = _toDouble(e['interval']);
-        final target = _toDouble(e['target'] ?? 60.0);
-        sumInt += actual;
-        sumDiff += (actual - target);
-      }
-      avgInterval = sumInt / validClicks.length;
-      avgDeviation = sumDiff / validClicks.length;
-    }
+    final l10n = AppLocalizations.of(context);
+    final report = AnalyticsReport.fromGrid(session.grid);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Precision Report'),
+        title: Text(l10n.precisionReport),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.ios_share),
+            onPressed: () => _showExportOptions(context),
+          ),
           IconButton(
             icon: const Icon(Icons.info_outline),
             onPressed: () => _showInfoDialog(context),
@@ -56,10 +48,22 @@ class AnalyticsScreen extends StatelessWidget {
               ),
             ),
             Text(
-              'Date: ${session.date} | Duration: ${session.matchDuration}',
+              '${l10n.date}: ${session.date} | ${l10n.duration}: ${session.matchDuration}',
               style: const TextStyle(color: Colors.grey, fontSize: 12),
             ),
             const Divider(height: 30),
+            if (_hasTrainingContext) ...[
+              Text(
+                l10n.trainingContext,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.orange,
+                ),
+              ),
+              const SizedBox(height: 10),
+              _buildTrainingContext(l10n),
+              const SizedBox(height: 25),
+            ],
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -78,27 +82,53 @@ class AnalyticsScreen extends StatelessWidget {
               child: Row(
                 children: [
                   _avgIndicator(
-                    'AVG VIBE',
-                    '${avgInterval.toStringAsFixed(1)}s',
+                    l10n.avgVibe,
+                    '${report.averageInterval.toStringAsFixed(1)}s',
                     Colors.white,
                   ),
                   Container(width: 1, height: 30, color: Colors.white24),
                   _avgIndicator(
-                    'DEVIATION',
-                    '${avgDeviation > 0 ? '+' : ''}${avgDeviation.toStringAsFixed(2)}s',
-                    avgDeviation.abs() < 1.5
+                    l10n.deviation,
+                    '${report.averageDeviation > 0 ? '+' : ''}${report.averageDeviation.toStringAsFixed(2)}s',
+                    report.averageDeviation.abs() < 1.5
                         ? Colors.green
-                        : (avgDeviation.abs() < 4
-                            ? Colors.orange
-                            : Colors.red),
+                        : report.averageDeviation.abs() < 4
+                        ? Colors.orange
+                        : Colors.red,
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 30),
-            const Text(
-              'Activity Timeline:',
-              style: TextStyle(
+            Text(
+              l10n.coachSummary,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.orange,
+              ),
+            ),
+            const SizedBox(height: 10),
+            _buildCoachSummary(report, l10n),
+            const SizedBox(height: 30),
+            if (session.athleteNote.isNotEmpty ||
+                session.coachComment.isNotEmpty) ...[
+              Text(
+                l10n.sessionNotes,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.orange,
+                ),
+              ),
+              const SizedBox(height: 10),
+              if (session.athleteNote.isNotEmpty)
+                _noteBox(l10n.athleteNote, session.athleteNote),
+              if (session.coachComment.isNotEmpty)
+                _noteBox(l10n.coachComment, session.coachComment),
+              const SizedBox(height: 20),
+            ],
+            Text(
+              l10n.activityTimeline,
+              style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Colors.orange,
               ),
@@ -109,7 +139,7 @@ class AnalyticsScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 20),
                 child: Center(
                   child: Text(
-                    'No activity recorded',
+                    l10n.noActivityRecorded,
                     style: TextStyle(color: Colors.grey.shade600),
                   ),
                 ),
@@ -119,37 +149,27 @@ class AnalyticsScreen extends StatelessWidget {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: session.grid.length,
-                itemBuilder: (context, i) {
-                  final e = session.grid[i];
-                  final type = _toInt(e['type']);
-
-                  IconData icon;
-                  String label;
-                  if (type == 0) {
-                    icon = Icons.pause_circle_filled;
-                    label = 'PAUSE / RESET';
-                  } else if (type == 1) {
-                    icon = Icons.stop;
-                    label = 'C1 Click';
-                  } else if (type == 2) {
-                    icon = Icons.change_history;
-                    label = 'C2 Click';
-                  } else {
-                    icon = Icons.circle;
-                    label = 'Try Error';
-                  }
+                itemBuilder: (context, index) {
+                  final entry = session.grid[index];
+                  final type = ActivityType.fromValue(_toInt(entry['type']));
+                  final status = type == ActivityType.manualPause
+                      ? Status.pause
+                      : _statusFromRaw(entry['status']);
 
                   return ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: Icon(icon, color: _getColor(e['status'])),
-                    title: Text(label, style: const TextStyle(fontSize: 14)),
+                    leading: Icon(_iconForType(type), color: status.toColor()),
+                    title: Text(
+                      _labelForType(type, l10n),
+                      style: const TextStyle(fontSize: 14),
+                    ),
                     subtitle: Text(
-                      e['timestamp'] ?? '--:--:--',
+                      entry['timestamp']?.toString() ?? '--:--:--',
                       style: const TextStyle(fontSize: 11),
                     ),
-                    trailing: type != 0
+                    trailing: type != ActivityType.manualPause
                         ? Text(
-                            '${e['interval']}s',
+                            '${_toInt(entry['interval'])}s',
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
@@ -166,84 +186,455 @@ class AnalyticsScreen extends StatelessWidget {
     );
   }
 
-  void _showInfoDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Precision Guide'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            _InfoRow(status: 'Green', description: 'Perfect timing (±10%)'),
-            _InfoRow(status: 'Orange', description: 'Good timing'),
-            _InfoRow(status: 'Red', description: 'Late (>+50%)'),
-            _InfoRow(status: 'Grey', description: 'Too early (<-30%)'),
+  bool get _hasTrainingContext =>
+      session.athleteName.isNotEmpty ||
+      session.coachName.isNotEmpty ||
+      session.venue.isNotEmpty ||
+      session.sectorPeg.isNotEmpty ||
+      session.trainingType.isNotEmpty ||
+      session.fishingMethod.isNotEmpty ||
+      session.targetPace.isNotEmpty ||
+      session.conditions.isNotEmpty ||
+      session.baitNotes.isNotEmpty ||
+      session.weatherDescription.isNotEmpty;
+
+  Widget _buildTrainingContext(AppLocalizations l10n) {
+    final rows = <Widget>[
+      if (session.athleteName.isNotEmpty)
+        _contextRow(l10n.athleteName, session.athleteName),
+      if (session.coachName.isNotEmpty)
+        _contextRow(l10n.coachName, session.coachName),
+      if (session.venue.isNotEmpty) _contextRow(l10n.venue, session.venue),
+      if (session.sectorPeg.isNotEmpty)
+        _contextRow(l10n.sectorPeg, session.sectorPeg),
+      if (session.trainingType.isNotEmpty)
+        _contextRow(l10n.trainingType, session.trainingType),
+      if (session.fishingMethod.isNotEmpty)
+        _contextRow(l10n.fishingMethod, session.fishingMethod),
+      if (session.targetPace.isNotEmpty)
+        _contextRow(l10n.targetPace, session.targetPace),
+      if (session.conditions.isNotEmpty)
+        _contextRow(l10n.conditions, session.conditions),
+      if (session.baitNotes.isNotEmpty)
+        _contextRow(l10n.baitNotes, session.baitNotes),
+      if (session.weatherDescription.isNotEmpty)
+        _contextRow(l10n.weatherSummary, _weatherSummary),
+    ];
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white10,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(children: rows),
+    );
+  }
+
+  String get _weatherSummary {
+    final parts = <String>[];
+    if (session.weatherPlace.isNotEmpty) parts.add(session.weatherPlace);
+    if (session.weatherDescription.isNotEmpty) {
+      parts.add(session.weatherDescription);
+    }
+    final temp = session.weatherTemperatureCelsius;
+    if (temp != null) parts.add('${temp.toStringAsFixed(1)}°C');
+    final wind = session.weatherWindSpeedMs;
+    if (wind != null) parts.add('wind ${wind.toStringAsFixed(1)} m/s');
+    final pressure = session.weatherPressureHpa;
+    if (pressure != null) parts.add('${pressure.toStringAsFixed(0)} hPa');
+    final humidity = session.weatherHumidityPercent;
+    if (humidity != null) parts.add('${humidity.toStringAsFixed(0)}%');
+    return parts.join(' • ');
+  }
+
+  Widget _contextRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              label,
+              style: const TextStyle(color: Colors.grey, fontSize: 12),
+            ),
+          ),
+          Expanded(child: Text(value)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCoachSummary(AnalyticsReport report, AppLocalizations l10n) {
+    final best = report.bestIntervalSeconds == null
+        ? '--'
+        : '${report.bestIntervalSeconds}s';
+    final worst = report.worstIntervalSeconds == null
+        ? '--'
+        : '${report.worstIntervalSeconds}s';
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            _metricTile(
+              l10n.stabilityScore,
+              '${report.stabilityScore}%',
+              Colors.green,
+            ),
+            const SizedBox(width: 10),
+            _metricTile(l10n.bestInterval, best, Colors.white),
+            const SizedBox(width: 10),
+            _metricTile(l10n.worstInterval, worst, Colors.white),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('OK'),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            _metricTile(l10n.green, report.greenCount.toString(), Colors.green),
+            const SizedBox(width: 10),
+            _metricTile(
+              l10n.orange,
+              report.orangeCount.toString(),
+              Colors.orange,
+            ),
+            const SizedBox(width: 10),
+            _metricTile(l10n.red, report.redCount.toString(), Colors.red),
+            const SizedBox(width: 10),
+            _metricTile(l10n.grey, report.greyCount.toString(), Colors.grey),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            _metricTile(
+              l10n.tryCount,
+              report.tryCount.toString(),
+              Colors.white,
+            ),
+            const SizedBox(width: 10),
+            _metricTile(
+              l10n.earlyCount,
+              report.earlyCount.toString(),
+              Colors.grey,
+            ),
+            const SizedBox(width: 10),
+            _metricTile(
+              l10n.lateCount,
+              report.lateCount.toString(),
+              Colors.red,
+            ),
+            const SizedBox(width: 10),
+            _metricTile(
+              l10n.longestStableStreak,
+              report.longestStableStreak.toString(),
+              Colors.green,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _metricTile(String label, String value, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white10,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          children: [
+            Text(
+              label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.grey, fontSize: 10),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              value,
+              style: TextStyle(
+                color: color,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _noteBox(String label, String value) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white10,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.orange,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(value),
+        ],
+      ),
+    );
+  }
+
+  Widget _statBox(String label, int value, {bool isHero = false}) {
+    return Container(
+      constraints: const BoxConstraints(minWidth: 80),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: isHero ? Colors.orange.withValues(alpha: 0.18) : Colors.white10,
+        borderRadius: BorderRadius.circular(14),
+        border: isHero ? Border.all(color: Colors.orange, width: 1.5) : null,
+      ),
+      child: Column(
+        children: [
+          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+          const SizedBox(height: 4),
+          Text(
+            value.toString(),
+            style: TextStyle(
+              color: isHero ? Colors.orange : Colors.white,
+              fontSize: isHero ? 24 : 20,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
     );
   }
 
-  int _toInt(dynamic v) => v is int ? v : int.tryParse(v.toString()) ?? 0;
-
-  double _toDouble(dynamic v) =>
-      v is num ? v.toDouble() : double.tryParse(v.toString()) ?? 0.0;
-
-  Color _getColor(dynamic s) {
-    switch (s?.toString()) {
-      case 'green':
-        return Colors.green;
-      case 'red':
-        return Colors.red;
-      case 'grey':
-        return Colors.grey;
-      default:
-        return Colors.orange;
-    }
-  }
-
-  Widget _statBox(String label, int value, {bool isHero = false}) => Column(
+  Widget _avgIndicator(String label, String value, Color color) {
+    return Expanded(
+      child: Column(
         children: [
-          Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+          const SizedBox(height: 4),
           Text(
-            '$value',
+            value,
             style: TextStyle(
-              fontSize: isHero ? 32 : 24,
+              color: color,
+              fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
           ),
         ],
-      );
+      ),
+    );
+  }
 
-  Widget _avgIndicator(String label, String value, Color color) => Expanded(
+  void _showExportOptions(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(label, style: const TextStyle(fontSize: 9, color: Colors.grey)),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
+            ListTile(
+              leading: const Icon(Icons.ios_share),
+              title: Text(l10n.shareTextReport),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _shareTextReport(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.table_chart),
+              title: Text(l10n.shareCsvReport),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _shareCsvReport(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.copy),
+              title: Text(l10n.copyCsvReport),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _copyCsvReport(context);
+              },
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Future<void> _shareTextReport(BuildContext context) async {
+    await _shareOrCopy(
+      context,
+      text: ReportExporter.buildPlainText(session),
+      debugLabel: 'Share text report',
+    );
+  }
+
+  Future<void> _shareCsvReport(BuildContext context) async {
+    await _shareOrCopy(
+      context,
+      text: ReportExporter.buildCsv(session),
+      debugLabel: 'Share CSV report',
+    );
+  }
+
+  Future<void> _copyCsvReport(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
+    await Clipboard.setData(
+      ClipboardData(text: ReportExporter.buildCsv(session)),
+    );
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(l10n.csvCopied)));
+  }
+
+  Future<void> _shareOrCopy(
+    BuildContext context, {
+    required String text,
+    required String debugLabel,
+  }) async {
+    final l10n = AppLocalizations.of(context);
+
+    try {
+      final result = await SharePlus.instance.share(
+        ShareParams(subject: session.name, text: text),
       );
+      if (result.status != ShareResultStatus.unavailable) return;
+    } catch (e) {
+      debugPrint('$debugLabel error: $e');
+    }
+
+    await Clipboard.setData(ClipboardData(text: text));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(l10n.reportCopied)));
+  }
+
+  void _showInfoDialog(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.precisionGuide),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _InfoRow(
+              status: l10n.green,
+              color: Colors.green,
+              description: l10n.greenDescription,
+            ),
+            _InfoRow(
+              status: l10n.orange,
+              color: Colors.orange,
+              description: l10n.orangeDescription,
+            ),
+            _InfoRow(
+              status: l10n.red,
+              color: Colors.red,
+              description: l10n.redDescription,
+            ),
+            _InfoRow(
+              status: l10n.grey,
+              color: Colors.grey,
+              description: l10n.greyDescription,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.ok)),
+        ],
+      ),
+    );
+  }
+
+  IconData _iconForType(ActivityType type) {
+    switch (type) {
+      case ActivityType.manualPause:
+        return Icons.pause_circle_filled;
+      case ActivityType.c1Click:
+        return Icons.stop;
+      case ActivityType.c2Click:
+        return Icons.change_history;
+      case ActivityType.tryClick:
+      case ActivityType.unknown:
+        return Icons.circle;
+    }
+  }
+
+  String _labelForType(ActivityType type, AppLocalizations l10n) {
+    switch (type) {
+      case ActivityType.manualPause:
+        return l10n.pauseReset;
+      case ActivityType.c1Click:
+        return l10n.c1Click;
+      case ActivityType.c2Click:
+        return l10n.c2Click;
+      case ActivityType.tryClick:
+        return l10n.tryError;
+      case ActivityType.unknown:
+        return l10n.unknown;
+    }
+  }
+
+  Status _statusFromRaw(dynamic value) {
+    final raw = value?.toString();
+    switch (raw) {
+      case 'green':
+        return Status.perfect;
+      case 'red':
+        return Status.poor;
+      case 'grey':
+        return Status.early;
+      case 'orange':
+        return Status.average;
+      default:
+        return Status.fromName(raw);
+    }
+  }
+
+  static int _toInt(dynamic value, {int defaultValue = 0}) {
+    if (value == null) return defaultValue;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value.toString()) ?? defaultValue;
+  }
 }
 
 class _InfoRow extends StatelessWidget {
   final String status;
+  final Color color;
   final String description;
 
-  const _InfoRow({required this.status, required this.description});
+  const _InfoRow({
+    required this.status,
+    required this.color,
+    required this.description,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -254,14 +645,7 @@ class _InfoRow extends StatelessWidget {
           Container(
             width: 16,
             height: 16,
-            decoration: BoxDecoration(
-              color: status == 'Green'
-                  ? Colors.green
-                  : (status == 'Orange'
-                      ? Colors.orange
-                      : (status == 'Red' ? Colors.red : Colors.grey)),
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
           const SizedBox(width: 12),
           Text('$status: $description'),

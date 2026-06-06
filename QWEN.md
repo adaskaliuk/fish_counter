@@ -190,6 +190,35 @@ scrollDelayMs = 100
 | Windows | ❌ Not configured | Throws error |
 | Linux | ❌ Not configured | Throws error |
 
+## 🫧 Fizzy Workflow
+
+Use the real Fizzy board for task tracking.
+
+**Board name:** `Fish cathcing`  
+**Public board URL:** `https://app.fizzy.do/6128892/public/boards/Y79hjW8dhUyf1h4iVC5viN2u`  
+**API endpoint:** `https://app.fizzy.do`  
+**Account ID:** `6128892`  
+**Internal board ID:** `03g9hcxgsooou3nem4gl9n4rn`  
+**Current-work column:** `In Todo`  
+**In Todo column ID:** `03g9kpnnzqevbchfx0a92so82`
+
+Rules:
+
+- Tasks go to Fizzy board `Fish cathcing`.
+- The task currently being worked on goes into `In Todo`.
+- Never commit or write real `FIZZY_TOKEN` to files.
+- Use local env var only:
+
+```bash
+export FIZZY_TOKEN='...'
+```
+
+Reference files:
+
+- `.env.example`
+- `.fizzy/API.md`
+- `.fizzy/BOARD.md` as fallback only.
+
 ## 🚀 Build & Run Commands
 
 ```bash
