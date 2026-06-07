@@ -48,7 +48,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyBnew0PUvcXtK-fl5ocTkfzc3-ouEVG66E',
-    appId: '1:662723388518:web:4ec50350c641cd866079a7',
+    appId: '1:662723388518:web:58be4a42e057e8176079a7',
     messagingSenderId: '662723388518',
     projectId: 'fish-counter-55a99',
     authDomain: 'fish-counter-55a99.firebaseapp.com',

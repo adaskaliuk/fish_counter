@@ -1076,6 +1076,8 @@ class _ClickerScreenState extends State<ClickerScreen> {
                 final navigator = Navigator.of(context);
                 final messenger = ScaffoldMessenger.of(context);
 
+                Object? syncError;
+
                 try {
                   final repo = await PrefsRepository.create();
                   final user = FirebaseAuth.instance.currentUser;
@@ -1108,7 +1110,12 @@ class _ClickerScreenState extends State<ClickerScreen> {
 
                   await repo.addHistorySession(session);
                   if (isSyncHistoryEnabled) {
-                    await CloudHistoryService().uploadSession(session);
+                    try {
+                      await CloudHistoryService().uploadSession(session);
+                    } catch (e) {
+                      syncError = e;
+                      debugPrint('Cloud history sync error: $e');
+                    }
                   }
 
                   if (!mounted) return;
@@ -1120,6 +1127,15 @@ class _ClickerScreenState extends State<ClickerScreen> {
 
                   if (!mounted) return;
                   navigator.pop();
+                  if (syncError != null) {
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Session saved locally, but cloud sync failed: $syncError',
+                        ),
+                      ),
+                    );
+                  }
                 } catch (e) {
                   debugPrint('Error saving session: $e');
                   if (!mounted) return;

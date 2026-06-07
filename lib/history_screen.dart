@@ -21,6 +21,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   List<GameSession> _sessions = [];
   bool _isLoading = true;
   String? _error;
+  String? _syncWarning;
 
   @override
   void initState() {
@@ -32,16 +33,23 @@ class _HistoryScreenState extends State<HistoryScreen> {
     setState(() {
       _isLoading = true;
       _error = null;
+      _syncWarning = null;
     });
 
     try {
       var container = await PrefsRepository.loadState();
+      Object? syncError;
       if (container.syncHistoryEnabled) {
-        final cloudSessions = await CloudHistoryService().loadSessions();
-        if (cloudSessions.isNotEmpty) {
-          final repo = await PrefsRepository.create();
-          await repo.mergeHistorySessions(cloudSessions);
-          container = await repo.loadInitialState();
+        try {
+          final cloudSessions = await CloudHistoryService().loadSessions();
+          if (cloudSessions.isNotEmpty) {
+            final repo = await PrefsRepository.create();
+            await repo.mergeHistorySessions(cloudSessions);
+            container = await repo.loadInitialState();
+          }
+        } catch (e) {
+          syncError = e;
+          debugPrint('Cloud history load error: $e');
         }
       }
 
@@ -51,6 +59,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
       setState(() {
         _sessions = sessions.reversed.toList(); // Display newest first
+        _syncWarning = syncError == null
+            ? null
+            : 'Cloud sync failed: $syncError';
         _isLoading = false;
       });
     } catch (e) {
@@ -124,9 +135,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
 
     return ListView.builder(
-      itemCount: _sessions.length,
+      itemCount: _sessions.length + (_syncWarning == null ? 0 : 1),
       itemBuilder: (context, index) {
-        final session = _sessions[index];
+        if (_syncWarning != null && index == 0) {
+          return ListTile(
+            leading: const Icon(Icons.cloud_off, color: Colors.orange),
+            title: Text(_syncWarning!),
+            subtitle: Text(AppLocalizations.of(context).retry),
+            onTap: _loadSessions,
+          );
+        }
+
+        final sessionIndex = index - (_syncWarning == null ? 0 : 1);
+        final session = _sessions[sessionIndex];
         return ListTile(
           title: Text(session.name),
           subtitle: Text(
