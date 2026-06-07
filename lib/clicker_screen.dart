@@ -5,17 +5,20 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:battery_plus/battery_plus.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fish_counter/constants.dart';
 import 'package:fish_counter/controllers/clicker_controller.dart';
 import 'package:fish_counter/history_screen.dart';
 import 'package:fish_counter/l10n/app_localizations.dart';
 import 'package:fish_counter/models/weather_snapshot.dart';
+import 'package:fish_counter/services/cloud_history_service.dart';
 import 'package:fish_counter/services/prefs_repository.dart';
 import 'package:fish_counter/services/weather_service.dart';
 import 'package:fish_counter/shake_undo_settings.dart';
 import 'package:fish_counter/undo_manager.dart' as app_undo;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
@@ -44,6 +47,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
   bool isDataHidden = false;
   bool isVibeFlash = false;
   bool isSessionActive = false;
+  bool isSyncHistoryEnabled = Defaults.defaultSyncHistoryEnabled;
   bool isShakeUndoEnabled = Defaults.defaultShakeUndoEnabled;
   ShakeSensitivity shakeSensitivity = ShakeSensitivity.medium;
 
@@ -614,7 +618,30 @@ class _ClickerScreenState extends State<ClickerScreen> {
                   ),
                 ),
               ),
-              const Expanded(child: SizedBox()),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 20),
+                    child: IconButton(
+                      tooltip: AppLocalizations.of(context).signOut,
+                      icon: const Icon(
+                        Icons.account_circle,
+                        size: 34,
+                        color: Colors.white54,
+                      ),
+                      onPressed: () async {
+                        await FirebaseAuth.instance.signOut();
+                        try {
+                          await GoogleSignIn.instance.signOut();
+                        } catch (e) {
+                          debugPrint('Google sign-out error: $e');
+                        }
+                      },
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ],
@@ -678,6 +705,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
     final mCtrl = TextEditingController(
       text: (matchInterval.inMinutes % 60).toString(),
     );
+    var dialogSyncHistoryEnabled = isSyncHistoryEnabled;
     var dialogShakeUndoEnabled = isShakeUndoEnabled;
     var dialogShakeSensitivity = shakeSensitivity;
 
@@ -699,6 +727,16 @@ class _ClickerScreenState extends State<ClickerScreen> {
                   controller: vCtrl,
                   decoration: InputDecoration(labelText: l10n.vibeInterval),
                   keyboardType: TextInputType.number,
+                ),
+                const Divider(),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(l10n.syncHistory),
+                  subtitle: Text(l10n.syncHistoryDescription),
+                  value: dialogSyncHistoryEnabled,
+                  onChanged: (value) {
+                    setDialogState(() => dialogSyncHistoryEnabled = value);
+                  },
                 ),
                 const Divider(),
                 SwitchListTile(
@@ -761,7 +799,8 @@ class _ClickerScreenState extends State<ClickerScreen> {
           ),
           actions: [
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
+                final navigator = Navigator.of(c);
                 setState(() {
                   resetDelay = _clampInt(
                     int.tryParse(rCtrl.text),
@@ -781,11 +820,15 @@ class _ClickerScreenState extends State<ClickerScreen> {
                     hours: hours,
                     minutes: minutes,
                   );
+                  isSyncHistoryEnabled = dialogSyncHistoryEnabled;
                   isShakeUndoEnabled = dialogShakeUndoEnabled;
                   shakeSensitivity = dialogShakeSensitivity;
                 });
-                _saveData();
-                Navigator.pop(c);
+                await _saveData();
+                if (isSyncHistoryEnabled) {
+                  await _syncLocalHistoryToCloud();
+                }
+                navigator.pop();
               },
               child: Text(l10n.save),
             ),
@@ -815,6 +858,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
         resetDelay = state.resetDelay;
         vibeInterval = state.vibeInterval;
         matchInterval = Duration(seconds: state.matchSeconds);
+        isSyncHistoryEnabled = state.syncHistoryEnabled;
         isShakeUndoEnabled = state.shakeUndoEnabled;
         shakeSensitivity = ShakeSensitivity.fromValue(state.shakeSensitivity);
         hasHistory = state.historySessions.isNotEmpty;
@@ -827,6 +871,18 @@ class _ClickerScreenState extends State<ClickerScreen> {
       });
     } catch (e) {
       debugPrint('Error loading data: $e');
+    }
+  }
+
+  Future<void> _syncLocalHistoryToCloud() async {
+    try {
+      final state = await PrefsRepository.loadState();
+      final cloud = CloudHistoryService();
+      for (final session in state.historySessions) {
+        await cloud.uploadSession(session);
+      }
+    } catch (e) {
+      debugPrint('Error syncing history: $e');
     }
   }
 
@@ -845,6 +901,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
         resetDelay: resetDelay,
         vibeInterval: vibeInterval,
         matchSeconds: matchInterval.inSeconds,
+        syncHistoryEnabled: isSyncHistoryEnabled,
         shakeUndoEnabled: isShakeUndoEnabled,
         shakeSensitivity: shakeSensitivity.value,
         activityGrid: activityGrid,
@@ -1021,6 +1078,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
 
                 try {
                   final repo = await PrefsRepository.create();
+                  final user = FirebaseAuth.instance.currentUser;
                   final session = ClickerController.buildSession(
                     id: DateTime.now().millisecondsSinceEpoch.toString(),
                     name: nameCtrl.text,
@@ -1031,6 +1089,9 @@ class _ClickerScreenState extends State<ClickerScreen> {
                     total: total,
                     matchInterval: matchInterval,
                     activityGrid: activityGrid,
+                    userId: user?.uid ?? '',
+                    userEmail: user?.email ?? '',
+                    userDisplayName: user?.displayName ?? '',
                     athleteName: athleteNameCtrl.text,
                     coachName: coachNameCtrl.text,
                     venue: venueCtrl.text,
@@ -1046,6 +1107,9 @@ class _ClickerScreenState extends State<ClickerScreen> {
                   );
 
                   await repo.addHistorySession(session);
+                  if (isSyncHistoryEnabled) {
+                    await CloudHistoryService().uploadSession(session);
+                  }
 
                   if (!mounted) return;
 

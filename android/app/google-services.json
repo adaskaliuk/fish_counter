@@ -12,7 +12,12 @@
           "package_name": "com.yukon.fishcounter"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "662723388518-qtrrqkbln2k16iindfkpo7ki08kpdrul.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDnAMzK_M7p1JmKj3fi-xhmlT0uRq1bziQ"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "662723388518-qtrrqkbln2k16iindfkpo7ki08kpdrul.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "662723388518-4859et828iqtbelketf64sast7ah1q79.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.yukon.fishcounter"
+              }
+            }
+          ]
         }
       }
     }

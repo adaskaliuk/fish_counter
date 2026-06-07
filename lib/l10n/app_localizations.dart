@@ -27,6 +27,16 @@ class AppLocalizations {
   static const _localizedValues = <String, Map<String, String>>{
     'en': {
       'appTitle': 'Fish Counter',
+      'authSubtitle': 'Sign in to identify athlete sessions',
+      'email': 'Email',
+      'password': 'Password',
+      'signIn': 'Sign in',
+      'register': 'Register',
+      'continueAsGuest': 'Continue as guest',
+      'continueWithGoogle': 'Continue with Google',
+      'needAccount': 'Need an account? Register',
+      'haveAccount': 'Already have an account? Sign in',
+      'signOut': 'Sign out',
       'tryButton': 'Try',
       'start': 'START',
       'pause': 'PAUSE',
@@ -37,6 +47,9 @@ class AppLocalizations {
       'settingsTitle': 'Settings',
       'actionDelay': 'Action Delay (s)',
       'vibeInterval': 'Vibe Interval (s)',
+      'syncHistory': 'Sync history',
+      'syncHistoryDescription':
+          'Back up saved sessions to Firebase when signed in',
       'shakeUndo': 'Shake Undo',
       'shakeSensitivity': 'Shake Sensitivity',
       'shakeSensitivityLow': 'Low',
@@ -109,6 +122,16 @@ class AppLocalizations {
     },
     'de': {
       'appTitle': 'Fischzähler',
+      'authSubtitle': 'Anmelden, um Athletensitzungen zu identifizieren',
+      'email': 'E-Mail',
+      'password': 'Passwort',
+      'signIn': 'Anmelden',
+      'register': 'Registrieren',
+      'continueAsGuest': 'Als Gast fortfahren',
+      'continueWithGoogle': 'Mit Google fortfahren',
+      'needAccount': 'Konto benötigt? Registrieren',
+      'haveAccount': 'Schon ein Konto? Anmelden',
+      'signOut': 'Abmelden',
       'tryButton': 'Versuch',
       'start': 'START',
       'pause': 'PAUSE',
@@ -119,6 +142,9 @@ class AppLocalizations {
       'settingsTitle': 'Einstellungen',
       'actionDelay': 'Aktionsverzögerung (s)',
       'vibeInterval': 'Vibrationsintervall (s)',
+      'syncHistory': 'Verlauf synchronisieren',
+      'syncHistoryDescription':
+          'Gespeicherte Sitzungen bei Anmeldung in Firebase sichern',
       'shakeUndo': 'Schüttel-Undo',
       'shakeSensitivity': 'Schüttel-Empfindlichkeit',
       'shakeSensitivityLow': 'Niedrig',
@@ -191,6 +217,16 @@ class AppLocalizations {
     },
     'fr': {
       'appTitle': 'Compteur de poissons',
+      'authSubtitle': 'Connectez-vous pour identifier les sessions d’athlète',
+      'email': 'E-mail',
+      'password': 'Mot de passe',
+      'signIn': 'Connexion',
+      'register': 'Inscription',
+      'continueAsGuest': 'Continuer comme invité',
+      'continueWithGoogle': 'Continuer avec Google',
+      'needAccount': 'Besoin d’un compte ? Inscription',
+      'haveAccount': 'Déjà un compte ? Connexion',
+      'signOut': 'Déconnexion',
       'tryButton': 'Essai',
       'start': 'DÉMARRER',
       'pause': 'PAUSE',
@@ -201,6 +237,9 @@ class AppLocalizations {
       'settingsTitle': 'Réglages',
       'actionDelay': 'Délai d’action (s)',
       'vibeInterval': 'Intervalle vibration (s)',
+      'syncHistory': 'Synchroniser l’historique',
+      'syncHistoryDescription':
+          'Sauvegarder les sessions dans Firebase une fois connecté',
       'shakeUndo': 'Annulation par secousse',
       'shakeSensitivity': 'Sensibilité secousse',
       'shakeSensitivityLow': 'Faible',
@@ -273,6 +312,16 @@ class AppLocalizations {
     },
     'pl': {
       'appTitle': 'Licznik ryb',
+      'authSubtitle': 'Zaloguj się, aby identyfikować sesje zawodnika',
+      'email': 'E-mail',
+      'password': 'Hasło',
+      'signIn': 'Zaloguj',
+      'register': 'Zarejestruj',
+      'continueAsGuest': 'Kontynuuj jako gość',
+      'continueWithGoogle': 'Kontynuuj z Google',
+      'needAccount': 'Potrzebujesz konta? Zarejestruj',
+      'haveAccount': 'Masz już konto? Zaloguj',
+      'signOut': 'Wyloguj',
       'tryButton': 'Próba',
       'start': 'START',
       'pause': 'PAUZA',
@@ -283,6 +332,8 @@ class AppLocalizations {
       'settingsTitle': 'Ustawienia',
       'actionDelay': 'Opóźnienie akcji (s)',
       'vibeInterval': 'Interwał wibracji (s)',
+      'syncHistory': 'Synchronizuj historię',
+      'syncHistoryDescription': 'Zapisuj sesje w Firebase po zalogowaniu',
       'shakeUndo': 'Cofanie potrząśnięciem',
       'shakeSensitivity': 'Czułość potrząśnięcia',
       'shakeSensitivityLow': 'Niska',
@@ -355,6 +406,16 @@ class AppLocalizations {
     },
     'it': {
       'appTitle': 'Contatore pesci',
+      'authSubtitle': 'Accedi per identificare le sessioni atleta',
+      'email': 'Email',
+      'password': 'Password',
+      'signIn': 'Accedi',
+      'register': 'Registrati',
+      'continueAsGuest': 'Continua come ospite',
+      'continueWithGoogle': 'Continua con Google',
+      'needAccount': 'Serve un account? Registrati',
+      'haveAccount': 'Hai già un account? Accedi',
+      'signOut': 'Esci',
       'tryButton': 'Prova',
       'start': 'AVVIA',
       'pause': 'PAUSA',
@@ -365,6 +426,8 @@ class AppLocalizations {
       'settingsTitle': 'Impostazioni',
       'actionDelay': 'Ritardo azione (s)',
       'vibeInterval': 'Intervallo vibrazione (s)',
+      'syncHistory': 'Sincronizza cronologia',
+      'syncHistoryDescription': 'Salva le sessioni in Firebase dopo l’accesso',
       'shakeUndo': 'Annulla scuotendo',
       'shakeSensitivity': 'Sensibilità scuotimento',
       'shakeSensitivityLow': 'Bassa',
@@ -437,6 +500,16 @@ class AppLocalizations {
     },
     'nl': {
       'appTitle': 'Vissenteller',
+      'authSubtitle': 'Log in om sportersessies te identificeren',
+      'email': 'E-mail',
+      'password': 'Wachtwoord',
+      'signIn': 'Inloggen',
+      'register': 'Registreren',
+      'continueAsGuest': 'Doorgaan als gast',
+      'continueWithGoogle': 'Doorgaan met Google',
+      'needAccount': 'Account nodig? Registreer',
+      'haveAccount': 'Al een account? Log in',
+      'signOut': 'Uitloggen',
       'tryButton': 'Poging',
       'start': 'START',
       'pause': 'PAUZE',
@@ -447,6 +520,9 @@ class AppLocalizations {
       'settingsTitle': 'Instellingen',
       'actionDelay': 'Actievertraging (s)',
       'vibeInterval': 'Trilinterval (s)',
+      'syncHistory': 'Geschiedenis synchroniseren',
+      'syncHistoryDescription':
+          'Sla sessies op in Firebase wanneer je bent ingelogd',
       'shakeUndo': 'Undo door schudden',
       'shakeSensitivity': 'Schudgevoeligheid',
       'shakeSensitivityLow': 'Laag',
@@ -519,6 +595,17 @@ class AppLocalizations {
     },
     'ro': {
       'appTitle': 'Contor pești',
+      'authSubtitle':
+          'Autentifică-te pentru identificarea sesiunilor sportivului',
+      'email': 'Email',
+      'password': 'Parolă',
+      'signIn': 'Autentificare',
+      'register': 'Înregistrare',
+      'continueAsGuest': 'Continuă ca invitat',
+      'continueWithGoogle': 'Continuă cu Google',
+      'needAccount': 'Ai nevoie de cont? Înregistrează-te',
+      'haveAccount': 'Ai deja cont? Autentificare',
+      'signOut': 'Deconectare',
       'tryButton': 'Încercare',
       'start': 'START',
       'pause': 'PAUZĂ',
@@ -529,6 +616,9 @@ class AppLocalizations {
       'settingsTitle': 'Setări',
       'actionDelay': 'Întârziere acțiune (s)',
       'vibeInterval': 'Interval vibrație (s)',
+      'syncHistory': 'Sincronizează istoricul',
+      'syncHistoryDescription':
+          'Salvează sesiunile în Firebase când ești autentificat',
       'shakeUndo': 'Undo prin scuturare',
       'shakeSensitivity': 'Sensibilitate scuturare',
       'shakeSensitivityLow': 'Scăzută',
@@ -601,6 +691,16 @@ class AppLocalizations {
     },
     'uk': {
       'appTitle': 'Лічильник риби',
+      'authSubtitle': 'Увійдіть, щоб ідентифікувати сесії спортсмена',
+      'email': 'Email',
+      'password': 'Пароль',
+      'signIn': 'Увійти',
+      'register': 'Зареєструватися',
+      'continueAsGuest': 'Продовжити як гість',
+      'continueWithGoogle': 'Продовжити з Google',
+      'needAccount': 'Потрібен акаунт? Зареєструватися',
+      'haveAccount': 'Вже є акаунт? Увійти',
+      'signOut': 'Вийти',
       'tryButton': 'Спроба',
       'start': 'СТАРТ',
       'pause': 'ПАУЗА',
@@ -611,6 +711,8 @@ class AppLocalizations {
       'settingsTitle': 'Налаштування',
       'actionDelay': 'Затримка дії (с)',
       'vibeInterval': 'Інтервал вібрації (с)',
+      'syncHistory': 'Синхронізувати історію',
+      'syncHistoryDescription': 'Зберігати сесії у Firebase після входу',
       'shakeUndo': 'Скасування струшуванням',
       'shakeSensitivity': 'Чутливість струшування',
       'shakeSensitivityLow': 'Низька',
@@ -689,6 +791,16 @@ class AppLocalizations {
   }
 
   String get appTitle => t('appTitle');
+  String get authSubtitle => t('authSubtitle');
+  String get email => t('email');
+  String get password => t('password');
+  String get signIn => t('signIn');
+  String get register => t('register');
+  String get continueAsGuest => t('continueAsGuest');
+  String get continueWithGoogle => t('continueWithGoogle');
+  String get needAccount => t('needAccount');
+  String get haveAccount => t('haveAccount');
+  String get signOut => t('signOut');
   String get tryButton => t('tryButton');
   String get start => t('start');
   String get pause => t('pause');
@@ -699,6 +811,8 @@ class AppLocalizations {
   String get settingsTitle => t('settingsTitle');
   String get actionDelay => t('actionDelay');
   String get vibeInterval => t('vibeInterval');
+  String get syncHistory => t('syncHistory');
+  String get syncHistoryDescription => t('syncHistoryDescription');
   String get shakeUndo => t('shakeUndo');
   String get shakeSensitivity => t('shakeSensitivity');
   String get shakeSensitivityLow => t('shakeSensitivityLow');

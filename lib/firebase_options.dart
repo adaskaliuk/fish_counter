@@ -62,13 +62,13 @@ class DefaultFirebaseOptions {
     projectId: 'fish-counter-55a99',
     storageBucket: 'fish-counter-55a99.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyDgAqGDL1FjackYmJArDgC6EArI2zkOsnw',
     appId: '1:662723388518:ios:4ffaa185456264796079a7',
     messagingSenderId: '662723388518',
     projectId: 'fish-counter-55a99',
     storageBucket: 'fish-counter-55a99.firebasestorage.app',
+    iosClientId: '662723388518-4859et828iqtbelketf64sast7ah1q79.apps.googleusercontent.com',
     iosBundleId: 'com.yukon.fishcounter',
   );
 }

@@ -168,6 +168,9 @@ void main() {
         tries: 1,
         total: 5,
         matchInterval: const Duration(hours: 4, minutes: 30),
+        userId: ' uid-1 ',
+        userEmail: ' athlete@example.com ',
+        userDisplayName: ' Athlete ',
         athleteName: ' Andrew ',
         coachName: ' Coach ',
         venue: ' Lake ',
@@ -204,6 +207,9 @@ void main() {
       expect(session.tries, 1);
       expect(session.total, 5);
       expect(session.matchDuration, '4:30');
+      expect(session.userId, 'uid-1');
+      expect(session.userEmail, 'athlete@example.com');
+      expect(session.userDisplayName, 'Athlete');
       expect(session.athleteName, 'Andrew');
       expect(session.coachName, 'Coach');
       expect(session.venue, 'Lake');

@@ -37,6 +37,15 @@ class PrefsRepository {
     await _prefs.setBool(PrefsKeys.isPaused, paused);
   }
 
+  Future<bool> isSyncHistoryEnabled() async {
+    return _prefs.getBool(PrefsKeys.syncHistoryEnabled) ??
+        Defaults.defaultSyncHistoryEnabled;
+  }
+
+  Future<void> setSyncHistoryEnabled(bool enabled) async {
+    await _prefs.setBool(PrefsKeys.syncHistoryEnabled, enabled);
+  }
+
   Future<void> saveClickerState({
     required int c1,
     required int c2,
@@ -49,6 +58,7 @@ class PrefsRepository {
     required int resetDelay,
     required int vibeInterval,
     required int matchSeconds,
+    required bool syncHistoryEnabled,
     required bool shakeUndoEnabled,
     required String shakeSensitivity,
     required List<Map<String, dynamic>> activityGrid,
@@ -64,6 +74,7 @@ class PrefsRepository {
     await _prefs.setInt(PrefsKeys.resetDelay, resetDelay);
     await _prefs.setInt(PrefsKeys.vibeInterval, vibeInterval);
     await _prefs.setInt(PrefsKeys.matchSeconds, matchSeconds);
+    await _prefs.setBool(PrefsKeys.syncHistoryEnabled, syncHistoryEnabled);
     await _prefs.setBool(PrefsKeys.shakeUndoEnabled, shakeUndoEnabled);
     await _prefs.setString(PrefsKeys.shakeSensitivity, shakeSensitivity);
     await _prefs.setString(PrefsKeys.activityGrid, jsonEncode(activityGrid));
@@ -78,6 +89,17 @@ class PrefsRepository {
   Future<void> saveActivity(List<ActivityLog> activityLogs) async {
     final rawData = activityLogs.map((log) => log.toJson()).toList();
     await _prefs.setString(PrefsKeys.activityGrid, jsonEncode(rawData));
+  }
+
+  Future<void> mergeHistorySessions(List<GameSession> sessions) async {
+    final current = await loadInitialState();
+    final byId = <String, GameSession>{
+      for (final session in current.historySessions) session.id: session,
+    };
+    for (final session in sessions) {
+      byId[session.id] = session;
+    }
+    await saveSessionHistory(byId.values.toList());
   }
 
   Future<void> saveSessionHistory(List<GameSession> sessions) async {
@@ -148,6 +170,9 @@ class PrefsRepository {
       activityGrid: activityLogs,
       rawActivityGrid: rawActivityGrid,
       historySessions: sessions,
+      syncHistoryEnabled:
+          _prefs.getBool(PrefsKeys.syncHistoryEnabled) ??
+          Defaults.defaultSyncHistoryEnabled,
       shakeUndoEnabled:
           _prefs.getBool(PrefsKeys.shakeUndoEnabled) ??
           Defaults.defaultShakeUndoEnabled,
@@ -174,6 +199,7 @@ class StateContainer {
   final List<ActivityLog> activityGrid;
   final List<Map<String, dynamic>> rawActivityGrid;
   final List<GameSession> historySessions;
+  final bool syncHistoryEnabled;
   final bool shakeUndoEnabled;
   final String shakeSensitivity;
 
@@ -192,6 +218,7 @@ class StateContainer {
     required this.activityGrid,
     required this.rawActivityGrid,
     required this.historySessions,
+    required this.syncHistoryEnabled,
     required this.shakeUndoEnabled,
     required this.shakeSensitivity,
   });

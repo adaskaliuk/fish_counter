@@ -3,6 +3,7 @@
 // ==========================================
 class GameSession {
   final String id, name, date, matchDuration;
+  final String userId, userEmail, userDisplayName;
   final String athleteName, coachName, venue, sectorPeg;
   final String trainingType, fishingMethod, targetPace, conditions, baitNotes;
   final String weatherPlace, weatherDescription, weatherFetchedAt;
@@ -24,6 +25,9 @@ class GameSession {
     required this.total,
     required this.matchDuration,
     required this.grid,
+    this.userId = '',
+    this.userEmail = '',
+    this.userDisplayName = '',
     this.athleteName = '',
     this.coachName = '',
     this.venue = '',
@@ -58,6 +62,9 @@ class GameSession {
     'total': total,
     'matchDuration': matchDuration,
     'grid': grid,
+    'userId': userId,
+    'userEmail': userEmail,
+    'userDisplayName': userDisplayName,
     'athleteName': athleteName,
     'coachName': coachName,
     'venue': venue,
@@ -96,6 +103,9 @@ class GameSession {
         defaultValue: '00:00:00',
       ),
       grid: _safeGridList(json['grid']),
+      userId: _safeString(json['userId']),
+      userEmail: _safeString(json['userEmail']),
+      userDisplayName: _safeString(json['userDisplayName']),
       athleteName: _safeString(json['athleteName']),
       coachName: _safeString(json['coachName']),
       venue: _safeString(json['venue']),

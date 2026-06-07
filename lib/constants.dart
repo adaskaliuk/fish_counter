@@ -23,6 +23,9 @@ class PrefsKeys {
   static const String matchSeconds =
       'match_seconds'; // Total match duration in seconds
 
+  // Cloud sync
+  static const String syncHistoryEnabled = 'sync_history_enabled';
+
   // Undo
   static const String shakeUndoEnabled = 'shake_undo_enabled';
   static const String shakeSensitivity = 'shake_sensitivity';
@@ -39,6 +42,7 @@ class Defaults {
   static const int defaultMatchDurationSeconds = 18000; // 5 hours
   static const int defaultActivityDelayMs = 600;
   static const int defaultScrollDelayMs = 100;
+  static const bool defaultSyncHistoryEnabled = false;
   static const bool defaultShakeUndoEnabled = true;
   static const String defaultShakeSensitivity = 'medium';
 }

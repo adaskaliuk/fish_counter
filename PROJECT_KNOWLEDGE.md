@@ -217,6 +217,49 @@ Useful files:
 - `.fizzy/API.md` — API notes discovered from `basecamp/fizzy` source.
 - `.fizzy/BOARD.md` — local fallback only when real API is unavailable.
 
+## 🌦️ Weather Capture
+
+Weather capture for sport-fishing sessions is implemented.
+
+Purpose:
+
+- automatically attach local weather context to a training session;
+- help athletes/coaches compare pace and performance against real conditions.
+
+Implementation:
+
+- location: `geolocator`;
+- OpenWeather package: `weather`;
+- direct OpenWeather HTTP fallback: `http`;
+- API key is provided through local `.env` and passed with `--dart-define`:
+
+```bash
+flutter run --dart-define=OPENWEATHER_API_KEY=$OPENWEATHER_API_KEY
+```
+
+Rules:
+
+- Never commit the real `OPENWEATHER_API_KEY`.
+- `.env` is ignored by git.
+- Coordinates are rounded to 3 decimals before storage for privacy.
+
+Stored in `GameSession`:
+
+- latitude / longitude;
+- weather place;
+- weather description;
+- temperature / feels like;
+- pressure;
+- humidity;
+- wind speed / direction;
+- fetched timestamp.
+
+Displayed/exported in:
+
+- Analytics Training Context;
+- plain text report;
+- CSV report.
+
 ## 🚀 Build & Run
 
 ```bash

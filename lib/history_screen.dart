@@ -4,6 +4,7 @@
 import 'package:fish_counter/analytics_screen.dart';
 import 'package:fish_counter/game_session.dart';
 import 'package:fish_counter/l10n/app_localizations.dart';
+import 'package:fish_counter/services/cloud_history_service.dart';
 import 'package:fish_counter/services/prefs_repository.dart';
 import 'package:flutter/material.dart';
 
@@ -34,11 +35,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
     });
 
     try {
-      final container = await PrefsRepository.loadState();
+      var container = await PrefsRepository.loadState();
+      if (container.syncHistoryEnabled) {
+        final cloudSessions = await CloudHistoryService().loadSessions();
+        if (cloudSessions.isNotEmpty) {
+          final repo = await PrefsRepository.create();
+          await repo.mergeHistorySessions(cloudSessions);
+          container = await repo.loadInitialState();
+        }
+      }
 
       if (!mounted) return;
 
-      // The container already ensures the history is loaded.
       final sessions = container.historySessions.cast<GameSession>().toList();
 
       setState(() {

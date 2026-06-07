@@ -1,5 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
-import 'package:fish_counter/clicker_screen.dart';
+import 'package:fish_counter/auth_gate.dart';
 import 'package:fish_counter/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -30,6 +30,6 @@ class CatchClickerApp extends StatelessWidget {
     theme: ThemeData.dark().copyWith(
       scaffoldBackgroundColor: const Color(0xFF121212),
     ),
-    home: const ClickerScreen(),
+    home: const AuthGate(),
   );
 }

@@ -14,6 +14,9 @@ void main() {
         total: 3,
         matchDuration: '5:00',
         grid: const [],
+        userId: 'uid-1',
+        userEmail: 'athlete@example.com',
+        userDisplayName: 'Athlete',
         athleteName: 'Andrew',
         coachName: 'Coach',
         venue: 'River',
@@ -36,6 +39,9 @@ void main() {
 
       final parsed = GameSession.fromJson(session.toJson());
 
+      expect(parsed.userId, 'uid-1');
+      expect(parsed.userEmail, 'athlete@example.com');
+      expect(parsed.userDisplayName, 'Athlete');
       expect(parsed.athleteName, 'Andrew');
       expect(parsed.coachName, 'Coach');
       expect(parsed.venue, 'River');
@@ -69,6 +75,9 @@ void main() {
         'grid': [],
       });
 
+      expect(parsed.userId, isEmpty);
+      expect(parsed.userEmail, isEmpty);
+      expect(parsed.userDisplayName, isEmpty);
       expect(parsed.athleteName, isEmpty);
       expect(parsed.coachName, isEmpty);
       expect(parsed.venue, isEmpty);
