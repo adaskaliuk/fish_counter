@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:fish_counter/constants.dart';
 import 'package:fish_counter/game_session.dart';
 import 'package:fish_counter/models/activity_log.dart';
+import 'package:fish_counter/models/athlete_profile.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Handles persistence for sessions and optional typed activity logs.
@@ -46,6 +47,44 @@ class PrefsRepository {
     await _prefs.setBool(PrefsKeys.syncHistoryEnabled, enabled);
   }
 
+  Future<void> saveSyncStatus({
+    required String status,
+    String error = '',
+  }) async {
+    await _prefs.setString(PrefsKeys.syncLastStatus, status);
+    await _prefs.setString(
+      PrefsKeys.syncLastAt,
+      DateTime.now().toIso8601String(),
+    );
+    await _prefs.setString(PrefsKeys.syncLastError, error);
+  }
+
+  String getSyncLastStatus() =>
+      _prefs.getString(PrefsKeys.syncLastStatus) ?? 'localOnly';
+
+  String getSyncLastAt() => _prefs.getString(PrefsKeys.syncLastAt) ?? '';
+
+  String getSyncLastError() => _prefs.getString(PrefsKeys.syncLastError) ?? '';
+
+  AthleteProfile loadAthleteProfile() {
+    final raw = _prefs.getString(PrefsKeys.athleteProfile);
+    if (raw == null) return const AthleteProfile();
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map) {
+        return AthleteProfile.fromJson(Map<String, dynamic>.from(decoded));
+      }
+    } catch (_) {}
+    return const AthleteProfile();
+  }
+
+  Future<void> saveAthleteProfile(AthleteProfile profile) async {
+    await _prefs.setString(
+      PrefsKeys.athleteProfile,
+      jsonEncode(profile.toJson()),
+    );
+  }
+
   Future<void> saveClickerState({
     required int c1,
     required int c2,
@@ -81,9 +120,28 @@ class PrefsRepository {
   }
 
   Future<void> addHistorySession(GameSession session) async {
-    final history = _prefs.getStringList(PrefsKeys.historySessions) ?? [];
-    history.add(jsonEncode(session.toJson()));
-    await _prefs.setStringList(PrefsKeys.historySessions, history);
+    final current = await loadInitialState();
+    final merged = mergeSessionLists(current.historySessions, [session]);
+    await saveSessionHistory(merged);
+  }
+
+  Future<void> deleteHistorySession(String sessionId) async {
+    final current = await loadInitialState();
+    final remaining = current.historySessions
+        .where((session) => session.id != sessionId)
+        .toList();
+    await saveSessionHistory(remaining);
+  }
+
+  Future<void> updateHistorySession(GameSession updatedSession) async {
+    final current = await loadInitialState();
+    final updated = current.historySessions
+        .map(
+          (session) =>
+              session.id == updatedSession.id ? updatedSession : session,
+        )
+        .toList();
+    await saveSessionHistory(updated);
   }
 
   Future<void> saveActivity(List<ActivityLog> activityLogs) async {
@@ -91,19 +149,47 @@ class PrefsRepository {
     await _prefs.setString(PrefsKeys.activityGrid, jsonEncode(rawData));
   }
 
-  Future<void> mergeHistorySessions(List<GameSession> sessions) async {
+  Future<List<GameSession>> mergeHistorySessions(
+    List<GameSession> sessions,
+  ) async {
     final current = await loadInitialState();
-    final byId = <String, GameSession>{
-      for (final session in current.historySessions) session.id: session,
-    };
-    for (final session in sessions) {
-      byId[session.id] = session;
+    final merged = mergeSessionLists(current.historySessions, sessions);
+    await saveSessionHistory(merged);
+    return merged;
+  }
+
+  static List<GameSession> mergeSessionLists(
+    List<GameSession> local,
+    List<GameSession> remote,
+  ) {
+    final byId = <String, GameSession>{};
+    for (final session in [...local, ...remote]) {
+      final existing = byId[session.id];
+      if (existing == null || _isNewer(session, existing)) {
+        byId[session.id] = session;
+      }
     }
-    await saveSessionHistory(byId.values.toList());
+
+    final merged = byId.values.toList();
+    merged.sort((a, b) => _sessionTimestamp(a).compareTo(_sessionTimestamp(b)));
+    return merged;
+  }
+
+  static bool _isNewer(GameSession candidate, GameSession existing) {
+    return _sessionTimestamp(
+          candidate,
+        ).compareTo(_sessionTimestamp(existing)) >=
+        0;
+  }
+
+  static DateTime _sessionTimestamp(GameSession session) {
+    return DateTime.tryParse(session.updatedAt) ??
+        DateTime.fromMillisecondsSinceEpoch(int.tryParse(session.id) ?? 0);
   }
 
   Future<void> saveSessionHistory(List<GameSession> sessions) async {
-    final jsonList = sessions
+    final deduped = mergeSessionLists(sessions, const []);
+    final jsonList = deduped
         .map((session) => jsonEncode(session.toJson()))
         .toList();
     await _prefs.setStringList(PrefsKeys.historySessions, jsonList);

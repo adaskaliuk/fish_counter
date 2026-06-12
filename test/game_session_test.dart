@@ -33,6 +33,7 @@ void main() {
         longitude: 30.52,
         weatherTemperatureCelsius: 21.5,
         weatherWindSpeedMs: 3.2,
+        updatedAt: '2026-06-06T10:01:00Z',
         athleteNote: 'Athlete note',
         coachComment: 'Coach comment',
       );
@@ -58,6 +59,7 @@ void main() {
       expect(parsed.longitude, 30.52);
       expect(parsed.weatherTemperatureCelsius, 21.5);
       expect(parsed.weatherWindSpeedMs, 3.2);
+      expect(parsed.updatedAt, '2026-06-06T10:01:00Z');
       expect(parsed.athleteNote, 'Athlete note');
       expect(parsed.coachComment, 'Coach comment');
     });
@@ -94,6 +96,33 @@ void main() {
       expect(parsed.weatherTemperatureCelsius, isNull);
       expect(parsed.athleteNote, isEmpty);
       expect(parsed.coachComment, isEmpty);
+    });
+
+    test('copyWith updates editable metadata and preserves counters', () {
+      final session = GameSession(
+        id: '1',
+        name: 'Old',
+        date: '06.06.26 10:00',
+        c1: 1,
+        c2: 2,
+        tries: 3,
+        total: 3,
+        matchDuration: '5:00',
+        grid: const [],
+        updatedAt: '2026-06-06T10:00:00Z',
+      );
+
+      final updated = session.copyWith(
+        name: 'New',
+        venue: 'Lake',
+        updatedAt: '2026-06-06T11:00:00Z',
+      );
+
+      expect(updated.name, 'New');
+      expect(updated.venue, 'Lake');
+      expect(updated.c1, 1);
+      expect(updated.total, 3);
+      expect(updated.updatedAt, '2026-06-06T11:00:00Z');
     });
   });
 }

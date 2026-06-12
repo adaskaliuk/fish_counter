@@ -7,6 +7,7 @@ class GameSession {
   final String athleteName, coachName, venue, sectorPeg;
   final String trainingType, fishingMethod, targetPace, conditions, baitNotes;
   final String weatherPlace, weatherDescription, weatherFetchedAt;
+  final String updatedAt;
   final double? latitude, longitude;
   final double? weatherTemperatureCelsius, weatherFeelsLikeCelsius;
   final double? weatherPressureHpa, weatherHumidityPercent;
@@ -40,6 +41,7 @@ class GameSession {
     this.weatherPlace = '',
     this.weatherDescription = '',
     this.weatherFetchedAt = '',
+    String? updatedAt,
     this.latitude,
     this.longitude,
     this.weatherTemperatureCelsius,
@@ -50,7 +52,61 @@ class GameSession {
     this.weatherWindDirectionDegrees,
     this.athleteNote = '',
     this.coachComment = '',
-  });
+  }) : updatedAt = updatedAt ?? DateTime.now().toIso8601String();
+
+  GameSession copyWith({
+    String? name,
+    String? athleteName,
+    String? coachName,
+    String? venue,
+    String? sectorPeg,
+    String? trainingType,
+    String? fishingMethod,
+    String? targetPace,
+    String? conditions,
+    String? baitNotes,
+    String? athleteNote,
+    String? coachComment,
+    String? updatedAt,
+  }) {
+    return GameSession(
+      id: id,
+      name: name ?? this.name,
+      date: date,
+      c1: c1,
+      c2: c2,
+      tries: tries,
+      total: total,
+      matchDuration: matchDuration,
+      grid: List<Map<String, dynamic>>.from(grid),
+      userId: userId,
+      userEmail: userEmail,
+      userDisplayName: userDisplayName,
+      athleteName: athleteName ?? this.athleteName,
+      coachName: coachName ?? this.coachName,
+      venue: venue ?? this.venue,
+      sectorPeg: sectorPeg ?? this.sectorPeg,
+      trainingType: trainingType ?? this.trainingType,
+      fishingMethod: fishingMethod ?? this.fishingMethod,
+      targetPace: targetPace ?? this.targetPace,
+      conditions: conditions ?? this.conditions,
+      baitNotes: baitNotes ?? this.baitNotes,
+      weatherPlace: weatherPlace,
+      weatherDescription: weatherDescription,
+      weatherFetchedAt: weatherFetchedAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      latitude: latitude,
+      longitude: longitude,
+      weatherTemperatureCelsius: weatherTemperatureCelsius,
+      weatherFeelsLikeCelsius: weatherFeelsLikeCelsius,
+      weatherPressureHpa: weatherPressureHpa,
+      weatherHumidityPercent: weatherHumidityPercent,
+      weatherWindSpeedMs: weatherWindSpeedMs,
+      weatherWindDirectionDegrees: weatherWindDirectionDegrees,
+      athleteNote: athleteNote ?? this.athleteNote,
+      coachComment: coachComment ?? this.coachComment,
+    );
+  }
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -77,6 +133,7 @@ class GameSession {
     'weatherPlace': weatherPlace,
     'weatherDescription': weatherDescription,
     'weatherFetchedAt': weatherFetchedAt,
+    'updatedAt': updatedAt,
     'latitude': latitude,
     'longitude': longitude,
     'weatherTemperatureCelsius': weatherTemperatureCelsius,
@@ -118,6 +175,10 @@ class GameSession {
       weatherPlace: _safeString(json['weatherPlace']),
       weatherDescription: _safeString(json['weatherDescription']),
       weatherFetchedAt: _safeString(json['weatherFetchedAt']),
+      updatedAt: _safeString(
+        json['updatedAt'],
+        defaultValue: _safeString(json['id']),
+      ),
       latitude: _safeDouble(json['latitude']),
       longitude: _safeDouble(json['longitude']),
       weatherTemperatureCelsius: _safeDouble(json['weatherTemperatureCelsius']),

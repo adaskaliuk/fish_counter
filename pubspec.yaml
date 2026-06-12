@@ -32,3 +32,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/branding/app_logo.png
+    - assets/branding/app_store_preview_square_1024.png

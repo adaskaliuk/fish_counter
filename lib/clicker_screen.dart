@@ -10,6 +10,7 @@ import 'package:fish_counter/constants.dart';
 import 'package:fish_counter/controllers/clicker_controller.dart';
 import 'package:fish_counter/history_screen.dart';
 import 'package:fish_counter/l10n/app_localizations.dart';
+import 'package:fish_counter/models/athlete_profile.dart';
 import 'package:fish_counter/models/weather_snapshot.dart';
 import 'package:fish_counter/services/cloud_history_service.dart';
 import 'package:fish_counter/services/prefs_repository.dart';
@@ -696,6 +697,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
 
   void _showSettings() {
     final l10n = AppLocalizations.of(context);
+    final repoFuture = PrefsRepository.create();
     final rCtrl = TextEditingController(text: resetDelay.toString());
     final vCtrl = TextEditingController(text: vibeInterval.toString());
     final dCtrl = TextEditingController(text: matchInterval.inDays.toString());
@@ -708,6 +710,26 @@ class _ClickerScreenState extends State<ClickerScreen> {
     var dialogSyncHistoryEnabled = isSyncHistoryEnabled;
     var dialogShakeUndoEnabled = isShakeUndoEnabled;
     var dialogShakeSensitivity = shakeSensitivity;
+    final athleteCtrl = TextEditingController();
+    final coachCtrl = TextEditingController();
+    final clubCtrl = TextEditingController();
+    final venueCtrl = TextEditingController();
+    final sectorCtrl = TextEditingController();
+    final trainingCtrl = TextEditingController();
+    final methodCtrl = TextEditingController();
+    final paceCtrl = TextEditingController();
+
+    repoFuture.then((repo) {
+      final profile = repo.loadAthleteProfile();
+      athleteCtrl.text = profile.athleteName;
+      coachCtrl.text = profile.coachName;
+      clubCtrl.text = profile.clubTeam;
+      venueCtrl.text = profile.defaultVenue;
+      sectorCtrl.text = profile.defaultSectorPeg;
+      trainingCtrl.text = profile.defaultTrainingType;
+      methodCtrl.text = profile.defaultFishingMethod;
+      paceCtrl.text = profile.defaultTargetPace;
+    });
 
     showDialog(
       context: context,
@@ -768,6 +790,40 @@ class _ClickerScreenState extends State<ClickerScreen> {
                       : null,
                 ),
                 const Divider(),
+                Text(l10n.athleteProfile),
+                TextField(
+                  controller: athleteCtrl,
+                  decoration: InputDecoration(labelText: l10n.athleteName),
+                ),
+                TextField(
+                  controller: coachCtrl,
+                  decoration: InputDecoration(labelText: l10n.coachName),
+                ),
+                TextField(
+                  controller: clubCtrl,
+                  decoration: InputDecoration(labelText: l10n.clubTeam),
+                ),
+                TextField(
+                  controller: venueCtrl,
+                  decoration: InputDecoration(labelText: l10n.venue),
+                ),
+                TextField(
+                  controller: sectorCtrl,
+                  decoration: InputDecoration(labelText: l10n.sectorPeg),
+                ),
+                TextField(
+                  controller: trainingCtrl,
+                  decoration: InputDecoration(labelText: l10n.trainingType),
+                ),
+                TextField(
+                  controller: methodCtrl,
+                  decoration: InputDecoration(labelText: l10n.fishingMethod),
+                ),
+                TextField(
+                  controller: paceCtrl,
+                  decoration: InputDecoration(labelText: l10n.targetPace),
+                ),
+                const Divider(),
                 Text(l10n.matchDuration),
                 Row(
                   children: [
@@ -825,6 +881,19 @@ class _ClickerScreenState extends State<ClickerScreen> {
                   shakeSensitivity = dialogShakeSensitivity;
                 });
                 await _saveData();
+                final repo = await repoFuture;
+                await repo.saveAthleteProfile(
+                  AthleteProfile(
+                    athleteName: athleteCtrl.text.trim(),
+                    coachName: coachCtrl.text.trim(),
+                    clubTeam: clubCtrl.text.trim(),
+                    defaultVenue: venueCtrl.text.trim(),
+                    defaultSectorPeg: sectorCtrl.text.trim(),
+                    defaultTrainingType: trainingCtrl.text.trim(),
+                    defaultFishingMethod: methodCtrl.text.trim(),
+                    defaultTargetPace: paceCtrl.text.trim(),
+                  ),
+                );
                 if (isSyncHistoryEnabled) {
                   await _syncLocalHistoryToCloud();
                 }
@@ -876,11 +945,8 @@ class _ClickerScreenState extends State<ClickerScreen> {
 
   Future<void> _syncLocalHistoryToCloud() async {
     try {
-      final state = await PrefsRepository.loadState();
-      final cloud = CloudHistoryService();
-      for (final session in state.historySessions) {
-        await cloud.uploadSession(session);
-      }
+      final repo = await PrefsRepository.create();
+      await CloudHistoryService().syncLocalAndRemote(repo);
     } catch (e) {
       debugPrint('Error syncing history: $e');
     }
@@ -932,23 +998,32 @@ class _ClickerScreenState extends State<ClickerScreen> {
     }
 
     final l10n = AppLocalizations.of(context);
+    final profile = (await PrefsRepository.create()).loadAthleteProfile();
     final nameCtrl = TextEditingController(
       text:
           '${l10n.sessionDefaultName} ${DateFormat('HH:mm').format(DateTime.now())}',
     );
-    final athleteNameCtrl = TextEditingController();
-    final coachNameCtrl = TextEditingController();
-    final venueCtrl = TextEditingController();
-    final sectorPegCtrl = TextEditingController();
-    final trainingTypeCtrl = TextEditingController();
-    final fishingMethodCtrl = TextEditingController();
-    final targetPaceCtrl = TextEditingController();
+    final athleteNameCtrl = TextEditingController(text: profile.athleteName);
+    final coachNameCtrl = TextEditingController(text: profile.coachName);
+    final venueCtrl = TextEditingController(text: profile.defaultVenue);
+    final sectorPegCtrl = TextEditingController(text: profile.defaultSectorPeg);
+    final trainingTypeCtrl = TextEditingController(
+      text: profile.defaultTrainingType,
+    );
+    final fishingMethodCtrl = TextEditingController(
+      text: profile.defaultFishingMethod,
+    );
+    final targetPaceCtrl = TextEditingController(
+      text: profile.defaultTargetPace,
+    );
     final conditionsCtrl = TextEditingController();
     final baitNotesCtrl = TextEditingController();
     WeatherSnapshot? weatherSnapshot;
     var isLoadingWeather = false;
     final athleteNoteCtrl = TextEditingController();
     final coachCommentCtrl = TextEditingController();
+
+    if (!mounted) return;
 
     await showDialog(
       context: context,

@@ -66,6 +66,8 @@ class AppLocalizations {
       'athleteNote': 'Athlete note',
       'coachComment': 'Coach comment',
       'sessionNotes': 'Session Notes',
+      'athleteProfile': 'Athlete profile',
+      'clubTeam': 'Club / team',
       'trainingContext': 'Training Context',
       'athleteName': 'Athlete name',
       'coachName': 'Coach name',
@@ -80,6 +82,14 @@ class AppLocalizations {
       'weatherSummary': 'Weather',
       'weatherLoadFailed': 'Could not load weather',
       'history': 'History',
+      'editSession': 'Edit session',
+      'deleteSession': 'Delete session',
+      'deleteSessionQuestion': 'Delete this session?',
+      'deleteSessionWarning':
+          'This removes it from local history and cloud sync when enabled.',
+      'cancel': 'Cancel',
+      'delete': 'Delete',
+      'sessionDeleted': 'Session deleted',
       'retry': 'Retry',
       'noSessionsYet': 'No sessions yet',
       'errorLoadingHistory': 'Error loading history',
@@ -161,6 +171,8 @@ class AppLocalizations {
       'athleteNote': 'Notiz des Athleten',
       'coachComment': 'Trainerkommentar',
       'sessionNotes': 'Sitzungsnotizen',
+      'athleteProfile': 'Athletenprofil',
+      'clubTeam': 'Verein / Team',
       'trainingContext': 'Trainingskontext',
       'athleteName': 'Athlet',
       'coachName': 'Trainer',
@@ -175,6 +187,14 @@ class AppLocalizations {
       'weatherSummary': 'Wetter',
       'weatherLoadFailed': 'Wetter konnte nicht geladen werden',
       'history': 'Verlauf',
+      'editSession': 'Sitzung bearbeiten',
+      'deleteSession': 'Sitzung löschen',
+      'deleteSessionQuestion': 'Diese Sitzung löschen?',
+      'deleteSessionWarning':
+          'Dies entfernt sie lokal und bei aktivierter Cloud-Synchronisierung auch aus der Cloud.',
+      'cancel': 'Abbrechen',
+      'delete': 'Löschen',
+      'sessionDeleted': 'Sitzung gelöscht',
       'retry': 'Erneut versuchen',
       'noSessionsYet': 'Noch keine Sitzungen',
       'errorLoadingHistory': 'Fehler beim Laden des Verlaufs',
@@ -256,6 +276,8 @@ class AppLocalizations {
       'athleteNote': 'Note de l’athlète',
       'coachComment': 'Commentaire du coach',
       'sessionNotes': 'Notes de session',
+      'athleteProfile': 'Profil athlète',
+      'clubTeam': 'Club / équipe',
       'trainingContext': 'Contexte d’entraînement',
       'athleteName': 'Athlète',
       'coachName': 'Coach',
@@ -270,6 +292,14 @@ class AppLocalizations {
       'weatherSummary': 'Météo',
       'weatherLoadFailed': 'Impossible de charger la météo',
       'history': 'Historique',
+      'editSession': 'Modifier la session',
+      'deleteSession': 'Supprimer la session',
+      'deleteSessionQuestion': 'Supprimer cette session ?',
+      'deleteSessionWarning':
+          'Cela la supprime de l’historique local et du cloud si la synchronisation est activée.',
+      'cancel': 'Annuler',
+      'delete': 'Supprimer',
+      'sessionDeleted': 'Session supprimée',
       'retry': 'Réessayer',
       'noSessionsYet': 'Aucune session',
       'errorLoadingHistory': 'Erreur de chargement de l’historique',
@@ -350,6 +380,8 @@ class AppLocalizations {
       'athleteNote': 'Notatka zawodnika',
       'coachComment': 'Komentarz trenera',
       'sessionNotes': 'Notatki sesji',
+      'athleteProfile': 'Profil zawodnika',
+      'clubTeam': 'Klub / zespół',
       'trainingContext': 'Kontekst treningu',
       'athleteName': 'Zawodnik',
       'coachName': 'Trener',
@@ -364,6 +396,14 @@ class AppLocalizations {
       'weatherSummary': 'Pogoda',
       'weatherLoadFailed': 'Nie udało się załadować pogody',
       'history': 'Historia',
+      'editSession': 'Edytuj sesję',
+      'deleteSession': 'Usuń sesję',
+      'deleteSessionQuestion': 'Usunąć tę sesję?',
+      'deleteSessionWarning':
+          'Usunie ją z historii lokalnej oraz z chmury, jeśli synchronizacja jest włączona.',
+      'cancel': 'Anuluj',
+      'delete': 'Usuń',
+      'sessionDeleted': 'Sesja usunięta',
       'retry': 'Spróbuj ponownie',
       'noSessionsYet': 'Brak sesji',
       'errorLoadingHistory': 'Błąd ładowania historii',
@@ -444,6 +484,8 @@ class AppLocalizations {
       'athleteNote': 'Nota dell’atleta',
       'coachComment': 'Commento dell’allenatore',
       'sessionNotes': 'Note della sessione',
+      'athleteProfile': 'Profilo atleta',
+      'clubTeam': 'Club / team',
       'trainingContext': 'Contesto allenamento',
       'athleteName': 'Atleta',
       'coachName': 'Allenatore',
@@ -458,6 +500,14 @@ class AppLocalizations {
       'weatherSummary': 'Meteo',
       'weatherLoadFailed': 'Impossibile caricare il meteo',
       'history': 'Cronologia',
+      'editSession': 'Modifica sessione',
+      'deleteSession': 'Elimina sessione',
+      'deleteSessionQuestion': 'Eliminare questa sessione?',
+      'deleteSessionWarning':
+          'La rimuove dalla cronologia locale e dal cloud se la sincronizzazione è attiva.',
+      'cancel': 'Annulla',
+      'delete': 'Elimina',
+      'sessionDeleted': 'Sessione eliminata',
       'retry': 'Riprova',
       'noSessionsYet': 'Nessuna sessione',
       'errorLoadingHistory': 'Errore nel caricamento della cronologia',
@@ -539,6 +589,8 @@ class AppLocalizations {
       'athleteNote': 'Notitie van sporter',
       'coachComment': 'Coachopmerking',
       'sessionNotes': 'Sessienotities',
+      'athleteProfile': 'Atleetprofiel',
+      'clubTeam': 'Club / team',
       'trainingContext': 'Trainingscontext',
       'athleteName': 'Sporter',
       'coachName': 'Coach',
@@ -553,6 +605,14 @@ class AppLocalizations {
       'weatherSummary': 'Weer',
       'weatherLoadFailed': 'Kon weer niet laden',
       'history': 'Geschiedenis',
+      'editSession': 'Sessie bewerken',
+      'deleteSession': 'Sessie verwijderen',
+      'deleteSessionQuestion': 'Deze sessie verwijderen?',
+      'deleteSessionWarning':
+          'Dit verwijdert de sessie lokaal en uit de cloud als synchronisatie is ingeschakeld.',
+      'cancel': 'Annuleren',
+      'delete': 'Verwijderen',
+      'sessionDeleted': 'Sessie verwijderd',
       'retry': 'Opnieuw proberen',
       'noSessionsYet': 'Nog geen sessies',
       'errorLoadingHistory': 'Fout bij laden van geschiedenis',
@@ -635,6 +695,8 @@ class AppLocalizations {
       'athleteNote': 'Notița sportivului',
       'coachComment': 'Comentariul antrenorului',
       'sessionNotes': 'Notițe sesiune',
+      'athleteProfile': 'Profil sportiv',
+      'clubTeam': 'Club / echipă',
       'trainingContext': 'Context antrenament',
       'athleteName': 'Sportiv',
       'coachName': 'Antrenor',
@@ -649,6 +711,14 @@ class AppLocalizations {
       'weatherSummary': 'Vreme',
       'weatherLoadFailed': 'Nu s-a putut încărca vremea',
       'history': 'Istoric',
+      'editSession': 'Editează sesiunea',
+      'deleteSession': 'Șterge sesiunea',
+      'deleteSessionQuestion': 'Ștergi această sesiune?',
+      'deleteSessionWarning':
+          'O elimină din istoricul local și din cloud dacă sincronizarea este activă.',
+      'cancel': 'Anulează',
+      'delete': 'Șterge',
+      'sessionDeleted': 'Sesiune ștearsă',
       'retry': 'Reîncearcă',
       'noSessionsYet': 'Nu există sesiuni',
       'errorLoadingHistory': 'Eroare la încărcarea istoricului',
@@ -729,6 +799,8 @@ class AppLocalizations {
       'athleteNote': 'Нотатка спортсмена',
       'coachComment': 'Коментар тренера',
       'sessionNotes': 'Нотатки сесії',
+      'athleteProfile': 'Профіль спортсмена',
+      'clubTeam': 'Клуб / команда',
       'trainingContext': 'Контекст тренування',
       'athleteName': 'Спортсмен',
       'coachName': 'Тренер',
@@ -743,6 +815,14 @@ class AppLocalizations {
       'weatherSummary': 'Погода',
       'weatherLoadFailed': 'Не вдалося завантажити погоду',
       'history': 'Історія',
+      'editSession': 'Редагувати сесію',
+      'deleteSession': 'Видалити сесію',
+      'deleteSessionQuestion': 'Видалити цю сесію?',
+      'deleteSessionWarning':
+          'Її буде видалено з локальної історії та з хмари, якщо синхронізація увімкнена.',
+      'cancel': 'Скасувати',
+      'delete': 'Видалити',
+      'sessionDeleted': 'Сесію видалено',
       'retry': 'Повторити',
       'noSessionsYet': 'Сесій ще немає',
       'errorLoadingHistory': 'Помилка завантаження історії',
@@ -829,6 +909,8 @@ class AppLocalizations {
   String get athleteNote => t('athleteNote');
   String get coachComment => t('coachComment');
   String get sessionNotes => t('sessionNotes');
+  String get athleteProfile => t('athleteProfile');
+  String get clubTeam => t('clubTeam');
   String get trainingContext => t('trainingContext');
   String get athleteName => t('athleteName');
   String get coachName => t('coachName');
@@ -843,6 +925,13 @@ class AppLocalizations {
   String get weatherSummary => t('weatherSummary');
   String get weatherLoadFailed => t('weatherLoadFailed');
   String get history => t('history');
+  String get editSession => t('editSession');
+  String get deleteSession => t('deleteSession');
+  String get deleteSessionQuestion => t('deleteSessionQuestion');
+  String get deleteSessionWarning => t('deleteSessionWarning');
+  String get cancel => t('cancel');
+  String get delete => t('delete');
+  String get sessionDeleted => t('sessionDeleted');
   String get retry => t('retry');
   String get noSessionsYet => t('noSessionsYet');
   String get errorLoadingHistory => t('errorLoadingHistory');

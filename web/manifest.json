@@ -1,11 +1,11 @@
 {
-    "name": "fish_counter",
-    "short_name": "fish_counter",
+    "name": "FishCounter",
+    "short_name": "FishCounter",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#FFFFFF",
+    "theme_color": "#0B7DB8",
+    "description": "Sport-fishing session tracking and analytics.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

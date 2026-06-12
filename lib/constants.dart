@@ -25,6 +25,9 @@ class PrefsKeys {
 
   // Cloud sync
   static const String syncHistoryEnabled = 'sync_history_enabled';
+  static const String syncLastStatus = 'sync_last_status';
+  static const String syncLastAt = 'sync_last_at';
+  static const String syncLastError = 'sync_last_error';
 
   // Undo
   static const String shakeUndoEnabled = 'shake_undo_enabled';
@@ -33,6 +36,7 @@ class PrefsKeys {
   // Grid/History
   static const String activityGrid = 'activity_grid_final';
   static const String historySessions = 'history_sessions';
+  static const String athleteProfile = 'athlete_profile';
 }
 
 // --- Default Values ---
