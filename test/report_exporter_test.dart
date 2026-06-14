@@ -12,6 +12,8 @@ void main() {
       c2: 3,
       tries: 1,
       total: 5,
+      goalFishCount: 5,
+      goalTargetPaceSeconds: 60,
       matchDuration: '5:00',
       athleteName: 'Andrew',
       coachName: 'Coach',
@@ -40,6 +42,8 @@ void main() {
     expect(text, contains('FishCounter Training Report'));
     expect(text, contains('Athlete: Andrew'));
     expect(text, contains('Fishing method: Feeder'));
+    expect(text, contains('Fish count: 5'));
+    expect(text, contains('Target pace: 60s'));
     expect(text, contains('Stability score: 100%'));
     expect(text, contains('Coach comment: Keep pace'));
     expect(text, contains('10:00:00 | C1 | 60s | green'));
@@ -54,6 +58,7 @@ void main() {
       c2: 3,
       tries: 1,
       total: 5,
+      goalFishCount: 5,
       matchDuration: '5:00',
       athleteName: 'Andrew',
       fishingMethod: 'Feeder',
@@ -73,6 +78,7 @@ void main() {
     expect(csv, contains('"session","name","Pace drill"'));
     expect(csv, contains('"context","athlete","Andrew"'));
     expect(csv, contains('"context","fishing_method","Feeder"'));
+    expect(csv, contains('"goals","fish_count","5"'));
     expect(csv, contains('"analytics","stability_score","100"'));
     expect(csv, contains('"10:00:00","C1","60","green"'));
   });

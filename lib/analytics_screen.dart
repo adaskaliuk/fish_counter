@@ -109,6 +109,55 @@ class AnalyticsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             _buildCoachSummary(report, l10n),
+            if (_hasGoals()) ...[
+              const SizedBox(height: 30),
+              Text(
+                l10n.trainingGoals,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.orange,
+                ),
+              ),
+              const SizedBox(height: 10),
+              _contextRow(
+                l10n.fishCount,
+                _goalStatus(
+                  session.total,
+                  session.goalFishCount,
+                  higherIsBetter: true,
+                  notSet: l10n.notSet,
+                ),
+              ),
+              _contextRow(
+                l10n.tryCount,
+                _goalStatus(
+                  session.tries,
+                  session.goalMaxTries,
+                  higherIsBetter: false,
+                  notSet: l10n.notSet,
+                ),
+              ),
+              _contextRow(
+                l10n.stabilityScore,
+                _goalStatus(
+                  report.stabilityScore,
+                  session.goalStabilityPercent,
+                  higherIsBetter: true,
+                  notSet: l10n.notSet,
+                  suffix: '%',
+                ),
+              ),
+              _contextRow(
+                l10n.avgPace,
+                _goalStatus(
+                  report.averageInterval.round(),
+                  session.goalTargetPaceSeconds,
+                  higherIsBetter: false,
+                  notSet: l10n.notSet,
+                  suffix: 's',
+                ),
+              ),
+            ],
             const SizedBox(height: 30),
             if (session.athleteNote.isNotEmpty ||
                 session.coachComment.isNotEmpty) ...[
@@ -266,6 +315,25 @@ class AnalyticsScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  bool _hasGoals() {
+    return session.goalFishCount > 0 ||
+        session.goalTargetPaceSeconds > 0 ||
+        session.goalMaxTries > 0 ||
+        session.goalStabilityPercent > 0;
+  }
+
+  String _goalStatus(
+    int actual,
+    int goal, {
+    required bool higherIsBetter,
+    required String notSet,
+    String suffix = '',
+  }) {
+    if (goal <= 0) return notSet;
+    final achieved = higherIsBetter ? actual >= goal : actual <= goal;
+    return '${achieved ? '✅' : '❌'} $actual$suffix / $goal$suffix';
   }
 
   Widget _buildCoachSummary(AnalyticsReport report, AppLocalizations l10n) {

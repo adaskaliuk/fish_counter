@@ -14,6 +14,10 @@ class GameSession {
   final double? weatherWindSpeedMs, weatherWindDirectionDegrees;
   final String athleteNote, coachComment;
   final int c1, c2, tries, total;
+  final int goalFishCount,
+      goalTargetPaceSeconds,
+      goalMaxTries,
+      goalStabilityPercent;
   final List<Map<String, dynamic>> grid;
 
   GameSession({
@@ -24,6 +28,10 @@ class GameSession {
     required this.c2,
     required this.tries,
     required this.total,
+    this.goalFishCount = 0,
+    this.goalTargetPaceSeconds = 0,
+    this.goalMaxTries = 0,
+    this.goalStabilityPercent = 0,
     required this.matchDuration,
     required this.grid,
     this.userId = '',
@@ -77,6 +85,10 @@ class GameSession {
       c2: c2,
       tries: tries,
       total: total,
+      goalFishCount: goalFishCount,
+      goalTargetPaceSeconds: goalTargetPaceSeconds,
+      goalMaxTries: goalMaxTries,
+      goalStabilityPercent: goalStabilityPercent,
       matchDuration: matchDuration,
       grid: List<Map<String, dynamic>>.from(grid),
       userId: userId,
@@ -116,6 +128,10 @@ class GameSession {
     'c2': c2,
     'tries': tries,
     'total': total,
+    'goalFishCount': goalFishCount,
+    'goalTargetPaceSeconds': goalTargetPaceSeconds,
+    'goalMaxTries': goalMaxTries,
+    'goalStabilityPercent': goalStabilityPercent,
     'matchDuration': matchDuration,
     'grid': grid,
     'userId': userId,
@@ -155,6 +171,10 @@ class GameSession {
       c2: _safeInt(json['c2']),
       tries: _safeInt(json['tries']),
       total: _safeInt(json['total']),
+      goalFishCount: _safeInt(json['goalFishCount']),
+      goalTargetPaceSeconds: _safeInt(json['goalTargetPaceSeconds']),
+      goalMaxTries: _safeInt(json['goalMaxTries']),
+      goalStabilityPercent: _safeInt(json['goalStabilityPercent']),
       matchDuration: _safeString(
         json['matchDuration'],
         defaultValue: '00:00:00',

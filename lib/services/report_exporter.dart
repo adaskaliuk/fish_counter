@@ -21,6 +21,14 @@ class ReportExporter {
       ['context', 'training_type', session.trainingType],
       ['context', 'fishing_method', session.fishingMethod],
       ['context', 'target_pace', session.targetPace],
+      ['goals', 'fish_count', session.goalFishCount.toString()],
+      [
+        'goals',
+        'target_pace_seconds',
+        session.goalTargetPaceSeconds.toString(),
+      ],
+      ['goals', 'max_tries', session.goalMaxTries.toString()],
+      ['goals', 'stability_percent', session.goalStabilityPercent.toString()],
       ['context', 'conditions', session.conditions],
       ['context', 'bait_notes', session.baitNotes],
       ['weather', 'place', session.weatherPlace],
@@ -115,6 +123,13 @@ class ReportExporter {
       'Target pace': session.targetPace,
       'Conditions': session.conditions,
       'Bait / method notes': session.baitNotes,
+    });
+
+    _writeSection(buffer, 'Training Goals', {
+      'Fish count': _positive(session.goalFishCount),
+      'Target pace': _positive(session.goalTargetPaceSeconds, suffix: 's'),
+      'Max tries': _positive(session.goalMaxTries),
+      'Stability target': _positive(session.goalStabilityPercent, suffix: '%'),
     });
 
     _writeSection(buffer, 'Weather', {
@@ -215,6 +230,9 @@ class ReportExporter {
   }
 
   static String _num(double? value) => value?.toStringAsFixed(2) ?? '';
+
+  static String _positive(int value, {String suffix = ''}) =>
+      value > 0 ? '$value$suffix' : '';
 
   static String _unit(double? value, String unit) =>
       value == null ? '' : '${value.toStringAsFixed(1)}$unit';

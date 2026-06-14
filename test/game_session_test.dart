@@ -12,6 +12,10 @@ void main() {
         c2: 2,
         tries: 3,
         total: 3,
+        goalFishCount: 10,
+        goalTargetPaceSeconds: 60,
+        goalMaxTries: 2,
+        goalStabilityPercent: 80,
         matchDuration: '5:00',
         grid: const [],
         userId: 'uid-1',
@@ -43,6 +47,10 @@ void main() {
       expect(parsed.userId, 'uid-1');
       expect(parsed.userEmail, 'athlete@example.com');
       expect(parsed.userDisplayName, 'Athlete');
+      expect(parsed.goalFishCount, 10);
+      expect(parsed.goalTargetPaceSeconds, 60);
+      expect(parsed.goalMaxTries, 2);
+      expect(parsed.goalStabilityPercent, 80);
       expect(parsed.athleteName, 'Andrew');
       expect(parsed.coachName, 'Coach');
       expect(parsed.venue, 'River');

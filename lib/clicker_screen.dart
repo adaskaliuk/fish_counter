@@ -1016,6 +1016,10 @@ class _ClickerScreenState extends State<ClickerScreen> {
     final targetPaceCtrl = TextEditingController(
       text: profile.defaultTargetPace,
     );
+    final goalFishCtrl = TextEditingController();
+    final goalPaceCtrl = TextEditingController();
+    final goalTriesCtrl = TextEditingController();
+    final goalStabilityCtrl = TextEditingController();
     final conditionsCtrl = TextEditingController();
     final baitNotesCtrl = TextEditingController();
     WeatherSnapshot? weatherSnapshot;
@@ -1066,6 +1070,31 @@ class _ClickerScreenState extends State<ClickerScreen> {
                   controller: targetPaceCtrl,
                   decoration: InputDecoration(labelText: l10n.targetPace),
                 ),
+                const Divider(),
+                Text(l10n.trainingGoals),
+                TextField(
+                  controller: goalFishCtrl,
+                  decoration: InputDecoration(labelText: l10n.targetFishCount),
+                  keyboardType: TextInputType.number,
+                ),
+                TextField(
+                  controller: goalPaceCtrl,
+                  decoration: InputDecoration(
+                    labelText: l10n.targetPaceSeconds,
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+                TextField(
+                  controller: goalTriesCtrl,
+                  decoration: InputDecoration(labelText: l10n.maxTries),
+                  keyboardType: TextInputType.number,
+                ),
+                TextField(
+                  controller: goalStabilityCtrl,
+                  decoration: InputDecoration(labelText: l10n.stabilityTarget),
+                  keyboardType: TextInputType.number,
+                ),
+                const Divider(),
                 TextField(
                   controller: conditionsCtrl,
                   decoration: InputDecoration(labelText: l10n.conditions),
@@ -1176,6 +1205,12 @@ class _ClickerScreenState extends State<ClickerScreen> {
                     trainingType: trainingTypeCtrl.text,
                     fishingMethod: fishingMethodCtrl.text,
                     targetPace: targetPaceCtrl.text,
+                    goalFishCount: int.tryParse(goalFishCtrl.text.trim()) ?? 0,
+                    goalTargetPaceSeconds:
+                        int.tryParse(goalPaceCtrl.text.trim()) ?? 0,
+                    goalMaxTries: int.tryParse(goalTriesCtrl.text.trim()) ?? 0,
+                    goalStabilityPercent:
+                        int.tryParse(goalStabilityCtrl.text.trim()) ?? 0,
                     conditions: conditionsCtrl.text,
                     baitNotes: baitNotesCtrl.text,
                     weather: weatherSnapshot,
@@ -1235,6 +1270,10 @@ class _ClickerScreenState extends State<ClickerScreen> {
     trainingTypeCtrl.dispose();
     fishingMethodCtrl.dispose();
     targetPaceCtrl.dispose();
+    goalFishCtrl.dispose();
+    goalPaceCtrl.dispose();
+    goalTriesCtrl.dispose();
+    goalStabilityCtrl.dispose();
     conditionsCtrl.dispose();
     baitNotesCtrl.dispose();
     athleteNoteCtrl.dispose();

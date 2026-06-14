@@ -284,21 +284,24 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Widget _syncStatusTile() {
+    final l10n = AppLocalizations.of(context);
     final (icon, color, title) = switch (_syncStatus) {
-      'off' => (Icons.cloud_off, Colors.grey, 'Sync off'),
-      'synced' => (Icons.cloud_done, Colors.green, 'Synced'),
-      'failed' => (Icons.cloud_off, Colors.orange, 'Sync failed'),
-      'syncing' => (Icons.sync, Colors.blue, 'Syncing...'),
-      _ => (Icons.cloud_queue, Colors.grey, 'Local only'),
+      'off' => (Icons.cloud_off, Colors.grey, l10n.syncOff),
+      'synced' => (Icons.cloud_done, Colors.green, l10n.synced),
+      'failed' => (Icons.cloud_off, Colors.orange, l10n.syncFailed),
+      'syncing' => (Icons.sync, Colors.blue, l10n.syncing),
+      _ => (Icons.cloud_queue, Colors.grey, l10n.localOnly),
     };
 
     return ListTile(
       leading: Icon(icon, color: color),
       title: Text(title),
-      subtitle: _lastSyncAt.isEmpty ? null : Text('Last sync: $_lastSyncAt'),
+      subtitle: _lastSyncAt.isEmpty
+          ? null
+          : Text('${l10n.lastSync}: $_lastSyncAt'),
       trailing: TextButton(
         onPressed: _isSyncing ? null : _syncNow,
-        child: const Text('Sync now'),
+        child: Text(l10n.syncNow),
       ),
     );
   }

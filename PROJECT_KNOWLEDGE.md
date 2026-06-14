@@ -323,3 +323,9 @@ flutter build ios --release
 **Last Updated:** 2026-02-24  
 **Code Review Status:** ✅ All critical issues fixed  
 **Analyzer Status:** ✅ No issues found
+
+## Localization rule
+- FishCounter has localization, so every feature task must include localization for all supported languages.
+- New user-visible UI strings must be added to `lib/l10n/app_localizations.dart` in the same task.
+- Avoid hardcoded user-visible UI strings in screens/dialogs/buttons/status labels.
+- Export/report labels can be intentionally English only only if explicitly agreed; otherwise treat them as localization scope too.
