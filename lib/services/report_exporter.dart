@@ -1,9 +1,10 @@
 import 'package:fish_counter/constants.dart';
 import 'package:fish_counter/game_session.dart';
+import 'package:fish_counter/l10n/app_localizations.dart';
 import 'package:fish_counter/models/analytics_report.dart';
 
 class ReportExporter {
-  static String buildCsv(GameSession session) {
+  static String buildCsv(GameSession session, {AppLocalizations? l10n}) {
     final report = AnalyticsReport.fromGrid(session.grid);
     final rows = <List<String>>[
       ['section', 'key', 'value'],
@@ -97,42 +98,48 @@ class ReportExporter {
     return rows.map(_csvRow).join('\n');
   }
 
-  static String buildPlainText(GameSession session) {
+  static String buildPlainText(GameSession session, {AppLocalizations? l10n}) {
     final report = AnalyticsReport.fromGrid(session.grid);
     final buffer = StringBuffer()
-      ..writeln('FishCounter Training Report')
+      ..writeln(l10n?.precisionReport ?? 'FishCounter Training Report')
       ..writeln('===========================')
-      ..writeln('Session: ${session.name}')
-      ..writeln('Date: ${session.date}')
-      ..writeln('Duration: ${session.matchDuration}')
+      ..writeln('${l10n?.sessionName ?? 'Session'}: ${session.name}')
+      ..writeln('${l10n?.date ?? 'Date'}: ${session.date}')
+      ..writeln('${l10n?.duration ?? 'Duration'}: ${session.matchDuration}')
       ..writeln()
       ..writeln('Counters')
       ..writeln('--------')
       ..writeln('C1: ${session.c1}')
       ..writeln('C2: ${session.c2}')
       ..writeln('Total: ${session.total}')
-      ..writeln('Tries: ${session.tries}');
+      ..writeln('${l10n?.tryCount ?? 'Tries'}: ${session.tries}');
 
-    _writeSection(buffer, 'Training Context', {
-      'Athlete': session.athleteName,
-      'Coach': session.coachName,
-      'Venue': session.venue,
-      'Sector / peg': session.sectorPeg,
-      'Training type': session.trainingType,
-      'Fishing method': session.fishingMethod,
-      'Target pace': session.targetPace,
-      'Conditions': session.conditions,
-      'Bait / method notes': session.baitNotes,
+    _writeSection(buffer, l10n?.trainingContext ?? 'Training Context', {
+      l10n?.athleteName ?? 'Athlete': session.athleteName,
+      l10n?.coachName ?? 'Coach': session.coachName,
+      l10n?.venue ?? 'Venue': session.venue,
+      l10n?.sectorPeg ?? 'Sector / peg': session.sectorPeg,
+      l10n?.trainingType ?? 'Training type': session.trainingType,
+      l10n?.fishingMethod ?? 'Fishing method': session.fishingMethod,
+      l10n?.targetPace ?? 'Target pace': session.targetPace,
+      l10n?.conditions ?? 'Conditions': session.conditions,
+      l10n?.baitNotes ?? 'Bait / method notes': session.baitNotes,
     });
 
-    _writeSection(buffer, 'Training Goals', {
-      'Fish count': _positive(session.goalFishCount),
-      'Target pace': _positive(session.goalTargetPaceSeconds, suffix: 's'),
-      'Max tries': _positive(session.goalMaxTries),
-      'Stability target': _positive(session.goalStabilityPercent, suffix: '%'),
+    _writeSection(buffer, l10n?.trainingGoals ?? 'Training Goals', {
+      l10n?.fishCount ?? 'Fish count': _positive(session.goalFishCount),
+      l10n?.targetPace ?? 'Target pace': _positive(
+        session.goalTargetPaceSeconds,
+        suffix: 's',
+      ),
+      l10n?.maxTries ?? 'Max tries': _positive(session.goalMaxTries),
+      l10n?.stabilityTarget ?? 'Stability target': _positive(
+        session.goalStabilityPercent,
+        suffix: '%',
+      ),
     });
 
-    _writeSection(buffer, 'Weather', {
+    _writeSection(buffer, l10n?.weatherSummary ?? 'Weather', {
       'Place': session.weatherPlace,
       'Description': session.weatherDescription,
       'Temperature': _unit(session.weatherTemperatureCelsius, '°C'),
@@ -146,32 +153,34 @@ class ReportExporter {
 
     buffer
       ..writeln()
-      ..writeln('Coach Analytics')
+      ..writeln(l10n?.coachSummary ?? 'Coach Analytics')
       ..writeln('---------------')
-      ..writeln('Stability score: ${report.stabilityScore}%')
+      ..writeln(
+        '${l10n?.stabilityScore ?? 'Stability score'}: ${report.stabilityScore}%',
+      )
       ..writeln(
         'Average interval: ${report.averageInterval.toStringAsFixed(1)}s',
       )
       ..writeln('Average deviation: ${_signed(report.averageDeviation)}s')
       ..writeln('Best interval: ${_interval(report.bestIntervalSeconds)}')
       ..writeln('Worst interval: ${_interval(report.worstIntervalSeconds)}')
-      ..writeln('Green: ${report.greenCount}')
-      ..writeln('Orange: ${report.orangeCount}')
-      ..writeln('Red: ${report.redCount}')
-      ..writeln('Grey: ${report.greyCount}')
-      ..writeln('Early: ${report.earlyCount}')
-      ..writeln('Late: ${report.lateCount}')
+      ..writeln('${l10n?.green ?? 'Green'}: ${report.greenCount}')
+      ..writeln('${l10n?.orange ?? 'Orange'}: ${report.orangeCount}')
+      ..writeln('${l10n?.red ?? 'Red'}: ${report.redCount}')
+      ..writeln('${l10n?.grey ?? 'Grey'}: ${report.greyCount}')
+      ..writeln('${l10n?.earlyCount ?? 'Early'}: ${report.earlyCount}')
+      ..writeln('${l10n?.lateCount ?? 'Late'}: ${report.lateCount}')
       ..writeln('Best stable streak: ${report.longestStableStreak}');
 
-    _writeSection(buffer, 'Notes', {
-      'Athlete note': session.athleteNote,
-      'Coach comment': session.coachComment,
+    _writeSection(buffer, l10n?.sessionNotes ?? 'Notes', {
+      l10n?.athleteNote ?? 'Athlete note': session.athleteNote,
+      l10n?.coachComment ?? 'Coach comment': session.coachComment,
     });
 
     if (session.grid.isNotEmpty) {
       buffer
         ..writeln()
-        ..writeln('Timeline')
+        ..writeln(l10n?.activityTimeline ?? 'Timeline')
         ..writeln('--------');
       for (final entry in session.grid) {
         buffer.writeln(_timelineLine(entry));

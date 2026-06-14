@@ -1,6 +1,8 @@
 // ==========================================
 // ANALYTICS SCREEN
 // ==========================================
+import 'dart:math' as math;
+
 import 'package:fish_counter/constants.dart';
 import 'package:fish_counter/game_session.dart';
 import 'package:fish_counter/l10n/app_localizations.dart';
@@ -109,6 +111,24 @@ class AnalyticsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             _buildCoachSummary(report, l10n),
+            if (_chartPoints.isNotEmpty) ...[
+              const SizedBox(height: 32),
+              _chartCard(
+                title: l10n.paceChart,
+                value: '${report.averageInterval.toStringAsFixed(1)}s',
+                caption: l10n.avgPace,
+                points: _chartPoints,
+                accent: Colors.orangeAccent,
+              ),
+              const SizedBox(height: 16),
+              _chartCard(
+                title: l10n.activityChart,
+                value: '${session.total}',
+                caption: l10n.fishCount,
+                points: _activityPoints,
+                accent: Colors.lightGreenAccent,
+              ),
+            ],
             if (_hasGoals()) ...[
               const SizedBox(height: 30),
               Text(
@@ -246,6 +266,111 @@ class AnalyticsScreen extends StatelessWidget {
       session.conditions.isNotEmpty ||
       session.baitNotes.isNotEmpty ||
       session.weatherDescription.isNotEmpty;
+
+  List<_ChartPoint> get _chartPoints {
+    final points = <_ChartPoint>[];
+    for (final entry in session.grid) {
+      final type = ActivityType.fromValue(_toInt(entry['type']));
+      if (type == ActivityType.manualPause) continue;
+      points.add(
+        _ChartPoint(
+          points.length.toDouble(),
+          _toInt(entry['interval']).toDouble(),
+        ),
+      );
+    }
+    return points;
+  }
+
+  List<_ChartPoint> get _activityPoints {
+    final points = <_ChartPoint>[];
+    var count = 0;
+    for (final entry in session.grid) {
+      final type = ActivityType.fromValue(_toInt(entry['type']));
+      if (type == ActivityType.manualPause) continue;
+      if (type == ActivityType.c1Click || type == ActivityType.c2Click) count++;
+      points.add(_ChartPoint(points.length.toDouble(), count.toDouble()));
+    }
+    return points;
+  }
+
+  Widget _chartCard({
+    required String title,
+    required String value,
+    required String caption,
+    required List<_ChartPoint> points,
+    required Color accent,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.white.withValues(alpha: .16),
+            Colors.white.withValues(alpha: .04),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(28),
+      ),
+      child: Container(
+        height: 220,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: const Color(0xFF161616),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white.withValues(alpha: .08)),
+          boxShadow: [
+            BoxShadow(
+              color: accent.withValues(alpha: .12),
+              blurRadius: 34,
+              offset: const Offset(0, 18),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Text(
+                  value,
+                  style: TextStyle(
+                    color: accent,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -.5,
+                  ),
+                ),
+              ],
+            ),
+            Text(
+              caption,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: .38),
+                fontSize: 11,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: _SessionLineChart(points: points, accent: accent),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _buildTrainingContext(AppLocalizations l10n) {
     final rows = <Widget>[
@@ -551,25 +676,27 @@ class AnalyticsScreen extends StatelessWidget {
   }
 
   Future<void> _shareTextReport(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
     await _shareOrCopy(
       context,
-      text: ReportExporter.buildPlainText(session),
-      debugLabel: 'Share text report',
+      text: ReportExporter.buildPlainText(session, l10n: l10n),
+      debugLabel: l10n.shareTextReport,
     );
   }
 
   Future<void> _shareCsvReport(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
     await _shareOrCopy(
       context,
-      text: ReportExporter.buildCsv(session),
-      debugLabel: 'Share CSV report',
+      text: ReportExporter.buildCsv(session, l10n: l10n),
+      debugLabel: l10n.shareCsvReport,
     );
   }
 
   Future<void> _copyCsvReport(BuildContext context) async {
     final l10n = AppLocalizations.of(context);
     await Clipboard.setData(
-      ClipboardData(text: ReportExporter.buildCsv(session)),
+      ClipboardData(text: ReportExporter.buildCsv(session, l10n: l10n)),
     );
     if (!context.mounted) return;
     ScaffoldMessenger.of(
@@ -720,5 +847,143 @@ class _InfoRow extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _ChartPoint {
+  final double x;
+  final double y;
+
+  const _ChartPoint(this.x, this.y);
+}
+
+class _SessionLineChart extends StatelessWidget {
+  final List<_ChartPoint> points;
+  final Color accent;
+
+  const _SessionLineChart({required this.points, required this.accent});
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _SessionLineChartPainter(points: points, accent: accent),
+      child: const SizedBox.expand(),
+    );
+  }
+}
+
+class _SessionLineChartPainter extends CustomPainter {
+  final List<_ChartPoint> points;
+  final Color accent;
+
+  const _SessionLineChartPainter({required this.points, required this.accent});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const left = 28.0;
+    const right = 8.0;
+    const top = 10.0;
+    const bottom = 22.0;
+    final chart = Rect.fromLTWH(
+      left,
+      top,
+      size.width - left - right,
+      size.height - top - bottom,
+    );
+    final axisPaint = Paint()
+      ..color = Colors.white.withValues(alpha: .10)
+      ..strokeWidth = 1;
+    final linePaint = Paint()
+      ..shader = LinearGradient(
+        colors: [accent.withValues(alpha: .55), accent],
+      ).createShader(chart)
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..style = PaintingStyle.stroke;
+    final dotPaint = Paint()
+      ..color = accent
+      ..style = PaintingStyle.fill;
+    final glowPaint = Paint()
+      ..color = accent.withValues(alpha: .18)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+    final fillPaint = Paint()
+      ..shader = LinearGradient(
+        colors: [accent.withValues(alpha: .22), accent.withValues(alpha: .02)],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ).createShader(chart);
+
+    for (var i = 0; i <= 3; i++) {
+      final y = chart.top + chart.height * i / 3;
+      canvas.drawLine(Offset(chart.left, y), Offset(chart.right, y), axisPaint);
+    }
+
+    if (points.isEmpty) return;
+
+    final minX = points.map((point) => point.x).reduce(math.min);
+    final maxX = points.map((point) => point.x).reduce(math.max);
+    final minY = points.map((point) => point.y).reduce(math.min);
+    final maxY = points.map((point) => point.y).reduce(math.max);
+    final xSpan = math.max(1, maxX - minX);
+    final ySpan = math.max(1, maxY - minY);
+
+    Offset mapPoint(_ChartPoint point) {
+      final x = chart.left + ((point.x - minX) / xSpan) * chart.width;
+      final y = chart.bottom - ((point.y - minY) / ySpan) * chart.height;
+      return Offset(x, y);
+    }
+
+    final first = mapPoint(points.first);
+    final path = Path()..moveTo(first.dx, first.dy);
+    for (final point in points.skip(1)) {
+      final offset = mapPoint(point);
+      path.lineTo(offset.dx, offset.dy);
+    }
+    final last = mapPoint(points.last);
+    final fillPath = Path.from(path)
+      ..lineTo(last.dx, chart.bottom)
+      ..lineTo(first.dx, chart.bottom)
+      ..close();
+
+    canvas.drawPath(fillPath, fillPaint);
+    canvas.drawPath(path, glowPaint);
+    canvas.drawPath(path, linePaint);
+
+    for (final point in points) {
+      canvas.drawCircle(mapPoint(point), 3.5, dotPaint);
+    }
+
+    _label(
+      canvas,
+      chart,
+      maxY.toStringAsFixed(maxY % 1 == 0 ? 0 : 1),
+      chart.top,
+    );
+    _label(
+      canvas,
+      chart,
+      minY.toStringAsFixed(minY % 1 == 0 ? 0 : 1),
+      chart.bottom - 12,
+    );
+  }
+
+  void _label(Canvas canvas, Rect chart, String text, double y) {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          color: Colors.white.withValues(alpha: .38),
+          fontSize: 10,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    painter.paint(canvas, Offset(0, y));
+  }
+
+  @override
+  bool shouldRepaint(covariant _SessionLineChartPainter oldDelegate) {
+    return oldDelegate.points != points || oldDelegate.accent != accent;
   }
 }

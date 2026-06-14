@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fish_counter/auth_screen.dart';
 import 'package:fish_counter/clicker_screen.dart';
 import 'package:fish_counter/services/cloud_history_service.dart';
+import 'package:fish_counter/services/cloud_settings_service.dart';
 import 'package:fish_counter/services/prefs_repository.dart';
 import 'package:flutter/material.dart';
 
@@ -44,6 +45,7 @@ class _StartupSyncedClickerScreenState
   Future<void> _syncHistoryIfEnabled() async {
     try {
       final repo = await PrefsRepository.create();
+      await CloudSettingsService().syncLocalAndRemote(repo);
       final enabled = await repo.isSyncHistoryEnabled();
       if (!enabled) return;
 

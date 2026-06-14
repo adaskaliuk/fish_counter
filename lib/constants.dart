@@ -28,6 +28,7 @@ class PrefsKeys {
   static const String syncLastStatus = 'sync_last_status';
   static const String syncLastAt = 'sync_last_at';
   static const String syncLastError = 'sync_last_error';
+  static const String settingsUpdatedAt = 'settings_updated_at';
 
   // Undo
   static const String shakeUndoEnabled = 'shake_undo_enabled';

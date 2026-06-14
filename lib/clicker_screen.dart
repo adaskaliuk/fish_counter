@@ -13,6 +13,7 @@ import 'package:fish_counter/l10n/app_localizations.dart';
 import 'package:fish_counter/models/athlete_profile.dart';
 import 'package:fish_counter/models/weather_snapshot.dart';
 import 'package:fish_counter/services/cloud_history_service.dart';
+import 'package:fish_counter/services/cloud_settings_service.dart';
 import 'package:fish_counter/services/prefs_repository.dart';
 import 'package:fish_counter/services/weather_service.dart';
 import 'package:fish_counter/shake_undo_settings.dart';
@@ -894,6 +895,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
                     defaultTargetPace: paceCtrl.text.trim(),
                   ),
                 );
+                await CloudSettingsService().uploadLocalSettings(repo);
                 if (isSyncHistoryEnabled) {
                   await _syncLocalHistoryToCloud();
                 }
@@ -1241,7 +1243,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
                     messenger.showSnackBar(
                       SnackBar(
                         content: Text(
-                          'Session saved locally, but cloud sync failed: $syncError',
+                          '${l10n.sessionSavedCloudFailed}: $syncError',
                         ),
                       ),
                     );

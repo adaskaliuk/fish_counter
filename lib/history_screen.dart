@@ -4,6 +4,8 @@
 import 'package:fish_counter/analytics_screen.dart';
 import 'package:fish_counter/game_session.dart';
 import 'package:fish_counter/l10n/app_localizations.dart';
+import 'package:fish_counter/progress_screen.dart';
+import 'package:fish_counter/session_comparison_screen.dart';
 import 'package:fish_counter/services/cloud_history_service.dart';
 import 'package:fish_counter/services/prefs_repository.dart';
 import 'package:flutter/material.dart';
@@ -25,6 +27,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
   String? _syncWarning;
   String _syncStatus = 'localOnly';
   String _lastSyncAt = '';
+  bool _compareMode = false;
+  final Set<String> _selectedForCompare = {};
 
   @override
   void initState() {
@@ -64,7 +68,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         _sessions = sessions.reversed.toList(); // Display newest first
         _syncWarning = syncError == null
             ? null
-            : 'Cloud sync failed: $syncError';
+            : '${AppLocalizations.of(context).cloudSyncFailed}: $syncError';
         _syncStatus = repo.getSyncLastStatus();
         _lastSyncAt = repo.getSyncLastAt();
         _isLoading = false;
@@ -104,7 +108,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       setState(() {
         _syncStatus = 'failed';
         _lastSyncAt = repo.getSyncLastAt();
-        _syncWarning = 'Cloud sync failed: $e';
+        _syncWarning = '${AppLocalizations.of(context).cloudSyncFailed}: $e';
         _isSyncing = false;
       });
     }
@@ -153,7 +157,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         _sessions.removeWhere((item) => item.id == session.id);
         _syncWarning = syncError == null
             ? null
-            : 'Cloud delete failed: $syncError';
+            : '${AppLocalizations.of(context).cloudDeleteFailed}: $syncError';
       });
       widget.onHistoryUpdate();
       messenger.showSnackBar(SnackBar(content: Text(l10n.sessionDeleted)));
@@ -190,7 +194,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _editField('Session name', nameCtrl),
+              _editField(l10n.sessionName, nameCtrl),
               _editField(l10n.athleteName, athleteCtrl),
               _editField(l10n.coachName, coachCtrl),
               _editField(l10n.venue, venueCtrl),
@@ -255,7 +259,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         if (index != -1) _sessions[index] = updated;
         _syncWarning = syncError == null
             ? null
-            : 'Cloud update failed: $syncError';
+            : '${AppLocalizations.of(context).cloudUpdateFailed}: $syncError';
       });
       widget.onHistoryUpdate();
       messenger.showSnackBar(SnackBar(content: Text(l10n.save)));
@@ -306,12 +310,65 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
+  void _toggleCompareSelection(GameSession session) {
+    setState(() {
+      if (_selectedForCompare.contains(session.id)) {
+        _selectedForCompare.remove(session.id);
+      } else if (_selectedForCompare.length < 2) {
+        _selectedForCompare.add(session.id);
+      }
+    });
+  }
+
+  void _openComparison() {
+    if (_selectedForCompare.length != 2) return;
+    final selected = _sessions
+        .where((session) => _selectedForCompare.contains(session.id))
+        .toList();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SessionComparisonScreen(
+          base: selected.last,
+          compare: selected.first,
+        ),
+      ),
+    );
+  }
+
+  void _openProgress() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => ProgressScreen(sessions: _sessions)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context).history),
+        title: Text(_compareMode ? l10n.selectTwoSessions : l10n.history),
         actions: [
+          if (_compareMode)
+            TextButton(
+              onPressed: _selectedForCompare.length == 2
+                  ? _openComparison
+                  : null,
+              child: Text(l10n.compare),
+            ),
+          IconButton(
+            icon: Icon(_compareMode ? Icons.close : Icons.compare_arrows),
+            onPressed: () => setState(() {
+              _compareMode = !_compareMode;
+              _selectedForCompare.clear();
+            }),
+          ),
+          IconButton(
+            tooltip: l10n.progressTrends,
+            icon: const Icon(Icons.insights),
+            onPressed: _sessions.isEmpty ? null : _openProgress,
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _isLoading ? null : _loadSessions,
@@ -391,33 +448,44 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
         final sessionIndex = index - 1 - warningOffset;
         final session = _sessions[sessionIndex];
+        final selected = _selectedForCompare.contains(session.id);
         return ListTile(
+          leading: _compareMode
+              ? Checkbox(
+                  value: selected,
+                  onChanged: (_) => _toggleCompareSelection(session),
+                )
+              : null,
           title: Text(session.name),
           subtitle: Text(
             '${AppLocalizations.of(context).date}: ${session.date} | ${AppLocalizations.of(context).duration}: ${session.matchDuration}',
           ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                tooltip: AppLocalizations.of(context).editSession,
-                icon: const Icon(Icons.edit_outlined),
-                onPressed: () => _editSession(session),
-              ),
-              IconButton(
-                tooltip: AppLocalizations.of(context).deleteSession,
-                icon: const Icon(Icons.delete_outline),
-                onPressed: () => _deleteSession(session),
-              ),
-              const Icon(Icons.chevron_right),
-            ],
-          ),
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (c) => AnalyticsScreen(session: session),
-            ),
-          ),
+          trailing: _compareMode
+              ? null
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      tooltip: AppLocalizations.of(context).editSession,
+                      icon: const Icon(Icons.edit_outlined),
+                      onPressed: () => _editSession(session),
+                    ),
+                    IconButton(
+                      tooltip: AppLocalizations.of(context).deleteSession,
+                      icon: const Icon(Icons.delete_outline),
+                      onPressed: () => _deleteSession(session),
+                    ),
+                    const Icon(Icons.chevron_right),
+                  ],
+                ),
+          onTap: _compareMode
+              ? () => _toggleCompareSelection(session)
+              : () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (c) => AnalyticsScreen(session: session),
+                  ),
+                ),
         );
       },
     );

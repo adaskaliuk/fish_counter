@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:fish_counter/constants.dart';
 import 'package:fish_counter/game_session.dart';
 import 'package:fish_counter/models/activity_log.dart';
+import 'package:fish_counter/models/app_settings.dart';
 import 'package:fish_counter/models/athlete_profile.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -45,6 +46,14 @@ class PrefsRepository {
 
   Future<void> setSyncHistoryEnabled(bool enabled) async {
     await _prefs.setBool(PrefsKeys.syncHistoryEnabled, enabled);
+    await touchSettingsUpdatedAt();
+  }
+
+  Future<void> touchSettingsUpdatedAt() async {
+    await _prefs.setString(
+      PrefsKeys.settingsUpdatedAt,
+      DateTime.now().toIso8601String(),
+    );
   }
 
   Future<void> saveSyncStatus({
@@ -83,6 +92,52 @@ class PrefsRepository {
       PrefsKeys.athleteProfile,
       jsonEncode(profile.toJson()),
     );
+    await touchSettingsUpdatedAt();
+  }
+
+  AppSettings loadAppSettings() {
+    return AppSettings(
+      syncHistoryEnabled:
+          _prefs.getBool(PrefsKeys.syncHistoryEnabled) ??
+          Defaults.defaultSyncHistoryEnabled,
+      resetDelay:
+          _prefs.getInt(PrefsKeys.resetDelay) ??
+          Defaults.defaultResetDelaySeconds,
+      vibeInterval:
+          _prefs.getInt(PrefsKeys.vibeInterval) ??
+          Defaults.defaultVibeIntervalSeconds,
+      matchSeconds:
+          _prefs.getInt(PrefsKeys.matchSeconds) ??
+          Defaults.defaultMatchDurationSeconds,
+      shakeUndoEnabled:
+          _prefs.getBool(PrefsKeys.shakeUndoEnabled) ??
+          Defaults.defaultShakeUndoEnabled,
+      shakeSensitivity:
+          _prefs.getString(PrefsKeys.shakeSensitivity) ??
+          Defaults.defaultShakeSensitivity,
+      athleteProfile: loadAthleteProfile(),
+      updatedAt: _prefs.getString(PrefsKeys.settingsUpdatedAt) ?? '',
+    );
+  }
+
+  Future<void> applyAppSettings(AppSettings settings) async {
+    await _prefs.setBool(
+      PrefsKeys.syncHistoryEnabled,
+      settings.syncHistoryEnabled,
+    );
+    await _prefs.setInt(PrefsKeys.resetDelay, settings.resetDelay);
+    await _prefs.setInt(PrefsKeys.vibeInterval, settings.vibeInterval);
+    await _prefs.setInt(PrefsKeys.matchSeconds, settings.matchSeconds);
+    await _prefs.setBool(PrefsKeys.shakeUndoEnabled, settings.shakeUndoEnabled);
+    await _prefs.setString(
+      PrefsKeys.shakeSensitivity,
+      settings.shakeSensitivity,
+    );
+    await _prefs.setString(
+      PrefsKeys.athleteProfile,
+      jsonEncode(settings.athleteProfile.toJson()),
+    );
+    await _prefs.setString(PrefsKeys.settingsUpdatedAt, settings.updatedAt);
   }
 
   Future<void> saveClickerState({
