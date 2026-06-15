@@ -2,6 +2,7 @@ import 'package:fish_counter/game_session.dart';
 import 'package:fish_counter/l10n/app_localizations.dart';
 import 'package:fish_counter/models/analytics_report.dart';
 import 'package:fish_counter/models/progress_report.dart';
+import 'package:fish_counter/models/weather_correlation_report.dart';
 import 'package:flutter/material.dart';
 
 class ProgressScreen extends StatelessWidget {
@@ -13,6 +14,7 @@ class ProgressScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final report = ProgressReport(sessions);
+    final weather = WeatherCorrelationReport(sessions);
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.progressTrends)),
@@ -64,6 +66,36 @@ class ProgressScreen extends StatelessWidget {
                     ),
                   ]
                 : [Text(l10n.notEnoughSessions)],
+          ),
+          const SizedBox(height: 18),
+          _sectionCard(
+            title: l10n.weatherCorrelation,
+            children: weather.hasEnoughData
+                ? [
+                    _weatherTile(
+                      l10n.weatherSessions,
+                      '${weather.sampleSize}',
+                      '${weather.averageTemperature.toStringAsFixed(1)}°C • ${weather.averageWind.toStringAsFixed(1)} m/s',
+                    ),
+                    _weatherTile(
+                      l10n.bestWeatherSession,
+                      weather.bestWeatherSession?.name ?? '-',
+                      weather.bestWeatherSession?.weatherDescription ?? '-',
+                    ),
+                    _signalTile(
+                      context,
+                      l10n.temperatureSignal,
+                      weather.stabilityTemperatureCorrelation,
+                      weather.temperatureSignal,
+                    ),
+                    _signalTile(
+                      context,
+                      l10n.windSignal,
+                      weather.totalWindCorrelation,
+                      weather.windSignal,
+                    ),
+                  ]
+                : [Text(l10n.notEnoughWeatherData)],
           ),
         ],
       ),
@@ -178,6 +210,48 @@ class ProgressScreen extends StatelessWidget {
       title: Text(title),
       subtitle: Text('${l10n.average}: $average • $label'),
       trailing: Text('${delta >= 0 ? '+' : ''}$delta$suffix'),
+    );
+  }
+
+  Widget _weatherTile(String title, String value, String subtitle) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: const Icon(Icons.cloud_outlined, color: Colors.lightBlueAccent),
+      title: Text(title),
+      subtitle: Text(subtitle),
+      trailing: Text(
+        value,
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+
+  Widget _signalTile(
+    BuildContext context,
+    String title,
+    double value,
+    WeatherSignal signal,
+  ) {
+    final l10n = AppLocalizations.of(context);
+    final (label, color, icon) = switch (signal) {
+      WeatherSignal.positive => (
+        l10n.improving,
+        Colors.green,
+        Icons.trending_up,
+      ),
+      WeatherSignal.negative => (
+        l10n.declining,
+        Colors.red,
+        Icons.trending_down,
+      ),
+      WeatherSignal.neutral => (l10n.stable, Colors.grey, Icons.trending_flat),
+    };
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(icon, color: color),
+      title: Text(title),
+      subtitle: Text(label),
+      trailing: Text(value.toStringAsFixed(2)),
     );
   }
 }

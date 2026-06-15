@@ -60,6 +60,9 @@ class AppLocalizations {
       'hours': 'Hrs',
       'minutes': 'Mins',
       'save': 'Save',
+      'saveSettingsQuestion': 'Save settings changes?',
+      'saveSettingsWarning': 'Settings were changed. Save them now?',
+      'dontSave': 'Don’t save',
       'off': 'Off',
       'saveSessionTitle': 'Save Session?',
       'sessionDefaultName': 'Session',
@@ -100,6 +103,13 @@ class AppLocalizations {
       'baitNotes': 'Bait / method notes',
       'autoFillWeather': 'Auto-fill weather',
       'weatherSummary': 'Weather',
+      'weatherCorrelation': 'Weather correlation',
+      'weatherSessions': 'Weather sessions',
+      'bestWeatherSession': 'Best weather session',
+      'temperatureSignal': 'Temperature signal',
+      'windSignal': 'Wind signal',
+      'notEnoughWeatherData':
+          'Save at least two sessions with weather to show correlations.',
       'weatherLoadFailed': 'Could not load weather',
       'history': 'History',
       'compare': 'Compare',
@@ -207,6 +217,9 @@ class AppLocalizations {
       'hours': 'Std.',
       'minutes': 'Min.',
       'save': 'Speichern',
+      'saveSettingsQuestion': 'Änderungen speichern?',
+      'saveSettingsWarning': 'Einstellungen wurden geändert. Jetzt speichern?',
+      'dontSave': 'Nicht speichern',
       'off': 'Aus',
       'saveSessionTitle': 'Sitzung speichern?',
       'sessionDefaultName': 'Sitzung',
@@ -248,6 +261,13 @@ class AppLocalizations {
       'baitNotes': 'Köder-/Methodennotizen',
       'autoFillWeather': 'Wetter automatisch ausfüllen',
       'weatherSummary': 'Wetter',
+      'weatherCorrelation': 'Wetter-Korrelation',
+      'weatherSessions': 'Wettersitzungen',
+      'bestWeatherSession': 'Beste Wettersitzung',
+      'temperatureSignal': 'Temperatur-Signal',
+      'windSignal': 'Wind-Signal',
+      'notEnoughWeatherData':
+          'Speichere mindestens zwei Sitzungen mit Wetterdaten.',
       'weatherLoadFailed': 'Wetter konnte nicht geladen werden',
       'history': 'Verlauf',
       'compare': 'Vergleichen',
@@ -356,6 +376,10 @@ class AppLocalizations {
       'hours': 'H',
       'minutes': 'Min',
       'save': 'Enregistrer',
+      'saveSettingsQuestion': 'Enregistrer les modifications ?',
+      'saveSettingsWarning':
+          'Les réglages ont été modifiés. Les enregistrer maintenant ?',
+      'dontSave': 'Ne pas enregistrer',
       'off': 'Éteindre',
       'saveSessionTitle': 'Enregistrer la session ?',
       'sessionDefaultName': 'Session',
@@ -397,6 +421,12 @@ class AppLocalizations {
       'baitNotes': 'Notes appâts / méthode',
       'autoFillWeather': 'Remplir la météo automatiquement',
       'weatherSummary': 'Météo',
+      'weatherCorrelation': 'Corrélation météo',
+      'weatherSessions': 'Sessions avec météo',
+      'bestWeatherSession': 'Meilleure session météo',
+      'temperatureSignal': 'Signal température',
+      'windSignal': 'Signal vent',
+      'notEnoughWeatherData': 'Enregistrez au moins deux sessions avec météo.',
       'weatherLoadFailed': 'Impossible de charger la météo',
       'history': 'Historique',
       'compare': 'Comparer',
@@ -502,6 +532,9 @@ class AppLocalizations {
       'hours': 'Godz.',
       'minutes': 'Min.',
       'save': 'Zapisz',
+      'saveSettingsQuestion': 'Zapisać zmiany ustawień?',
+      'saveSettingsWarning': 'Ustawienia zostały zmienione. Zapisać je teraz?',
+      'dontSave': 'Nie zapisuj',
       'off': 'Wyłącz',
       'saveSessionTitle': 'Zapisać sesję?',
       'sessionDefaultName': 'Sesja',
@@ -543,6 +576,12 @@ class AppLocalizations {
       'baitNotes': 'Notatki zanęta / metoda',
       'autoFillWeather': 'Uzupełnij pogodę automatycznie',
       'weatherSummary': 'Pogoda',
+      'weatherCorrelation': 'Korelacja pogody',
+      'weatherSessions': 'Sesje z pogodą',
+      'bestWeatherSession': 'Najlepsza sesja pogodowa',
+      'temperatureSignal': 'Sygnał temperatury',
+      'windSignal': 'Sygnał wiatru',
+      'notEnoughWeatherData': 'Zapisz co najmniej dwie sesje z pogodą.',
       'weatherLoadFailed': 'Nie udało się załadować pogody',
       'history': 'Historia',
       'compare': 'Porównaj',
@@ -650,6 +689,10 @@ class AppLocalizations {
       'hours': 'Ore',
       'minutes': 'Min',
       'save': 'Salva',
+      'saveSettingsQuestion': 'Salvare le modifiche?',
+      'saveSettingsWarning':
+          'Le impostazioni sono state modificate. Salvarle ora?',
+      'dontSave': 'Non salvare',
       'off': 'Spegni',
       'saveSessionTitle': 'Salvare la sessione?',
       'sessionDefaultName': 'Sessione',
@@ -691,6 +734,12 @@ class AppLocalizations {
       'baitNotes': 'Note esche / metodo',
       'autoFillWeather': 'Compila meteo automaticamente',
       'weatherSummary': 'Meteo',
+      'weatherCorrelation': 'Correlazione meteo',
+      'weatherSessions': 'Sessioni con meteo',
+      'bestWeatherSession': 'Migliore sessione meteo',
+      'temperatureSignal': 'Segnale temperatura',
+      'windSignal': 'Segnale vento',
+      'notEnoughWeatherData': 'Salva almeno due sessioni con meteo.',
       'weatherLoadFailed': 'Impossibile caricare il meteo',
       'history': 'Cronologia',
       'compare': 'Confronta',
@@ -796,6 +845,9 @@ class AppLocalizations {
       'hours': 'Uur',
       'minutes': 'Min',
       'save': 'Opslaan',
+      'saveSettingsQuestion': 'Instellingen opslaan?',
+      'saveSettingsWarning': 'Instellingen zijn gewijzigd. Nu opslaan?',
+      'dontSave': 'Niet opslaan',
       'off': 'Uit',
       'saveSessionTitle': 'Sessie opslaan?',
       'sessionDefaultName': 'Sessie',
@@ -837,6 +889,12 @@ class AppLocalizations {
       'baitNotes': 'Aas- / methodenotities',
       'autoFillWeather': 'Weer automatisch invullen',
       'weatherSummary': 'Weer',
+      'weatherCorrelation': 'Weercorrelatie',
+      'weatherSessions': 'Sessies met weer',
+      'bestWeatherSession': 'Beste weersessie',
+      'temperatureSignal': 'Temperatuursignaal',
+      'windSignal': 'Windsignaal',
+      'notEnoughWeatherData': 'Sla minstens twee sessies met weer op.',
       'weatherLoadFailed': 'Kon weer niet laden',
       'history': 'Geschiedenis',
       'compare': 'Vergelijken',
@@ -945,6 +1003,9 @@ class AppLocalizations {
       'hours': 'Ore',
       'minutes': 'Min',
       'save': 'Salvează',
+      'saveSettingsQuestion': 'Salvezi modificările?',
+      'saveSettingsWarning': 'Setările au fost modificate. Le salvezi acum?',
+      'dontSave': 'Nu salva',
       'off': 'Oprit',
       'saveSessionTitle': 'Salvezi sesiunea?',
       'sessionDefaultName': 'Sesiune',
@@ -986,6 +1047,12 @@ class AppLocalizations {
       'baitNotes': 'Note nadă / metodă',
       'autoFillWeather': 'Completează vremea automat',
       'weatherSummary': 'Vreme',
+      'weatherCorrelation': 'Corelație meteo',
+      'weatherSessions': 'Sesiuni cu vreme',
+      'bestWeatherSession': 'Cea mai bună sesiune meteo',
+      'temperatureSignal': 'Semnal temperatură',
+      'windSignal': 'Semnal vânt',
+      'notEnoughWeatherData': 'Salvează cel puțin două sesiuni cu vreme.',
       'weatherLoadFailed': 'Nu s-a putut încărca vremea',
       'history': 'Istoric',
       'compare': 'Compară',
@@ -1090,6 +1157,9 @@ class AppLocalizations {
       'hours': 'Год',
       'minutes': 'Хв',
       'save': 'Зберегти',
+      'saveSettingsQuestion': 'Зберегти зміни налаштувань?',
+      'saveSettingsWarning': 'Налаштування змінено. Зберегти їх зараз?',
+      'dontSave': 'Не зберігати',
       'off': 'Вимкнути',
       'saveSessionTitle': 'Зберегти сесію?',
       'sessionDefaultName': 'Сесія',
@@ -1131,6 +1201,12 @@ class AppLocalizations {
       'baitNotes': 'Нотатки прикормка / метод',
       'autoFillWeather': 'Автозаповнити погоду',
       'weatherSummary': 'Погода',
+      'weatherCorrelation': 'Кореляція з погодою',
+      'weatherSessions': 'Сесії з погодою',
+      'bestWeatherSession': 'Найкраща погодна сесія',
+      'temperatureSignal': 'Сигнал температури',
+      'windSignal': 'Сигнал вітру',
+      'notEnoughWeatherData': 'Збережіть мінімум дві сесії з погодою.',
       'weatherLoadFailed': 'Не вдалося завантажити погоду',
       'history': 'Історія',
       'compare': 'Порівняти',
@@ -1241,6 +1317,9 @@ class AppLocalizations {
   String get hours => t('hours');
   String get minutes => t('minutes');
   String get save => t('save');
+  String get saveSettingsQuestion => t('saveSettingsQuestion');
+  String get saveSettingsWarning => t('saveSettingsWarning');
+  String get dontSave => t('dontSave');
   String get off => t('off');
   String get saveSessionTitle => t('saveSessionTitle');
   String get sessionDefaultName => t('sessionDefaultName');
@@ -1281,6 +1360,12 @@ class AppLocalizations {
   String get baitNotes => t('baitNotes');
   String get autoFillWeather => t('autoFillWeather');
   String get weatherSummary => t('weatherSummary');
+  String get weatherCorrelation => t('weatherCorrelation');
+  String get weatherSessions => t('weatherSessions');
+  String get bestWeatherSession => t('bestWeatherSession');
+  String get temperatureSignal => t('temperatureSignal');
+  String get windSignal => t('windSignal');
+  String get notEnoughWeatherData => t('notEnoughWeatherData');
   String get weatherLoadFailed => t('weatherLoadFailed');
   String get history => t('history');
   String get compare => t('compare');

@@ -858,43 +858,87 @@ class _ClickerScreenState extends State<ClickerScreen> {
             ElevatedButton(
               onPressed: () async {
                 final navigator = Navigator.of(c);
+                final repo = await repoFuture;
+                final currentProfile = repo.loadAthleteProfile();
+                final newResetDelay = _clampInt(
+                  int.tryParse(rCtrl.text),
+                  min: 0,
+                  fallback: Defaults.defaultResetDelaySeconds,
+                );
+                final newVibeInterval = _clampInt(
+                  int.tryParse(vCtrl.text),
+                  min: 1,
+                  fallback: Defaults.defaultVibeIntervalSeconds,
+                );
+                final days = _clampInt(int.tryParse(dCtrl.text), min: 0);
+                final hours = _clampInt(int.tryParse(hCtrl.text), min: 0);
+                final minutes = _clampInt(int.tryParse(mCtrl.text), min: 0);
+                final newMatchInterval = Duration(
+                  days: days,
+                  hours: hours,
+                  minutes: minutes,
+                );
+                final newProfile = AthleteProfile(
+                  athleteName: athleteCtrl.text.trim(),
+                  coachName: coachCtrl.text.trim(),
+                  clubTeam: clubCtrl.text.trim(),
+                  defaultVenue: venueCtrl.text.trim(),
+                  defaultSectorPeg: sectorCtrl.text.trim(),
+                  defaultTrainingType: trainingCtrl.text.trim(),
+                  defaultFishingMethod: methodCtrl.text.trim(),
+                  defaultTargetPace: paceCtrl.text.trim(),
+                );
+                final changed =
+                    newResetDelay != resetDelay ||
+                    newVibeInterval != vibeInterval ||
+                    newMatchInterval != matchInterval ||
+                    dialogSyncHistoryEnabled != isSyncHistoryEnabled ||
+                    dialogShakeUndoEnabled != isShakeUndoEnabled ||
+                    dialogShakeSensitivity != shakeSensitivity ||
+                    newProfile.toJson().toString() !=
+                        currentProfile.toJson().toString();
+
+                if (!changed) {
+                  navigator.pop();
+                  return;
+                }
+
+                if (!c.mounted) return;
+                final shouldSave = await showDialog<bool>(
+                  context: c,
+                  barrierDismissible: false,
+                  builder: (confirmContext) => AlertDialog(
+                    title: Text(l10n.saveSettingsQuestion),
+                    content: Text(l10n.saveSettingsWarning),
+                    actions: [
+                      TextButton(
+                        onPressed: () =>
+                            Navigator.of(confirmContext).pop(false),
+                        child: Text(l10n.dontSave),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.of(confirmContext).pop(true),
+                        child: Text(l10n.save),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (shouldSave != true) {
+                  navigator.pop();
+                  return;
+                }
+
                 setState(() {
-                  resetDelay = _clampInt(
-                    int.tryParse(rCtrl.text),
-                    min: 0,
-                    fallback: Defaults.defaultResetDelaySeconds,
-                  );
-                  vibeInterval = _clampInt(
-                    int.tryParse(vCtrl.text),
-                    min: 1,
-                    fallback: Defaults.defaultVibeIntervalSeconds,
-                  );
-                  final days = _clampInt(int.tryParse(dCtrl.text), min: 0);
-                  final hours = _clampInt(int.tryParse(hCtrl.text), min: 0);
-                  final minutes = _clampInt(int.tryParse(mCtrl.text), min: 0);
-                  matchInterval = Duration(
-                    days: days,
-                    hours: hours,
-                    minutes: minutes,
-                  );
+                  resetDelay = newResetDelay;
+                  vibeInterval = newVibeInterval;
+                  matchInterval = newMatchInterval;
                   isSyncHistoryEnabled = dialogSyncHistoryEnabled;
                   isShakeUndoEnabled = dialogShakeUndoEnabled;
                   shakeSensitivity = dialogShakeSensitivity;
                 });
                 await _saveData();
-                final repo = await repoFuture;
-                await repo.saveAthleteProfile(
-                  AthleteProfile(
-                    athleteName: athleteCtrl.text.trim(),
-                    coachName: coachCtrl.text.trim(),
-                    clubTeam: clubCtrl.text.trim(),
-                    defaultVenue: venueCtrl.text.trim(),
-                    defaultSectorPeg: sectorCtrl.text.trim(),
-                    defaultTrainingType: trainingCtrl.text.trim(),
-                    defaultFishingMethod: methodCtrl.text.trim(),
-                    defaultTargetPace: paceCtrl.text.trim(),
-                  ),
-                );
+                await repo.saveAthleteProfile(newProfile);
                 await CloudSettingsService().uploadLocalSettings(repo);
                 if (isSyncHistoryEnabled) {
                   await _syncLocalHistoryToCloud();
