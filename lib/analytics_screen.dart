@@ -6,6 +6,7 @@ import 'dart:math' as math;
 import 'package:fish_counter/constants.dart';
 import 'package:fish_counter/game_session.dart';
 import 'package:fish_counter/l10n/app_localizations.dart';
+import 'package:fish_counter/models/activity_heatmap_report.dart';
 import 'package:fish_counter/models/analytics_report.dart';
 import 'package:fish_counter/services/report_exporter.dart';
 import 'package:flutter/material.dart';
@@ -21,6 +22,7 @@ class AnalyticsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final report = AnalyticsReport.fromGrid(session.grid);
+    final heatmap = ActivityHeatmapReport.fromGrid(session.grid);
 
     return Scaffold(
       appBar: AppBar(
@@ -128,6 +130,10 @@ class AnalyticsScreen extends StatelessWidget {
                 points: _activityPoints,
                 accent: Colors.lightGreenAccent,
               ),
+            ],
+            if (heatmap.hasData) ...[
+              const SizedBox(height: 16),
+              _heatmapCard(l10n, heatmap),
             ],
             if (_hasGoals()) ...[
               const SizedBox(height: 30),
@@ -370,6 +376,195 @@ class AnalyticsScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _heatmapCard(AppLocalizations l10n, ActivityHeatmapReport heatmap) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.white.withValues(alpha: .16),
+            Colors.white.withValues(alpha: .04),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(28),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: const Color(0xFF161616),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white.withValues(alpha: .08)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    l10n.activityHeatmap,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Text(
+                  '${heatmap.cells.length}',
+                  style: const TextStyle(
+                    color: Colors.lightGreenAccent,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            LayoutBuilder(
+              builder: (context, _) {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (final row in heatmap.rows) ...[
+                      Row(
+                        children: [
+                          for (final cell in row)
+                            Expanded(
+                              child: AspectRatio(
+                                aspectRatio: 1,
+                                child: Tooltip(
+                                  message:
+                                      '${cell.timestamp} • ${_heatmapLabel(l10n, cell.status)} • ${cell.intervalSeconds}s',
+                                  child: Container(
+                                    margin: const EdgeInsets.all(1.5),
+                                    decoration: BoxDecoration(
+                                      color: cell.status.toColor().withValues(
+                                        alpha: cell.status == Status.pause
+                                            ? .35
+                                            : .9,
+                                      ),
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(
+                                        color: Colors.white.withValues(
+                                          alpha: .10,
+                                        ),
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: cell.status
+                                              .toColor()
+                                              .withValues(
+                                                alpha:
+                                                    cell.status == Status.pause
+                                                    ? .08
+                                                    : .18,
+                                              ),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          for (var i = row.length; i < heatmap.columns; i++)
+                            const Expanded(
+                              child: AspectRatio(
+                                aspectRatio: 1,
+                                child: SizedBox(),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                    ],
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _heatmapLegendItem(l10n.green, Colors.green.shade700),
+                        _heatmapLegendItem(l10n.orange, Colors.orange.shade800),
+                        _heatmapLegendItem(l10n.red, Colors.red.shade800),
+                        _heatmapLegendItem(l10n.grey, Colors.grey.shade700),
+                        _heatmapLegendItem(
+                          l10n.pauseReset,
+                          Colors.blueGrey.shade600,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        l10n.activityTimeline,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: .38),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _heatmapLegendItem(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: .06),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withValues(alpha: .08)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _heatmapLabel(AppLocalizations l10n, Status status) {
+    switch (status) {
+      case Status.perfect:
+        return l10n.green;
+      case Status.good:
+        return l10n.green;
+      case Status.average:
+        return l10n.orange;
+      case Status.poor:
+        return l10n.red;
+      case Status.early:
+        return l10n.grey;
+      case Status.pause:
+        return l10n.pauseReset;
+    }
   }
 
   Widget _buildTrainingContext(AppLocalizations l10n) {

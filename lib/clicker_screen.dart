@@ -860,42 +860,32 @@ class _ClickerScreenState extends State<ClickerScreen> {
                 final navigator = Navigator.of(c);
                 final repo = await repoFuture;
                 final currentProfile = repo.loadAthleteProfile();
-                final newResetDelay = _clampInt(
-                  int.tryParse(rCtrl.text),
-                  min: 0,
-                  fallback: Defaults.defaultResetDelaySeconds,
-                );
-                final newVibeInterval = _clampInt(
-                  int.tryParse(vCtrl.text),
-                  min: 1,
-                  fallback: Defaults.defaultVibeIntervalSeconds,
-                );
-                final days = _clampInt(int.tryParse(dCtrl.text), min: 0);
-                final hours = _clampInt(int.tryParse(hCtrl.text), min: 0);
-                final minutes = _clampInt(int.tryParse(mCtrl.text), min: 0);
-                final newMatchInterval = Duration(
-                  days: days,
-                  hours: hours,
-                  minutes: minutes,
-                );
-                final newProfile = AthleteProfile(
-                  athleteName: athleteCtrl.text.trim(),
-                  coachName: coachCtrl.text.trim(),
-                  clubTeam: clubCtrl.text.trim(),
-                  defaultVenue: venueCtrl.text.trim(),
-                  defaultSectorPeg: sectorCtrl.text.trim(),
-                  defaultTrainingType: trainingCtrl.text.trim(),
-                  defaultFishingMethod: methodCtrl.text.trim(),
-                  defaultTargetPace: paceCtrl.text.trim(),
+                final draft = _readSettingsDraft(
+                  resetCtrl: rCtrl,
+                  vibeCtrl: vCtrl,
+                  daysCtrl: dCtrl,
+                  hoursCtrl: hCtrl,
+                  minutesCtrl: mCtrl,
+                  syncHistoryEnabled: dialogSyncHistoryEnabled,
+                  shakeUndoEnabled: dialogShakeUndoEnabled,
+                  shakeSensitivity: dialogShakeSensitivity,
+                  athleteCtrl: athleteCtrl,
+                  coachCtrl: coachCtrl,
+                  clubCtrl: clubCtrl,
+                  venueCtrl: venueCtrl,
+                  sectorCtrl: sectorCtrl,
+                  trainingCtrl: trainingCtrl,
+                  methodCtrl: methodCtrl,
+                  paceCtrl: paceCtrl,
                 );
                 final changed =
-                    newResetDelay != resetDelay ||
-                    newVibeInterval != vibeInterval ||
-                    newMatchInterval != matchInterval ||
-                    dialogSyncHistoryEnabled != isSyncHistoryEnabled ||
-                    dialogShakeUndoEnabled != isShakeUndoEnabled ||
-                    dialogShakeSensitivity != shakeSensitivity ||
-                    newProfile.toJson().toString() !=
+                    draft.resetDelay != resetDelay ||
+                    draft.vibeInterval != vibeInterval ||
+                    draft.matchInterval != matchInterval ||
+                    draft.syncHistoryEnabled != isSyncHistoryEnabled ||
+                    draft.shakeUndoEnabled != isShakeUndoEnabled ||
+                    draft.shakeSensitivity != shakeSensitivity ||
+                    draft.profile.toJson().toString() !=
                         currentProfile.toJson().toString();
 
                 if (!changed) {
@@ -924,21 +914,22 @@ class _ClickerScreenState extends State<ClickerScreen> {
                   ),
                 );
 
-                if (shouldSave != true) {
+                if (shouldSave == false) {
                   navigator.pop();
                   return;
                 }
+                if (shouldSave != true) return;
 
                 setState(() {
-                  resetDelay = newResetDelay;
-                  vibeInterval = newVibeInterval;
-                  matchInterval = newMatchInterval;
-                  isSyncHistoryEnabled = dialogSyncHistoryEnabled;
-                  isShakeUndoEnabled = dialogShakeUndoEnabled;
-                  shakeSensitivity = dialogShakeSensitivity;
+                  resetDelay = draft.resetDelay;
+                  vibeInterval = draft.vibeInterval;
+                  matchInterval = draft.matchInterval;
+                  isSyncHistoryEnabled = draft.syncHistoryEnabled;
+                  isShakeUndoEnabled = draft.shakeUndoEnabled;
+                  shakeSensitivity = draft.shakeSensitivity;
                 });
                 await _saveData();
-                await repo.saveAthleteProfile(newProfile);
+                await repo.saveAthleteProfile(draft.profile);
                 await CloudSettingsService().uploadLocalSettings(repo);
                 if (isSyncHistoryEnabled) {
                   await _syncLocalHistoryToCloud();
@@ -954,6 +945,65 @@ class _ClickerScreenState extends State<ClickerScreen> {
   }
 
   // ==========================================
+  ({
+    int resetDelay,
+    int vibeInterval,
+    Duration matchInterval,
+    bool syncHistoryEnabled,
+    bool shakeUndoEnabled,
+    ShakeSensitivity shakeSensitivity,
+    AthleteProfile profile,
+  })
+  _readSettingsDraft({
+    required TextEditingController resetCtrl,
+    required TextEditingController vibeCtrl,
+    required TextEditingController daysCtrl,
+    required TextEditingController hoursCtrl,
+    required TextEditingController minutesCtrl,
+    required bool syncHistoryEnabled,
+    required bool shakeUndoEnabled,
+    required ShakeSensitivity shakeSensitivity,
+    required TextEditingController athleteCtrl,
+    required TextEditingController coachCtrl,
+    required TextEditingController clubCtrl,
+    required TextEditingController venueCtrl,
+    required TextEditingController sectorCtrl,
+    required TextEditingController trainingCtrl,
+    required TextEditingController methodCtrl,
+    required TextEditingController paceCtrl,
+  }) {
+    return (
+      resetDelay: _clampInt(
+        int.tryParse(resetCtrl.text),
+        min: 0,
+        fallback: Defaults.defaultResetDelaySeconds,
+      ),
+      vibeInterval: _clampInt(
+        int.tryParse(vibeCtrl.text),
+        min: 1,
+        fallback: Defaults.defaultVibeIntervalSeconds,
+      ),
+      matchInterval: Duration(
+        days: _clampInt(int.tryParse(daysCtrl.text), min: 0),
+        hours: _clampInt(int.tryParse(hoursCtrl.text), min: 0),
+        minutes: _clampInt(int.tryParse(minutesCtrl.text), min: 0),
+      ),
+      syncHistoryEnabled: syncHistoryEnabled,
+      shakeUndoEnabled: shakeUndoEnabled,
+      shakeSensitivity: shakeSensitivity,
+      profile: AthleteProfile(
+        athleteName: athleteCtrl.text.trim(),
+        coachName: coachCtrl.text.trim(),
+        clubTeam: clubCtrl.text.trim(),
+        defaultVenue: venueCtrl.text.trim(),
+        defaultSectorPeg: sectorCtrl.text.trim(),
+        defaultTrainingType: trainingCtrl.text.trim(),
+        defaultFishingMethod: methodCtrl.text.trim(),
+        defaultTargetPace: paceCtrl.text.trim(),
+      ),
+    );
+  }
+
   // DATA PERSISTENCE
   // ==========================================
   Future<void> _loadData() async {

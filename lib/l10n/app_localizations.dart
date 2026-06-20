@@ -160,6 +160,7 @@ class AppLocalizations {
       'activityTimeline': 'Activity Timeline:',
       'paceChart': 'Pace chart',
       'activityChart': 'Activity chart',
+      'activityHeatmap': 'Activity heatmap',
       'reportCopied': 'Report copied to clipboard',
       'csvCopied': 'CSV copied to clipboard',
       'shareTextReport': 'Share text report',
@@ -319,6 +320,7 @@ class AppLocalizations {
       'activityTimeline': 'Aktivitätsverlauf:',
       'paceChart': 'Tempo-Diagramm',
       'activityChart': 'Aktivitätsdiagramm',
+      'activityHeatmap': 'Aktivitäts-Heatmap',
       'reportCopied': 'Bericht in die Zwischenablage kopiert',
       'csvCopied': 'CSV in die Zwischenablage kopiert',
       'shareTextReport': 'Textbericht teilen',
@@ -476,6 +478,7 @@ class AppLocalizations {
       'lateCount': 'Tard',
       'longestStableStreak': 'Meilleure série',
       'activityTimeline': 'Chronologie d’activité :',
+      'activityHeatmap': 'Carte thermique d’activité',
       'reportCopied': 'Rapport copié dans le presse-papiers',
       'csvCopied': 'CSV copié dans le presse-papiers',
       'shareTextReport': 'Partager le rapport texte',
@@ -633,6 +636,7 @@ class AppLocalizations {
       'activityTimeline': 'Oś aktywności:',
       'paceChart': 'Wykres tempa',
       'activityChart': 'Wykres aktywności',
+      'activityHeatmap': 'Mapa cieplna aktywności',
       'reportCopied': 'Raport skopiowany do schowka',
       'csvCopied': 'CSV skopiowany do schowka',
       'shareTextReport': 'Udostępnij raport tekstowy',
@@ -788,6 +792,7 @@ class AppLocalizations {
       'lateCount': 'Tardi',
       'longestStableStreak': 'Serie migliore',
       'activityTimeline': 'Sequenza attività:',
+      'activityHeatmap': 'Mappa termica attività',
       'reportCopied': 'Report copiato negli appunti',
       'csvCopied': 'CSV copiato negli appunti',
       'shareTextReport': 'Condividi report testuale',
@@ -945,6 +950,7 @@ class AppLocalizations {
       'activityTimeline': 'Activiteitstijdlijn:',
       'paceChart': 'Tempografiek',
       'activityChart': 'Activiteitsgrafiek',
+      'activityHeatmap': 'Activiteitshittekaart',
       'reportCopied': 'Rapport gekopieerd naar klembord',
       'csvCopied': 'CSV gekopieerd naar klembord',
       'shareTextReport': 'Tekstrapport delen',
@@ -1101,6 +1107,7 @@ class AppLocalizations {
       'lateCount': 'Târziu',
       'longestStableStreak': 'Cea mai bună serie',
       'activityTimeline': 'Cronologie activitate:',
+      'activityHeatmap': 'Hartă termică a activității',
       'reportCopied': 'Raport copiat în clipboard',
       'csvCopied': 'CSV copiat în clipboard',
       'shareTextReport': 'Partajează raport text',
@@ -1255,6 +1262,7 @@ class AppLocalizations {
       'lateCount': 'Запізно',
       'longestStableStreak': 'Найкраща серія',
       'activityTimeline': 'Шкала активності:',
+      'activityHeatmap': 'Теплова карта активності',
       'reportCopied': 'Звіт скопійовано в буфер',
       'csvCopied': 'CSV скопійовано в буфер',
       'shareTextReport': 'Поділитися текстовим звітом',
@@ -1415,6 +1423,7 @@ class AppLocalizations {
   String get activityTimeline => t('activityTimeline');
   String get paceChart => t('paceChart');
   String get activityChart => t('activityChart');
+  String get activityHeatmap => t('activityHeatmap');
   String get reportCopied => t('reportCopied');
   String get csvCopied => t('csvCopied');
   String get shareTextReport => t('shareTextReport');
