@@ -24,23 +24,26 @@ class AuthGate extends StatelessWidget {
           return const AuthScreen();
         }
 
-        return const _StartupSyncedClickerScreen();
+        return const StartupSyncedClickerScreen();
       },
     );
   }
 }
 
-class _StartupSyncedClickerScreen extends StatefulWidget {
-  const _StartupSyncedClickerScreen();
+class StartupSyncedClickerScreen extends StatefulWidget {
+  const StartupSyncedClickerScreen({super.key, this.startupSyncBuilder});
+
+  final Future<void> Function()? startupSyncBuilder;
 
   @override
-  State<_StartupSyncedClickerScreen> createState() =>
+  State<StartupSyncedClickerScreen> createState() =>
       _StartupSyncedClickerScreenState();
 }
 
 class _StartupSyncedClickerScreenState
-    extends State<_StartupSyncedClickerScreen> {
-  late final Future<void> _startupSync = _syncHistoryIfEnabled();
+    extends State<StartupSyncedClickerScreen> {
+  late final Future<void> _startupSync =
+      (widget.startupSyncBuilder ?? _syncHistoryIfEnabled)();
 
   Future<void> _syncHistoryIfEnabled() async {
     try {
@@ -60,6 +63,12 @@ class _StartupSyncedClickerScreenState
     return FutureBuilder<void>(
       future: _startupSync,
       builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
         return const ClickerScreen();
       },
     );

@@ -287,6 +287,11 @@ flutter build ios --release
 8. Session saved to history
 9. Counters reset for next session
 
+## 🔍 Code Review Rule
+- After every implementation task, run code review with the
+  `thermo-nuclear-code-quality-review` skill.
+- Keep fixing the code until that review has no remarks.
+
 ## 🧪 Testing Strategy (Recommended)
 
 ### Unit Tests Needed

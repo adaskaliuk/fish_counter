@@ -36,6 +36,12 @@ Prefer the `lean_ctx` tool (installed by the extension) to run `lean-ctx` direct
 The embedded bridge is on by default and shows up in `/lean-ctx` (it reports `connected` plus a
 tool count). To force the one-shot CLI path (no cross-call cache), set `LEAN_CTX_PI_ENABLE_MCP=0`.
 
+## Code review gate
+
+- After every implementation task, run a code review with the
+  `thermo-nuclear-code-quality-review` skill.
+- Keep fixing the implementation until that review has no remarks.
+
 <!-- lean-ctx -->
 ## lean-ctx
 

@@ -329,3 +329,8 @@ flutter build ios --release
 - New user-visible UI strings must be added to `lib/l10n/app_localizations.dart` in the same task.
 - Avoid hardcoded user-visible UI strings in screens/dialogs/buttons/status labels.
 - Export/report labels can be intentionally English only only if explicitly agreed; otherwise treat them as localization scope too.
+
+## Code review rule
+- After every implementation task, run code review with the
+  `thermo-nuclear-code-quality-review` skill.
+- Do not consider the task done until that review has no remarks and all findings are fixed.
