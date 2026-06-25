@@ -24,6 +24,7 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: StartupSyncedClickerScreen(
           startupSyncBuilder: () => completer.future,
+          enableBackgroundTasks: false,
         ),
       ),
     );

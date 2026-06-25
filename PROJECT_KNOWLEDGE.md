@@ -217,6 +217,31 @@ Useful files:
 - `.fizzy/API.md` — API notes discovered from `basecamp/fizzy` source.
 - `.fizzy/BOARD.md` — local fallback only when real API is unavailable.
 
+## 🔁 Review-Gated Loop
+
+Use this loop for FishCounter implementation work:
+
+1. **Design** — read the real flow first; no edits before boundary known.
+2. **Review** — run a reviewer subagent before/after each round.
+3. **Verify** — run targeted tests/analyze every round.
+4. **Stop** — max 3 rounds; on blocker, ask instead of guessing.
+
+FishCounter-specific rules:
+
+- one active task only;
+- active task lives in `In Todo`;
+- backlog lives in `Maybe?`;
+- keep changes minimal; prefer root-cause fixes over caller band-aids.
+
+Turn checklist:
+
+1. Read current flow + touched files.
+2. State goal + stop condition.
+3. Patch smallest root-cause diff.
+4. Run review gate.
+5. Run targeted verify.
+6. Ship only when clean.
+
 ## 🌦️ Weather Capture
 
 Weather capture for sport-fishing sessions is implemented.

@@ -7,7 +7,7 @@ import 'package:fish_counter/controllers/clicker_controller.dart';
 import 'package:fish_counter/services/prefs_repository.dart';
 import 'package:fish_counter/services/timer_manager.dart';
 import 'package:fish_counter/shake_undo_settings.dart';
-import 'package:fish_counter/undo_manager.dart';
+import 'package:fish_counter/undo_manager.dart' as undo;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -143,8 +143,8 @@ class ClickerProvider extends ChangeNotifier {
   Future<void> initialize() async {
     final initialState = await _prefs.loadInitialState();
     _state = _state.copyWith(
-      counter1: initialState.counter1,
-      counter2: initialState.counter2,
+      counter1: initialState.c1,
+      counter2: initialState.c2,
       tries: initialState.tries,
       total: initialState.total,
       isPowerOn: initialState.powerOn,
@@ -159,7 +159,7 @@ class ClickerProvider extends ChangeNotifier {
       shakeSensitivity: ShakeSensitivity.fromValue(
         initialState.shakeSensitivity,
       ),
-      activityGrid: initialState.activityGrid,
+      activityGrid: initialState.rawActivityGrid,
       hasHistory: initialState.historySessions.isNotEmpty,
     );
     notifyListeners();
@@ -274,7 +274,7 @@ class ClickerProvider extends ChangeNotifier {
     HapticFeedback.mediumImpact();
     _countdownTimer?.cancel();
 
-    final result = undoLastAction(
+    final result = undo.undoLastAction(
       counter1: _state.counter1,
       counter2: _state.counter2,
       tries: _state.tries,
@@ -416,6 +416,52 @@ class ClickerProvider extends ChangeNotifier {
     );
     notifyListeners();
     await _saveData();
+  }
+
+  void applyPowerState(ClickerPowerState powerState) {
+    _state = _state.copyWith(
+      isPowerOn: powerState.isPowerOn,
+      isPaused: powerState.isPaused,
+      isSessionActive: powerState.isSessionActive,
+      isDataHidden: powerState.isDataHidden,
+      isActionDelay: powerState.isActionDelay,
+      delayCountdown: powerState.delayCountdown,
+      duration: powerState.duration,
+      resetDelay: powerState.matchInterval == null ? _state.resetDelay : _state.resetDelay,
+      matchInterval: powerState.matchInterval ?? _state.matchInterval,
+      counter1: powerState.shouldResetCounters ? 0 : _state.counter1,
+      counter2: powerState.shouldResetCounters ? 0 : _state.counter2,
+      tries: powerState.shouldResetCounters ? 0 : _state.tries,
+      total: powerState.shouldResetCounters ? 0 : _state.total,
+      activityGrid: powerState.shouldClearActivity ? [] : _state.activityGrid,
+      hasHistory: powerState.hasHistory,
+    );
+    notifyListeners();
+  }
+
+  void applySettings({
+    required int resetDelay,
+    required int vibeInterval,
+    required Duration matchInterval,
+    required bool syncHistoryEnabled,
+    required bool shakeUndoEnabled,
+    required ShakeSensitivity shakeSensitivity,
+  }) {
+    _state = _state.copyWith(
+      resetDelay: resetDelay,
+      vibeInterval: vibeInterval,
+      matchInterval: matchInterval,
+      isSyncHistoryEnabled: syncHistoryEnabled,
+      isShakeUndoEnabled: shakeUndoEnabled,
+      shakeSensitivity: shakeSensitivity,
+    );
+    notifyListeners();
+  }
+
+  Future<void> saveData() => _saveData();
+
+  void cancelCountdown() {
+    _countdownTimer?.cancel();
   }
 
   Future<void> resetAfterSessionSaved() async {

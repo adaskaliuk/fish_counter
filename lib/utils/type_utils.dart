@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 /// Utility class for safe type conversions and validation.
 class TypeUtils {
   TypeUtils._();
@@ -31,7 +29,7 @@ class TypeUtils {
     return defaultValue;
   }
 
-  /// Safely converts a dynamic value to List<Map<String, dynamic>>.
+  /// Safely converts a dynamic value to `List<Map<String, dynamic>>`.
   static List<Map<String, dynamic>> safeMapList(dynamic value) {
     if (value == null) return [];
     if (value is! List) return [];

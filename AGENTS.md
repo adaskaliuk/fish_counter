@@ -42,6 +42,23 @@ tool count). To force the one-shot CLI path (no cross-call cache), set `LEAN_CTX
   `thermo-nuclear-code-quality-review` skill.
 - Keep fixing the implementation until that review has no remarks.
 
+## Review-gated loop
+
+- Design first: read flow + boundary before edits.
+- Run review before/after each round; max 3 rounds.
+- Verify with tests/analyze every round; no green, no ship.
+- Stop early on product/architecture blocker; ask instead of guessing.
+- Keep one active task; move task to `In Todo`, backlog to `Maybe?`.
+
+## Turn checklist
+
+1. Read current flow + touched files.
+2. State goal + stop condition.
+3. Patch smallest root-cause diff.
+4. Run review gate.
+5. Run targeted verify.
+6. Commit only if clean.
+
 <!-- lean-ctx -->
 ## lean-ctx
 

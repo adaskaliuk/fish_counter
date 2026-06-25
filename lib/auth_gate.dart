@@ -31,9 +31,14 @@ class AuthGate extends StatelessWidget {
 }
 
 class StartupSyncedClickerScreen extends StatefulWidget {
-  const StartupSyncedClickerScreen({super.key, this.startupSyncBuilder});
+  const StartupSyncedClickerScreen({
+    super.key,
+    this.startupSyncBuilder,
+    this.enableBackgroundTasks = true,
+  });
 
   final Future<void> Function()? startupSyncBuilder;
+  final bool enableBackgroundTasks;
 
   @override
   State<StartupSyncedClickerScreen> createState() =>
@@ -74,7 +79,7 @@ class _StartupSyncedClickerScreenState
           );
         }
 
-        return const ClickerScreen();
+        return ClickerScreen(enableBackgroundTasks: widget.enableBackgroundTasks);
       },
     );
   }

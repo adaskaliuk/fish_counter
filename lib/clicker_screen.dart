@@ -2,11 +2,12 @@
 // MAIN SCREEN
 // ==========================================
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:fish_counter/constants.dart';
-import 'package:fish_counter/controllers/clicker_controller.dart';
+import 'package:fish_counter/models/athlete_profile.dart';
 import 'package:fish_counter/history_screen.dart';
 import 'package:fish_counter/l10n/app_localizations.dart';
 import 'package:fish_counter/providers/clicker_provider.dart';
+import 'package:fish_counter/services/cloud_history_service.dart';
+import 'package:fish_counter/services/cloud_settings_service.dart';
 import 'package:fish_counter/services/prefs_repository.dart';
 import 'package:fish_counter/shake_undo_settings.dart';
 import 'package:fish_counter/utils/type_utils.dart';
@@ -20,7 +21,9 @@ part 'clicker_screen_dialogs.dart';
 // MAIN WIDGET
 // ==========================================
 class ClickerScreen extends StatefulWidget {
-  const ClickerScreen({super.key});
+  const ClickerScreen({super.key, this.enableBackgroundTasks = true});
+
+  final bool enableBackgroundTasks;
 
   @override
   State<ClickerScreen> createState() => _ClickerScreenState();
@@ -28,35 +31,42 @@ class ClickerScreen extends StatefulWidget {
 
 class _ClickerScreenState extends State<ClickerScreen> {
   final ScrollController _gridScrollController = ScrollController();
+  ClickerProvider? _provider;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = context.read<ClickerProvider>();
-      provider.initialize();
-      provider.startGlobalTimer();
-      provider.startShakeListener();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final provider = ClickerProvider(prefs: await PrefsRepository.create());
+      await provider.initialize();
+      if (widget.enableBackgroundTasks) {
+        provider.startGlobalTimer();
+        provider.startShakeListener();
+      }
+      if (!mounted) {
+        provider.dispose();
+        return;
+      }
+      setState(() => _provider = provider);
     });
   }
 
   @override
   void dispose() {
+    _provider?.dispose();
+    _provider = null;
+    
     _gridScrollController.dispose();
     super.dispose();
   }
 
-  void _scrollToEnd() {
-    Future.delayed(
-      const Duration(milliseconds: Defaults.defaultScrollDelayMs),
-      () {
-        if (mounted && _gridScrollController.hasClients) {
-          _gridScrollController.jumpTo(
-            _gridScrollController.position.maxScrollExtent,
-          );
-        }
-      },
-    );
+  ClickerProvider get _providerOrThrow {
+    final provider = _provider;
+    if (provider == null) {
+      throw StateError('ClickerProvider not ready');
+    }
+    return provider;
   }
 
   // ==========================================
@@ -448,7 +458,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
   void _showSettings() => _showSettingsDialog(this);
 
   Future<void> _handlePower() async {
-    final provider = context.read<ClickerProvider>();
+    final provider = _providerOrThrow;
     final state = provider.state;
     
     if (state.isPowerOn) {
@@ -459,6 +469,45 @@ class _ClickerScreenState extends State<ClickerScreen> {
   }
 
   // ==========================================
+  ClickerState get _clickerState => _providerOrThrow.state;
+
+  bool get isPowerOn => _clickerState.isPowerOn;
+  int get resetDelay => _clickerState.resetDelay;
+  int get vibeInterval => _clickerState.vibeInterval;
+  Duration get matchInterval => _clickerState.matchInterval;
+  bool get isSyncHistoryEnabled => _clickerState.isSyncHistoryEnabled;
+  bool get isShakeUndoEnabled => _clickerState.isShakeUndoEnabled;
+  ShakeSensitivity get shakeSensitivity => _clickerState.shakeSensitivity;
+  int get counter1 => _clickerState.counter1;
+  int get counter2 => _clickerState.counter2;
+  int get tries => _clickerState.tries;
+  int get total => _clickerState.total;
+  bool get isSessionActive => _clickerState.isSessionActive;
+  bool get isPaused => _clickerState.isPaused;
+  bool get isActionDelay => _clickerState.isActionDelay;
+  bool get isDataHidden => _clickerState.isDataHidden;
+  List<Map<String, dynamic>> get activityGrid => _clickerState.activityGrid;
+
+  void _applySettings({
+    required int resetDelay,
+    required int vibeInterval,
+    required Duration matchInterval,
+    required bool syncHistoryEnabled,
+    required bool shakeUndoEnabled,
+    required ShakeSensitivity shakeSensitivity,
+  }) {
+    _providerOrThrow.applySettings(
+      resetDelay: resetDelay,
+      vibeInterval: vibeInterval,
+      matchInterval: matchInterval,
+      syncHistoryEnabled: syncHistoryEnabled,
+      shakeUndoEnabled: shakeUndoEnabled,
+      shakeSensitivity: shakeSensitivity,
+    );
+  }
+
+  Future<void> _saveData() => _providerOrThrow.saveData();
+
   // UTILS
   // ==========================================
   static int _safeInt(dynamic value, {int defaultValue = 0}) {
@@ -467,10 +516,13 @@ class _ClickerScreenState extends State<ClickerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => ClickerProvider(
-        prefs: context.read<PrefsRepository>(),
-      ),
+    final provider = _provider;
+    if (provider == null) {
+      return const SizedBox.shrink();
+    }
+
+    return ChangeNotifierProvider.value(
+      value: provider,
       child: Scaffold(
         body: SafeArea(
           child: Center(
@@ -485,9 +537,9 @@ class _ClickerScreenState extends State<ClickerScreen> {
               ),
               child: Column(
                 children: [
-                  _buildLCD(context),
+                  Builder(builder: _buildLCD),
                   const SizedBox(height: 12),
-                  _buildControls(context),
+                  Builder(builder: _buildControls),
                 ],
               ),
             ),

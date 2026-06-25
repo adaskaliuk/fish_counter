@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:fish_counter/constants.dart';
+import 'package:fish_counter/game_session.dart';
 import 'package:fish_counter/models/activity_log.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

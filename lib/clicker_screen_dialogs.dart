@@ -27,20 +27,21 @@ Future<void> _showSettingsDialog(_ClickerScreenState state) async {
   final paceCtrl = TextEditingController();
   final dialogContext = state.context;
 
-  final repo = await repoFuture;
-  final profile = repo.loadAthleteProfile();
-  athleteCtrl.text = profile.athleteName;
-  coachCtrl.text = profile.coachName;
-  clubCtrl.text = profile.clubTeam;
-  venueCtrl.text = profile.defaultVenue;
-  sectorCtrl.text = profile.defaultSectorPeg;
-  trainingCtrl.text = profile.defaultTrainingType;
-  methodCtrl.text = profile.defaultFishingMethod;
-  paceCtrl.text = profile.defaultTargetPace;
+  try {
+    final repo = await repoFuture;
+    final profile = repo.loadAthleteProfile();
+    athleteCtrl.text = profile.athleteName;
+    coachCtrl.text = profile.coachName;
+    clubCtrl.text = profile.clubTeam;
+    venueCtrl.text = profile.defaultVenue;
+    sectorCtrl.text = profile.defaultSectorPeg;
+    trainingCtrl.text = profile.defaultTrainingType;
+    methodCtrl.text = profile.defaultFishingMethod;
+    paceCtrl.text = profile.defaultTargetPace;
 
-  if (!dialogContext.mounted) return;
+    if (!dialogContext.mounted) return;
 
-  await showDialog(
+    await showDialog(
     context: dialogContext,
     builder: (c) => StatefulBuilder(
       builder: (context, setDialogState) => AlertDialog(
@@ -264,333 +265,22 @@ Future<void> _showSettingsDialog(_ClickerScreenState state) async {
         ],
       ),
     ),
-  );
-
-  rCtrl.dispose();
-  vCtrl.dispose();
-  dCtrl.dispose();
-  hCtrl.dispose();
-  mCtrl.dispose();
-  athleteCtrl.dispose();
-  coachCtrl.dispose();
-  clubCtrl.dispose();
-  venueCtrl.dispose();
-  sectorCtrl.dispose();
-  trainingCtrl.dispose();
-  methodCtrl.dispose();
-  paceCtrl.dispose();
-}
-
-Future<void> _handlePowerPress(_ClickerScreenState state) async {
-  if (!state.isPowerOn) {
-    state._applyPowerState(ClickerController.turnPowerOn());
-    await state._saveData();
-    return;
+    );
+  } finally {
+    rCtrl.dispose();
+    vCtrl.dispose();
+    dCtrl.dispose();
+    hCtrl.dispose();
+    mCtrl.dispose();
+    athleteCtrl.dispose();
+    coachCtrl.dispose();
+    clubCtrl.dispose();
+    venueCtrl.dispose();
+    sectorCtrl.dispose();
+    trainingCtrl.dispose();
+    methodCtrl.dispose();
+    paceCtrl.dispose();
   }
-
-  final l10n = AppLocalizations.of(state.context);
-  final profile = (await PrefsRepository.create()).loadAthleteProfile();
-  final nameCtrl = TextEditingController(
-    text:
-        '${l10n.sessionDefaultName} ${DateFormat('HH:mm').format(DateTime.now())}',
-  );
-  final athleteNameCtrl = TextEditingController(text: profile.athleteName);
-  final coachNameCtrl = TextEditingController(text: profile.coachName);
-  final venueCtrl = TextEditingController(text: profile.defaultVenue);
-  final sectorPegCtrl = TextEditingController(text: profile.defaultSectorPeg);
-  final trainingTypeCtrl = TextEditingController(
-    text: profile.defaultTrainingType,
-  );
-  final fishingMethodCtrl = TextEditingController(
-    text: profile.defaultFishingMethod,
-  );
-  final targetPaceCtrl = TextEditingController(text: profile.defaultTargetPace);
-  final goalFishCtrl = TextEditingController(text: '0');
-  final goalPaceCtrl = TextEditingController(text: '0');
-  final goalTriesCtrl = TextEditingController(text: '0');
-  final goalStabilityCtrl = TextEditingController(text: '0');
-  final conditionsCtrl = TextEditingController();
-  final baitNotesCtrl = TextEditingController();
-  WeatherSnapshot? weatherSnapshot;
-  var isLoadingWeather = false;
-  final athleteNoteCtrl = TextEditingController();
-  final coachCommentCtrl = TextEditingController();
-
-  if (!state.mounted) return;
-
-  await showDialog(
-    context: state.context,
-    barrierDismissible: false,
-    builder: (context) => StatefulBuilder(
-      builder: (context, setDialogState) => AlertDialog(
-        title: Text(l10n.saveSessionTitle),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(controller: nameCtrl),
-              const SizedBox(height: 8),
-              Text(l10n.trainingContext),
-              TextField(
-                controller: athleteNameCtrl,
-                decoration: InputDecoration(labelText: l10n.athleteName),
-              ),
-              TextField(
-                controller: coachNameCtrl,
-                decoration: InputDecoration(labelText: l10n.coachName),
-              ),
-              TextField(
-                controller: venueCtrl,
-                decoration: InputDecoration(labelText: l10n.venue),
-              ),
-              TextField(
-                controller: sectorPegCtrl,
-                decoration: InputDecoration(labelText: l10n.sectorPeg),
-              ),
-              TextField(
-                controller: trainingTypeCtrl,
-                decoration: InputDecoration(labelText: l10n.trainingType),
-              ),
-              TextField(
-                controller: fishingMethodCtrl,
-                decoration: InputDecoration(labelText: l10n.fishingMethod),
-              ),
-              TextField(
-                controller: targetPaceCtrl,
-                decoration: InputDecoration(labelText: l10n.targetPace),
-              ),
-              const Divider(),
-              Text(l10n.trainingGoals),
-              TextField(
-                controller: goalFishCtrl,
-                decoration: InputDecoration(labelText: l10n.targetFishCount),
-                keyboardType: TextInputType.number,
-              ),
-              TextField(
-                controller: goalPaceCtrl,
-                decoration: InputDecoration(labelText: l10n.targetPaceSeconds),
-                keyboardType: TextInputType.number,
-              ),
-              TextField(
-                controller: goalTriesCtrl,
-                decoration: InputDecoration(labelText: l10n.maxTries),
-                keyboardType: TextInputType.number,
-              ),
-              TextField(
-                controller: goalStabilityCtrl,
-                decoration: InputDecoration(labelText: l10n.stabilityTarget),
-                keyboardType: TextInputType.number,
-              ),
-              const Divider(),
-              TextField(
-                controller: conditionsCtrl,
-                decoration: InputDecoration(labelText: l10n.conditions),
-                minLines: 1,
-                maxLines: 2,
-              ),
-              TextField(
-                controller: baitNotesCtrl,
-                decoration: InputDecoration(labelText: l10n.baitNotes),
-                minLines: 1,
-                maxLines: 2,
-              ),
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: isLoadingWeather
-                    ? null
-                    : () async {
-                        setDialogState(() => isLoadingWeather = true);
-                        try {
-                          final snapshot = await SessionWeatherService()
-                              .fetchCurrentWeather();
-                          if (!state.mounted) return;
-                          setDialogState(() => weatherSnapshot = snapshot);
-                        } catch (e) {
-                          debugPrint('Weather load error: $e');
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('${l10n.weatherLoadFailed}: $e'),
-                            ),
-                          );
-                        } finally {
-                          if (state.mounted) {
-                            setDialogState(() => isLoadingWeather = false);
-                          }
-                        }
-                      },
-                icon: isLoadingWeather
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.cloud),
-                label: Text(l10n.autoFillWeather),
-              ),
-              if (weatherSnapshot != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Text(
-                    '${l10n.weatherSummary}: ${weatherSnapshot!.summary}',
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                ),
-              const Divider(),
-              TextField(
-                controller: athleteNoteCtrl,
-                decoration: InputDecoration(labelText: l10n.athleteNote),
-                minLines: 1,
-                maxLines: 3,
-              ),
-              TextField(
-                controller: coachCommentCtrl,
-                decoration: InputDecoration(labelText: l10n.coachComment),
-                minLines: 1,
-                maxLines: 3,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              state._countdownTimer?.cancel();
-              state._applyPowerState(
-                ClickerController.turnPowerOffWithoutSaving(),
-              );
-              await state._saveData();
-            },
-            child: Text(l10n.off),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final navigator = Navigator.of(context);
-              final messenger = ScaffoldMessenger.of(context);
-
-              Object? syncError;
-
-              try {
-                final repo = await PrefsRepository.create();
-                final user = FirebaseAuth.instance.currentUser;
-                final goalFishCount = parseStrictInt(goalFishCtrl.text.trim(), min: 0);
-                final goalTargetPaceSeconds = parseStrictInt(
-                  goalPaceCtrl.text.trim(),
-                  min: 0,
-                );
-                final goalMaxTries = parseStrictInt(
-                  goalTriesCtrl.text.trim(),
-                  min: 0,
-                );
-                final goalStabilityPercent = parseStrictInt(
-                  goalStabilityCtrl.text.trim(),
-                  min: 0,
-                );
-
-                if (goalFishCount == null ||
-                    goalTargetPaceSeconds == null ||
-                    goalMaxTries == null ||
-                    goalStabilityPercent == null) {
-                  messenger.showSnackBar(
-                    SnackBar(content: Text(l10n.errorSavingSession)),
-                  );
-                  return;
-                }
-
-                final session = ClickerController.buildSession(
-                  id: DateTime.now().millisecondsSinceEpoch.toString(),
-                  name: nameCtrl.text,
-                  date: DateFormat('dd.MM.yy HH:mm').format(DateTime.now()),
-                  counter1: state.counter1,
-                  counter2: state.counter2,
-                  tries: state.tries,
-                  total: state.total,
-                  matchInterval: state.matchInterval,
-                  activityGrid: state.activityGrid,
-                  userId: user?.uid ?? '',
-                  userEmail: user?.email ?? '',
-                  userDisplayName: user?.displayName ?? '',
-                  athleteName: athleteNameCtrl.text,
-                  coachName: coachNameCtrl.text,
-                  venue: venueCtrl.text,
-                  sectorPeg: sectorPegCtrl.text,
-                  trainingType: trainingTypeCtrl.text,
-                  fishingMethod: fishingMethodCtrl.text,
-                  targetPace: targetPaceCtrl.text,
-                  goalFishCount: goalFishCount,
-                  goalTargetPaceSeconds: goalTargetPaceSeconds,
-                  goalMaxTries: goalMaxTries,
-                  goalStabilityPercent: goalStabilityPercent,
-                  conditions: conditionsCtrl.text,
-                  baitNotes: baitNotesCtrl.text,
-                  weather: weatherSnapshot,
-                  athleteNote: athleteNoteCtrl.text,
-                  coachComment: coachCommentCtrl.text,
-                );
-
-                await repo.addHistorySession(session);
-                if (state.isSyncHistoryEnabled) {
-                  try {
-                    await CloudHistoryService().uploadSession(session);
-                  } catch (e) {
-                    syncError = e;
-                    debugPrint('Cloud history sync error: $e');
-                  }
-                }
-
-                if (!state.mounted) return;
-
-                state._countdownTimer?.cancel();
-                state._applyPowerState(
-                  ClickerController.resetAfterSessionSaved(),
-                );
-
-                await state._saveData();
-
-                if (!state.mounted) return;
-                navigator.pop();
-                if (syncError != null) {
-                  messenger.showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        '${l10n.sessionSavedCloudFailed}: $syncError',
-                      ),
-                    ),
-                  );
-                }
-              } catch (e) {
-                debugPrint('Error saving session: $e');
-                if (!state.mounted) return;
-                navigator.pop();
-                messenger.showSnackBar(
-                  SnackBar(content: Text('${l10n.errorSavingSession}: $e')),
-                );
-              }
-            },
-            child: Text(l10n.save),
-          ),
-        ],
-      ),
-    ),
-  );
-
-  nameCtrl.dispose();
-  athleteNameCtrl.dispose();
-  coachNameCtrl.dispose();
-  venueCtrl.dispose();
-  sectorPegCtrl.dispose();
-  trainingTypeCtrl.dispose();
-  fishingMethodCtrl.dispose();
-  targetPaceCtrl.dispose();
-  goalFishCtrl.dispose();
-  goalPaceCtrl.dispose();
-  goalTriesCtrl.dispose();
-  goalStabilityCtrl.dispose();
-  conditionsCtrl.dispose();
-  baitNotesCtrl.dispose();
-  athleteNoteCtrl.dispose();
-  coachCommentCtrl.dispose();
 }
 
 String shakeSensitivityLabel(

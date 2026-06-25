@@ -18,7 +18,7 @@ void main() {
           GlobalCupertinoLocalizations.delegate,
         ],
         supportedLocales: AppLocalizations.supportedLocales,
-        home: ClickerScreen(),
+        home: ClickerScreen(enableBackgroundTasks: false),
       ),
     );
     await tester.pumpAndSettle();

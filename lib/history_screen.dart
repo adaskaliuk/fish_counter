@@ -9,7 +9,6 @@ import 'package:fish_counter/session_comparison_screen.dart';
 import 'package:fish_counter/services/cloud_history_service.dart';
 import 'package:fish_counter/services/prefs_repository.dart';
 import 'package:fish_counter/utils/error_handler.dart';
-import 'package:fish_counter/widgets/history_widgets.dart';
 import 'package:fish_counter/widgets/session_edit_dialog.dart';
 import 'package:flutter/material.dart';
 

@@ -25,13 +25,13 @@ class SessionCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     return Card(
       elevation: isSelected ? 4 : 1,
-      color: isSelected ? Colors.orange.withOpacity(0.1) : null,
+      color: isSelected ? Colors.orange.withValues(alpha: 0.1) : null,
       child: ListTile(
         leading: isSelected
             ? const Icon(Icons.check_circle, color: Colors.orange)
             : const Icon(Icons.history),
         title: Text(session.name),
-        subtitle: Text('${session.date} • ${session.total} ${l10n.total}'),
+        subtitle: Text('${session.date} • ${session.total} ${l10n.fishCount}'),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -120,13 +120,13 @@ class SyncStatusBanner extends StatelessWidget {
   Color _getStatusColor() {
     switch (status) {
       case 'syncing':
-        return Colors.blue.withOpacity(0.1);
+        return Colors.blue.withValues(alpha: 0.1);
       case 'success':
-        return Colors.green.withOpacity(0.1);
+        return Colors.green.withValues(alpha: 0.1);
       case 'failed':
-        return Colors.red.withOpacity(0.1);
+        return Colors.red.withValues(alpha: 0.1);
       default:
-        return Colors.grey.withOpacity(0.1);
+        return Colors.grey.withValues(alpha: 0.1);
     }
   }
 
@@ -174,7 +174,7 @@ class LoadingOverlay extends StatelessWidget {
         child,
         if (isLoading)
           Container(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             child: const Center(
               child: CircularProgressIndicator(),
             ),

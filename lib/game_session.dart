@@ -19,6 +19,33 @@ class GameSession {
   final SessionGoals goals;
   final WeatherInfo weatherInfo;
 
+  // Backward-compatible flat accessors.
+  String get userId => userInfo.userId;
+  String get userEmail => userInfo.userEmail;
+  String get userDisplayName => userInfo.userDisplayName;
+  String get venue => venueInfo.venue;
+  String get sectorPeg => venueInfo.sectorPeg;
+  String get trainingType => venueInfo.trainingType;
+  String get fishingMethod => venueInfo.fishingMethod;
+  String get targetPace => venueInfo.targetPace;
+  String get conditions => venueInfo.conditions;
+  String get baitNotes => venueInfo.baitNotes;
+  int get goalFishCount => goals.goalFishCount;
+  int get goalTargetPaceSeconds => goals.goalTargetPaceSeconds;
+  int get goalMaxTries => goals.goalMaxTries;
+  int get goalStabilityPercent => goals.goalStabilityPercent;
+  String get weatherPlace => weatherInfo.place;
+  String get weatherDescription => weatherInfo.description;
+  String get weatherFetchedAt => weatherInfo.fetchedAt;
+  double? get latitude => weatherInfo.latitude;
+  double? get longitude => weatherInfo.longitude;
+  double? get weatherTemperatureCelsius => weatherInfo.temperatureCelsius;
+  double? get weatherFeelsLikeCelsius => weatherInfo.feelsLikeCelsius;
+  double? get weatherPressureHpa => weatherInfo.pressureHpa;
+  double? get weatherHumidityPercent => weatherInfo.humidityPercent;
+  double? get weatherWindSpeedMs => weatherInfo.windSpeedMs;
+  double? get weatherWindDirectionDegrees => weatherInfo.windDirectionDegrees;
+
   GameSession._({
     required this.id,
     required this.name,
@@ -29,16 +56,44 @@ class GameSession {
     required this.total,
     required this.matchDuration,
     required this.grid,
-    required this.userInfo,
-    required this.venueInfo,
-    required this.goals,
+    SessionUserInfo? userInfo,
+    SessionVenueInfo? venueInfo,
+    SessionGoals? goals,
+    WeatherInfo? weatherInfo,
+    String weatherPlace = '',
+    String weatherDescription = '',
+    String weatherFetchedAt = '',
+    double? latitude,
+    double? longitude,
+    double? weatherTemperatureCelsius,
+    double? weatherFeelsLikeCelsius,
+    double? weatherPressureHpa,
+    double? weatherHumidityPercent,
+    double? weatherWindSpeedMs,
+    double? weatherWindDirectionDegrees,
     required this.updatedAt,
-    required this.weatherInfo,
     this.athleteName = '',
     this.coachName = '',
     this.athleteNote = '',
     this.coachComment = '',
-  });
+  })  : userInfo = userInfo ?? const SessionUserInfo(),
+        venueInfo = venueInfo ?? const SessionVenueInfo(),
+        goals = goals ?? const SessionGoals(),
+        weatherInfo =
+            weatherInfo ??
+            WeatherInfo(
+              place: weatherPlace,
+              description: weatherDescription,
+              fetchedAt: weatherFetchedAt,
+              latitude: latitude,
+              longitude: longitude,
+              temperatureCelsius: weatherTemperatureCelsius,
+              feelsLikeCelsius: weatherFeelsLikeCelsius,
+              pressureHpa: weatherPressureHpa,
+              humidityPercent: weatherHumidityPercent,
+              windSpeedMs: weatherWindSpeedMs,
+              windDirectionDegrees: weatherWindDirectionDegrees,
+            );
 
   factory GameSession({
     required String id,
@@ -54,7 +109,36 @@ class GameSession {
     SessionVenueInfo? venueInfo,
     SessionGoals? goals,
     WeatherInfo? weatherInfo,
+    String userId = '',
+    String userEmail = '',
+    String userDisplayName = '',
+    String venue = '',
+    String sectorPeg = '',
+    String trainingType = '',
+    String fishingMethod = '',
+    String targetPace = '',
+    String conditions = '',
+    String baitNotes = '',
+    int goalFishCount = 0,
+    int goalTargetPaceSeconds = 0,
+    int goalMaxTries = 0,
+    int goalStabilityPercent = 0,
+    String weatherPlace = '',
+    String weatherDescription = '',
+    String weatherFetchedAt = '',
+    double? latitude,
+    double? longitude,
+    double? weatherTemperatureCelsius,
+    double? weatherFeelsLikeCelsius,
+    double? weatherPressureHpa,
+    double? weatherHumidityPercent,
+    double? weatherWindSpeedMs,
+    double? weatherWindDirectionDegrees,
+    String athleteNote = '',
+    String coachComment = '',
     String? updatedAt,
+    String athleteName = '',
+    String coachName = '',
   }) {
     return GameSession._(
       id: id,
@@ -66,16 +150,56 @@ class GameSession {
       total: total,
       matchDuration: matchDuration,
       grid: grid,
-      userInfo: userInfo ?? const SessionUserInfo(),
-      venueInfo: venueInfo ?? const SessionVenueInfo(),
-      goals: goals ?? const SessionGoals(),
-      weatherInfo: weatherInfo ?? const WeatherInfo(),
+      userInfo: userInfo ?? SessionUserInfo(
+        userId: userId,
+        userEmail: userEmail,
+        userDisplayName: userDisplayName,
+      ),
+      venueInfo: venueInfo ?? SessionVenueInfo(
+        venue: venue,
+        sectorPeg: sectorPeg,
+        trainingType: trainingType,
+        fishingMethod: fishingMethod,
+        targetPace: targetPace,
+        conditions: conditions,
+        baitNotes: baitNotes,
+      ),
+      goals: goals ?? SessionGoals(
+        goalFishCount: goalFishCount,
+        goalTargetPaceSeconds: goalTargetPaceSeconds,
+        goalMaxTries: goalMaxTries,
+        goalStabilityPercent: goalStabilityPercent,
+      ),
+      weatherInfo: weatherInfo ?? WeatherInfo(
+        place: weatherPlace,
+        description: weatherDescription,
+        fetchedAt: weatherFetchedAt,
+        latitude: latitude,
+        longitude: longitude,
+        temperatureCelsius: weatherTemperatureCelsius,
+        feelsLikeCelsius: weatherFeelsLikeCelsius,
+        pressureHpa: weatherPressureHpa,
+        humidityPercent: weatherHumidityPercent,
+        windSpeedMs: weatherWindSpeedMs,
+        windDirectionDegrees: weatherWindDirectionDegrees,
+      ),
       updatedAt: updatedAt ?? DateTime.now().toIso8601String(),
+      athleteName: athleteName,
+      coachName: coachName,
+      athleteNote: athleteNote,
+      coachComment: coachComment,
     );
   }
 
   GameSession copyWith({
     String? name,
+    String? venue,
+    String? sectorPeg,
+    String? trainingType,
+    String? fishingMethod,
+    String? targetPace,
+    String? conditions,
+    String? baitNotes,
     String? athleteName,
     String? coachName,
     String? athleteNote,
@@ -97,7 +221,24 @@ class GameSession {
       matchDuration: matchDuration,
       grid: List<Map<String, dynamic>>.from(grid),
       userInfo: userInfo ?? this.userInfo,
-      venueInfo: venueInfo ?? this.venueInfo,
+      venueInfo: venueInfo ??
+          (venue == null &&
+                  sectorPeg == null &&
+                  trainingType == null &&
+                  fishingMethod == null &&
+                  targetPace == null &&
+                  conditions == null &&
+                  baitNotes == null
+              ? this.venueInfo
+              : this.venueInfo.copyWith(
+                  venue: venue,
+                  sectorPeg: sectorPeg,
+                  trainingType: trainingType,
+                  fishingMethod: fishingMethod,
+                  targetPace: targetPace,
+                  conditions: conditions,
+                  baitNotes: baitNotes,
+                )),
       goals: goals ?? this.goals,
       weatherInfo: weatherInfo ?? this.weatherInfo,
       updatedAt: updatedAt ?? this.updatedAt,
