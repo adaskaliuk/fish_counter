@@ -1,26 +1,25 @@
+import 'package:fish_counter/models/session_goals.dart';
+import 'package:fish_counter/models/session_user_info.dart';
+import 'package:fish_counter/models/session_venue_info.dart';
+import 'package:fish_counter/models/weather_info.dart';
+import 'package:fish_counter/utils/type_utils.dart';
+
 // ==========================================
 // SESSION MODEL
 // ==========================================
 class GameSession {
   final String id, name, date, matchDuration;
-  final String userId, userEmail, userDisplayName;
-  final String athleteName, coachName, venue, sectorPeg;
-  final String trainingType, fishingMethod, targetPace, conditions, baitNotes;
-  final String weatherPlace, weatherDescription, weatherFetchedAt;
+  final String athleteName, coachName;
   final String updatedAt;
-  final double? latitude, longitude;
-  final double? weatherTemperatureCelsius, weatherFeelsLikeCelsius;
-  final double? weatherPressureHpa, weatherHumidityPercent;
-  final double? weatherWindSpeedMs, weatherWindDirectionDegrees;
   final String athleteNote, coachComment;
   final int c1, c2, tries, total;
-  final int goalFishCount,
-      goalTargetPaceSeconds,
-      goalMaxTries,
-      goalStabilityPercent;
   final List<Map<String, dynamic>> grid;
+  final SessionUserInfo userInfo;
+  final SessionVenueInfo venueInfo;
+  final SessionGoals goals;
+  final WeatherInfo weatherInfo;
 
-  GameSession({
+  GameSession._({
     required this.id,
     required this.name,
     required this.date,
@@ -28,56 +27,66 @@ class GameSession {
     required this.c2,
     required this.tries,
     required this.total,
-    this.goalFishCount = 0,
-    this.goalTargetPaceSeconds = 0,
-    this.goalMaxTries = 0,
-    this.goalStabilityPercent = 0,
     required this.matchDuration,
     required this.grid,
-    this.userId = '',
-    this.userEmail = '',
-    this.userDisplayName = '',
+    required this.userInfo,
+    required this.venueInfo,
+    required this.goals,
+    required this.updatedAt,
+    required this.weatherInfo,
     this.athleteName = '',
     this.coachName = '',
-    this.venue = '',
-    this.sectorPeg = '',
-    this.trainingType = '',
-    this.fishingMethod = '',
-    this.targetPace = '',
-    this.conditions = '',
-    this.baitNotes = '',
-    this.weatherPlace = '',
-    this.weatherDescription = '',
-    this.weatherFetchedAt = '',
-    String? updatedAt,
-    this.latitude,
-    this.longitude,
-    this.weatherTemperatureCelsius,
-    this.weatherFeelsLikeCelsius,
-    this.weatherPressureHpa,
-    this.weatherHumidityPercent,
-    this.weatherWindSpeedMs,
-    this.weatherWindDirectionDegrees,
     this.athleteNote = '',
     this.coachComment = '',
-  }) : updatedAt = updatedAt ?? DateTime.now().toIso8601String();
+  });
+
+  factory GameSession({
+    required String id,
+    required String name,
+    required String date,
+    required int c1,
+    required int c2,
+    required int tries,
+    required int total,
+    required String matchDuration,
+    required List<Map<String, dynamic>> grid,
+    SessionUserInfo? userInfo,
+    SessionVenueInfo? venueInfo,
+    SessionGoals? goals,
+    WeatherInfo? weatherInfo,
+    String? updatedAt,
+  }) {
+    return GameSession._(
+      id: id,
+      name: name,
+      date: date,
+      c1: c1,
+      c2: c2,
+      tries: tries,
+      total: total,
+      matchDuration: matchDuration,
+      grid: grid,
+      userInfo: userInfo ?? const SessionUserInfo(),
+      venueInfo: venueInfo ?? const SessionVenueInfo(),
+      goals: goals ?? const SessionGoals(),
+      weatherInfo: weatherInfo ?? const WeatherInfo(),
+      updatedAt: updatedAt ?? DateTime.now().toIso8601String(),
+    );
+  }
 
   GameSession copyWith({
     String? name,
     String? athleteName,
     String? coachName,
-    String? venue,
-    String? sectorPeg,
-    String? trainingType,
-    String? fishingMethod,
-    String? targetPace,
-    String? conditions,
-    String? baitNotes,
     String? athleteNote,
     String? coachComment,
     String? updatedAt,
+    SessionUserInfo? userInfo,
+    SessionVenueInfo? venueInfo,
+    SessionGoals? goals,
+    WeatherInfo? weatherInfo,
   }) {
-    return GameSession(
+    return GameSession._(
       id: id,
       name: name ?? this.name,
       date: date,
@@ -85,36 +94,15 @@ class GameSession {
       c2: c2,
       tries: tries,
       total: total,
-      goalFishCount: goalFishCount,
-      goalTargetPaceSeconds: goalTargetPaceSeconds,
-      goalMaxTries: goalMaxTries,
-      goalStabilityPercent: goalStabilityPercent,
       matchDuration: matchDuration,
       grid: List<Map<String, dynamic>>.from(grid),
-      userId: userId,
-      userEmail: userEmail,
-      userDisplayName: userDisplayName,
+      userInfo: userInfo ?? this.userInfo,
+      venueInfo: venueInfo ?? this.venueInfo,
+      goals: goals ?? this.goals,
+      weatherInfo: weatherInfo ?? this.weatherInfo,
+      updatedAt: updatedAt ?? this.updatedAt,
       athleteName: athleteName ?? this.athleteName,
       coachName: coachName ?? this.coachName,
-      venue: venue ?? this.venue,
-      sectorPeg: sectorPeg ?? this.sectorPeg,
-      trainingType: trainingType ?? this.trainingType,
-      fishingMethod: fishingMethod ?? this.fishingMethod,
-      targetPace: targetPace ?? this.targetPace,
-      conditions: conditions ?? this.conditions,
-      baitNotes: baitNotes ?? this.baitNotes,
-      weatherPlace: weatherPlace,
-      weatherDescription: weatherDescription,
-      weatherFetchedAt: weatherFetchedAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      latitude: latitude,
-      longitude: longitude,
-      weatherTemperatureCelsius: weatherTemperatureCelsius,
-      weatherFeelsLikeCelsius: weatherFeelsLikeCelsius,
-      weatherPressureHpa: weatherPressureHpa,
-      weatherHumidityPercent: weatherHumidityPercent,
-      weatherWindSpeedMs: weatherWindSpeedMs,
-      weatherWindDirectionDegrees: weatherWindDirectionDegrees,
       athleteNote: athleteNote ?? this.athleteNote,
       coachComment: coachComment ?? this.coachComment,
     );
@@ -128,117 +116,210 @@ class GameSession {
     'c2': c2,
     'tries': tries,
     'total': total,
-    'goalFishCount': goalFishCount,
-    'goalTargetPaceSeconds': goalTargetPaceSeconds,
-    'goalMaxTries': goalMaxTries,
-    'goalStabilityPercent': goalStabilityPercent,
     'matchDuration': matchDuration,
     'grid': grid,
-    'userId': userId,
-    'userEmail': userEmail,
-    'userDisplayName': userDisplayName,
     'athleteName': athleteName,
     'coachName': coachName,
-    'venue': venue,
-    'sectorPeg': sectorPeg,
-    'trainingType': trainingType,
-    'fishingMethod': fishingMethod,
-    'targetPace': targetPace,
-    'conditions': conditions,
-    'baitNotes': baitNotes,
-    'weatherPlace': weatherPlace,
-    'weatherDescription': weatherDescription,
-    'weatherFetchedAt': weatherFetchedAt,
     'updatedAt': updatedAt,
-    'latitude': latitude,
-    'longitude': longitude,
-    'weatherTemperatureCelsius': weatherTemperatureCelsius,
-    'weatherFeelsLikeCelsius': weatherFeelsLikeCelsius,
-    'weatherPressureHpa': weatherPressureHpa,
-    'weatherHumidityPercent': weatherHumidityPercent,
-    'weatherWindSpeedMs': weatherWindSpeedMs,
-    'weatherWindDirectionDegrees': weatherWindDirectionDegrees,
     'athleteNote': athleteNote,
     'coachComment': coachComment,
+    ...userInfo.toJson(),
+    ...venueInfo.toJson(),
+    ...goals.toJson(),
+    ...weatherInfo.toJson(),
   };
 
   factory GameSession.fromJson(Map<String, dynamic> json) {
-    return GameSession(
-      id: _safeString(json['id']),
-      name: _safeString(json['name'], defaultValue: 'Session'),
-      date: _safeString(json['date'], defaultValue: '--'),
-      c1: _safeInt(json['c1']),
-      c2: _safeInt(json['c2']),
-      tries: _safeInt(json['tries']),
-      total: _safeInt(json['total']),
-      goalFishCount: _safeInt(json['goalFishCount']),
-      goalTargetPaceSeconds: _safeInt(json['goalTargetPaceSeconds']),
-      goalMaxTries: _safeInt(json['goalMaxTries']),
-      goalStabilityPercent: _safeInt(json['goalStabilityPercent']),
-      matchDuration: _safeString(
+    return GameSession._(
+      id: TypeUtils.safeString(json['id']),
+      name: TypeUtils.safeString(json['name'], defaultValue: 'Session'),
+      date: TypeUtils.safeString(json['date'], defaultValue: '--'),
+      c1: TypeUtils.safeInt(json['c1']),
+      c2: TypeUtils.safeInt(json['c2']),
+      tries: TypeUtils.safeInt(json['tries']),
+      total: TypeUtils.safeInt(json['total']),
+      matchDuration: TypeUtils.safeString(
         json['matchDuration'],
         defaultValue: '00:00:00',
       ),
-      grid: _safeGridList(json['grid']),
-      userId: _safeString(json['userId']),
-      userEmail: _safeString(json['userEmail']),
-      userDisplayName: _safeString(json['userDisplayName']),
-      athleteName: _safeString(json['athleteName']),
-      coachName: _safeString(json['coachName']),
-      venue: _safeString(json['venue']),
-      sectorPeg: _safeString(json['sectorPeg']),
-      trainingType: _safeString(json['trainingType']),
-      fishingMethod: _safeString(json['fishingMethod']),
-      targetPace: _safeString(json['targetPace']),
-      conditions: _safeString(json['conditions']),
-      baitNotes: _safeString(json['baitNotes']),
-      weatherPlace: _safeString(json['weatherPlace']),
-      weatherDescription: _safeString(json['weatherDescription']),
-      weatherFetchedAt: _safeString(json['weatherFetchedAt']),
-      updatedAt: _safeString(
+      grid: TypeUtils.safeMapList(json['grid']),
+      userInfo: SessionUserInfo.fromJson(json),
+      venueInfo: SessionVenueInfo.fromJson(json),
+      goals: SessionGoals.fromJson(json),
+      weatherInfo: WeatherInfo.fromJson(json),
+      updatedAt: TypeUtils.safeString(
         json['updatedAt'],
-        defaultValue: _safeString(json['id']),
+        defaultValue: TypeUtils.safeString(json['id']),
       ),
-      latitude: _safeDouble(json['latitude']),
-      longitude: _safeDouble(json['longitude']),
-      weatherTemperatureCelsius: _safeDouble(json['weatherTemperatureCelsius']),
-      weatherFeelsLikeCelsius: _safeDouble(json['weatherFeelsLikeCelsius']),
-      weatherPressureHpa: _safeDouble(json['weatherPressureHpa']),
-      weatherHumidityPercent: _safeDouble(json['weatherHumidityPercent']),
-      weatherWindSpeedMs: _safeDouble(json['weatherWindSpeedMs']),
-      weatherWindDirectionDegrees: _safeDouble(
-        json['weatherWindDirectionDegrees'],
-      ),
-      athleteNote: _safeString(json['athleteNote']),
-      coachComment: _safeString(json['coachComment']),
+      athleteName: TypeUtils.safeString(json['athleteName']),
+      coachName: TypeUtils.safeString(json['coachName']),
+      athleteNote: TypeUtils.safeString(json['athleteNote']),
+      coachComment: TypeUtils.safeString(json['coachComment']),
     );
   }
+}
 
-  static String _safeString(dynamic value, {String defaultValue = ''}) {
-    if (value == null) return defaultValue;
-    return value.toString();
+class GameSessionBuilder {
+  String? _id, _name, _date, _matchDuration;
+  int? _c1, _c2, _tries, _total;
+  List<Map<String, dynamic>>? _grid;
+  SessionUserInfo? _userInfo;
+  SessionVenueInfo? _venueInfo;
+  SessionGoals? _goals;
+  String? _updatedAt;
+  String? _athleteName, _coachName;
+  String? _weatherPlace, _weatherDescription, _weatherFetchedAt;
+  double? _latitude, _longitude;
+  double? _weatherTemperatureCelsius, _weatherFeelsLikeCelsius;
+  double? _weatherPressureHpa, _weatherHumidityPercent;
+  double? _weatherWindSpeedMs, _weatherWindDirectionDegrees;
+  String? _athleteNote, _coachComment;
+
+  GameSessionBuilder id(String value) {
+    _id = value;
+    return this;
   }
 
-  static double? _safeDouble(dynamic value) {
-    if (value == null) return null;
-    if (value is num) return value.toDouble();
-    return double.tryParse(value.toString());
+  GameSessionBuilder name(String value) {
+    _name = value;
+    return this;
   }
 
-  static int _safeInt(dynamic value, {int defaultValue = 0}) {
-    if (value == null) return defaultValue;
-    if (value is int) return value;
-    if (value is num) return value.toInt();
-    return int.tryParse(value.toString()) ?? defaultValue;
+  GameSessionBuilder date(String value) {
+    _date = value;
+    return this;
   }
 
-  static List<Map<String, dynamic>> _safeGridList(dynamic value) {
-    if (value == null) return [];
-    if (value is! List) return [];
+  GameSessionBuilder counters({
+    required int c1,
+    required int c2,
+    required int tries,
+    required int total,
+  }) {
+    _c1 = c1;
+    _c2 = c2;
+    _tries = tries;
+    _total = total;
+    return this;
+  }
 
-    return value
-        .whereType<Map>()
-        .map((entry) => Map<String, dynamic>.from(entry))
-        .toList();
+  GameSessionBuilder matchDuration(String value) {
+    _matchDuration = value;
+    return this;
+  }
+
+  GameSessionBuilder grid(List<Map<String, dynamic>> value) {
+    _grid = value;
+    return this;
+  }
+
+  GameSessionBuilder userInfo(SessionUserInfo value) {
+    _userInfo = value;
+    return this;
+  }
+
+  GameSessionBuilder venueInfo(SessionVenueInfo value) {
+    _venueInfo = value;
+    return this;
+  }
+
+  GameSessionBuilder goals(SessionGoals value) {
+    _goals = value;
+    return this;
+  }
+
+  GameSessionBuilder athleteName(String value) {
+    _athleteName = value;
+    return this;
+  }
+
+  GameSessionBuilder coachName(String value) {
+    _coachName = value;
+    return this;
+  }
+
+  GameSessionBuilder weatherPlace(String value) {
+    _weatherPlace = value;
+    return this;
+  }
+
+  GameSessionBuilder weatherDescription(String value) {
+    _weatherDescription = value;
+    return this;
+  }
+
+  GameSessionBuilder weatherFetchedAt(String value) {
+    _weatherFetchedAt = value;
+    return this;
+  }
+
+  GameSessionBuilder location({double? latitude, double? longitude}) {
+    _latitude = latitude;
+    _longitude = longitude;
+    return this;
+  }
+
+  GameSessionBuilder weatherData({
+    double? temperatureCelsius,
+    double? feelsLikeCelsius,
+    double? pressureHpa,
+    double? humidityPercent,
+    double? windSpeedMs,
+    double? windDirectionDegrees,
+  }) {
+    _weatherTemperatureCelsius = temperatureCelsius;
+    _weatherFeelsLikeCelsius = feelsLikeCelsius;
+    _weatherPressureHpa = pressureHpa;
+    _weatherHumidityPercent = humidityPercent;
+    _weatherWindSpeedMs = windSpeedMs;
+    _weatherWindDirectionDegrees = windDirectionDegrees;
+    return this;
+  }
+
+  GameSessionBuilder notes({
+    String? athleteNote,
+    String? coachComment,
+  }) {
+    _athleteNote = athleteNote;
+    _coachComment = coachComment;
+    return this;
+  }
+
+  GameSessionBuilder updatedAt(String value) {
+    _updatedAt = value;
+    return this;
+  }
+
+  GameSession build() {
+    return GameSession._(
+      id: _id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      name: _name ?? 'Session',
+      date: _date ?? '--',
+      c1: _c1 ?? 0,
+      c2: _c2 ?? 0,
+      tries: _tries ?? 0,
+      total: _total ?? 0,
+      matchDuration: _matchDuration ?? '00:00:00',
+      grid: _grid ?? [],
+      userInfo: _userInfo ?? const SessionUserInfo(),
+      venueInfo: _venueInfo ?? const SessionVenueInfo(),
+      goals: _goals ?? const SessionGoals(),
+      updatedAt: _updatedAt ?? DateTime.now().toIso8601String(),
+      athleteName: _athleteName ?? '',
+      coachName: _coachName ?? '',
+      weatherPlace: _weatherPlace ?? '',
+      weatherDescription: _weatherDescription ?? '',
+      weatherFetchedAt: _weatherFetchedAt ?? '',
+      latitude: _latitude,
+      longitude: _longitude,
+      weatherTemperatureCelsius: _weatherTemperatureCelsius,
+      weatherFeelsLikeCelsius: _weatherFeelsLikeCelsius,
+      weatherPressureHpa: _weatherPressureHpa,
+      weatherHumidityPercent: _weatherHumidityPercent,
+      weatherWindSpeedMs: _weatherWindSpeedMs,
+      weatherWindDirectionDegrees: _weatherWindDirectionDegrees,
+      athleteNote: _athleteNote ?? '',
+      coachComment: _coachComment ?? '',
+    );
   }
 }

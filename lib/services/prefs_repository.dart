@@ -5,6 +5,7 @@ import 'package:fish_counter/game_session.dart';
 import 'package:fish_counter/models/activity_log.dart';
 import 'package:fish_counter/models/app_settings.dart';
 import 'package:fish_counter/models/athlete_profile.dart';
+import 'package:fish_counter/utils/type_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Handles persistence for sessions and optional typed activity logs.
@@ -52,7 +53,7 @@ class PrefsRepository {
   Future<void> touchSettingsUpdatedAt() async {
     await _prefs.setString(
       PrefsKeys.settingsUpdatedAt,
-      DateTime.now().toIso8601String(),
+      DateTime.now().toUtc().toIso8601String(),
     );
   }
 
@@ -98,25 +99,19 @@ class PrefsRepository {
   AppSettings loadAppSettings() {
     return AppSettings(
       syncHistoryEnabled:
-          _prefs.getBool(PrefsKeys.syncHistoryEnabled) ??
-          Defaults.defaultSyncHistoryEnabled,
+          TypeUtils.safeBool(_prefs.getBool(PrefsKeys.syncHistoryEnabled), defaultValue: Defaults.defaultSyncHistoryEnabled),
       resetDelay:
-          _prefs.getInt(PrefsKeys.resetDelay) ??
-          Defaults.defaultResetDelaySeconds,
+          TypeUtils.safeInt(_prefs.getInt(PrefsKeys.resetDelay), defaultValue: Defaults.defaultResetDelaySeconds),
       vibeInterval:
-          _prefs.getInt(PrefsKeys.vibeInterval) ??
-          Defaults.defaultVibeIntervalSeconds,
+          TypeUtils.safeInt(_prefs.getInt(PrefsKeys.vibeInterval), defaultValue: Defaults.defaultVibeIntervalSeconds),
       matchSeconds:
-          _prefs.getInt(PrefsKeys.matchSeconds) ??
-          Defaults.defaultMatchDurationSeconds,
+          TypeUtils.safeInt(_prefs.getInt(PrefsKeys.matchSeconds), defaultValue: Defaults.defaultMatchDurationSeconds),
       shakeUndoEnabled:
-          _prefs.getBool(PrefsKeys.shakeUndoEnabled) ??
-          Defaults.defaultShakeUndoEnabled,
+          TypeUtils.safeBool(_prefs.getBool(PrefsKeys.shakeUndoEnabled), defaultValue: Defaults.defaultShakeUndoEnabled),
       shakeSensitivity:
-          _prefs.getString(PrefsKeys.shakeSensitivity) ??
-          Defaults.defaultShakeSensitivity,
+          TypeUtils.safeString(_prefs.getString(PrefsKeys.shakeSensitivity), defaultValue: Defaults.defaultShakeSensitivity),
       athleteProfile: loadAthleteProfile(),
-      updatedAt: _prefs.getString(PrefsKeys.settingsUpdatedAt) ?? '',
+      updatedAt: TypeUtils.safeString(_prefs.getString(PrefsKeys.settingsUpdatedAt)),
     );
   }
 
@@ -137,7 +132,11 @@ class PrefsRepository {
       PrefsKeys.athleteProfile,
       jsonEncode(settings.athleteProfile.toJson()),
     );
-    await _prefs.setString(PrefsKeys.settingsUpdatedAt, settings.updatedAt);
+    await _prefs.setString(
+      PrefsKeys.settingsUpdatedAt,
+      DateTime.tryParse(settings.updatedAt)?.toUtc().toIso8601String() ??
+          settings.updatedAt,
+    );
   }
 
   Future<void> saveClickerState({
@@ -291,35 +290,23 @@ class PrefsRepository {
     }
 
     return StateContainer(
-      c1: _prefs.getInt(PrefsKeys.counter1) ?? 0,
-      c2: _prefs.getInt(PrefsKeys.counter2) ?? 0,
-      tries: _prefs.getInt(PrefsKeys.tries) ?? 0,
-      total: _prefs.getInt(PrefsKeys.total) ?? 0,
-      powerOn: _prefs.getBool(PrefsKeys.isPowerOn) ?? true,
-      paused: _prefs.getBool(PrefsKeys.isPaused) ?? true,
-      sessionActive: _prefs.getBool(PrefsKeys.isSessionActive) ?? false,
-      dataHidden: _prefs.getBool(PrefsKeys.isDataHidden) ?? true,
-      resetDelay:
-          _prefs.getInt(PrefsKeys.resetDelay) ??
-          Defaults.defaultResetDelaySeconds,
-      vibeInterval:
-          _prefs.getInt(PrefsKeys.vibeInterval) ??
-          Defaults.defaultVibeIntervalSeconds,
-      matchSeconds:
-          _prefs.getInt(PrefsKeys.matchSeconds) ??
-          Defaults.defaultMatchDurationSeconds,
+      c1: TypeUtils.safeInt(_prefs.getInt(PrefsKeys.counter1)),
+      c2: TypeUtils.safeInt(_prefs.getInt(PrefsKeys.counter2)),
+      tries: TypeUtils.safeInt(_prefs.getInt(PrefsKeys.tries)),
+      total: TypeUtils.safeInt(_prefs.getInt(PrefsKeys.total)),
+      powerOn: TypeUtils.safeBool(_prefs.getBool(PrefsKeys.isPowerOn), defaultValue: true),
+      paused: TypeUtils.safeBool(_prefs.getBool(PrefsKeys.isPaused), defaultValue: true),
+      sessionActive: TypeUtils.safeBool(_prefs.getBool(PrefsKeys.isSessionActive)),
+      dataHidden: TypeUtils.safeBool(_prefs.getBool(PrefsKeys.isDataHidden), defaultValue: true),
+      resetDelay: TypeUtils.safeInt(_prefs.getInt(PrefsKeys.resetDelay), defaultValue: Defaults.defaultResetDelaySeconds),
+      vibeInterval: TypeUtils.safeInt(_prefs.getInt(PrefsKeys.vibeInterval), defaultValue: Defaults.defaultVibeIntervalSeconds),
+      matchSeconds: TypeUtils.safeInt(_prefs.getInt(PrefsKeys.matchSeconds), defaultValue: Defaults.defaultMatchDurationSeconds),
       activityGrid: activityLogs,
       rawActivityGrid: rawActivityGrid,
       historySessions: sessions,
-      syncHistoryEnabled:
-          _prefs.getBool(PrefsKeys.syncHistoryEnabled) ??
-          Defaults.defaultSyncHistoryEnabled,
-      shakeUndoEnabled:
-          _prefs.getBool(PrefsKeys.shakeUndoEnabled) ??
-          Defaults.defaultShakeUndoEnabled,
-      shakeSensitivity:
-          _prefs.getString(PrefsKeys.shakeSensitivity) ??
-          Defaults.defaultShakeSensitivity,
+      syncHistoryEnabled: TypeUtils.safeBool(_prefs.getBool(PrefsKeys.syncHistoryEnabled), defaultValue: Defaults.defaultSyncHistoryEnabled),
+      shakeUndoEnabled: TypeUtils.safeBool(_prefs.getBool(PrefsKeys.shakeUndoEnabled), defaultValue: Defaults.defaultShakeUndoEnabled),
+      shakeSensitivity: TypeUtils.safeString(_prefs.getString(PrefsKeys.shakeSensitivity), defaultValue: Defaults.defaultShakeSensitivity),
     );
   }
 }

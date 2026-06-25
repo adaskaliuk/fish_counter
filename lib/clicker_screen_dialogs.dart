@@ -25,21 +25,23 @@ Future<void> _showSettingsDialog(_ClickerScreenState state) async {
   final trainingCtrl = TextEditingController();
   final methodCtrl = TextEditingController();
   final paceCtrl = TextEditingController();
+  final dialogContext = state.context;
 
-  repoFuture.then((repo) {
-    final profile = repo.loadAthleteProfile();
-    athleteCtrl.text = profile.athleteName;
-    coachCtrl.text = profile.coachName;
-    clubCtrl.text = profile.clubTeam;
-    venueCtrl.text = profile.defaultVenue;
-    sectorCtrl.text = profile.defaultSectorPeg;
-    trainingCtrl.text = profile.defaultTrainingType;
-    methodCtrl.text = profile.defaultFishingMethod;
-    paceCtrl.text = profile.defaultTargetPace;
-  });
+  final repo = await repoFuture;
+  final profile = repo.loadAthleteProfile();
+  athleteCtrl.text = profile.athleteName;
+  coachCtrl.text = profile.coachName;
+  clubCtrl.text = profile.clubTeam;
+  venueCtrl.text = profile.defaultVenue;
+  sectorCtrl.text = profile.defaultSectorPeg;
+  trainingCtrl.text = profile.defaultTrainingType;
+  methodCtrl.text = profile.defaultFishingMethod;
+  paceCtrl.text = profile.defaultTargetPace;
+
+  if (!dialogContext.mounted) return;
 
   await showDialog(
-    context: state.context,
+    context: dialogContext,
     builder: (c) => StatefulBuilder(
       builder: (context, setDialogState) => AlertDialog(
         title: Text(l10n.settingsTitle),
@@ -162,26 +164,25 @@ Future<void> _showSettingsDialog(_ClickerScreenState state) async {
           ElevatedButton(
             onPressed: () async {
               final navigator = Navigator.of(c);
+              final messenger = ScaffoldMessenger.of(c);
               final repo = await repoFuture;
               final currentProfile = repo.loadAthleteProfile();
-              final newResetDelay = clampInt(
-                int.tryParse(rCtrl.text),
-                min: 0,
-                fallback: Defaults.defaultResetDelaySeconds,
+              final newResetDelay = parseStrictInt(rCtrl.text, min: 0);
+              final newVibeInterval = parseStrictInt(vCtrl.text, min: 1);
+              final newMatchInterval = parseStrictDuration(
+                dCtrl.text,
+                hCtrl.text,
+                mCtrl.text,
               );
-              final newVibeInterval = clampInt(
-                int.tryParse(vCtrl.text),
-                min: 1,
-                fallback: Defaults.defaultVibeIntervalSeconds,
-              );
-              final days = clampInt(int.tryParse(dCtrl.text), min: 0);
-              final hours = clampInt(int.tryParse(hCtrl.text), min: 0);
-              final minutes = clampInt(int.tryParse(mCtrl.text), min: 0);
-              final newMatchInterval = Duration(
-                days: days,
-                hours: hours,
-                minutes: minutes,
-              );
+
+              if (newResetDelay == null ||
+                  newVibeInterval == null ||
+                  newMatchInterval == null) {
+                messenger.showSnackBar(
+                  SnackBar(content: Text(l10n.errorSavingSession)),
+                );
+                return;
+              }
               final newProfile = AthleteProfile(
                 athleteName: athleteCtrl.text.trim(),
                 coachName: coachCtrl.text.trim(),
@@ -243,9 +244,18 @@ Future<void> _showSettingsDialog(_ClickerScreenState state) async {
               );
               await state._saveData();
               await repo.saveAthleteProfile(newProfile);
-              await CloudSettingsService().uploadLocalSettings(repo);
+              await repo.touchSettingsUpdatedAt();
+              try {
+                await CloudSettingsService().uploadLocalSettings(repo);
+              } catch (e) {
+                debugPrint('Error syncing settings: $e');
+              }
               if (state.isSyncHistoryEnabled) {
-                await state._syncLocalHistoryToCloud();
+                try {
+                  await CloudHistoryService().syncLocalAndRemote(repo);
+                } catch (e) {
+                  debugPrint('Error syncing history: $e');
+                }
               }
               navigator.pop();
             },
@@ -295,10 +305,10 @@ Future<void> _handlePowerPress(_ClickerScreenState state) async {
     text: profile.defaultFishingMethod,
   );
   final targetPaceCtrl = TextEditingController(text: profile.defaultTargetPace);
-  final goalFishCtrl = TextEditingController();
-  final goalPaceCtrl = TextEditingController();
-  final goalTriesCtrl = TextEditingController();
-  final goalStabilityCtrl = TextEditingController();
+  final goalFishCtrl = TextEditingController(text: '0');
+  final goalPaceCtrl = TextEditingController(text: '0');
+  final goalTriesCtrl = TextEditingController(text: '0');
+  final goalStabilityCtrl = TextEditingController(text: '0');
   final conditionsCtrl = TextEditingController();
   final baitNotesCtrl = TextEditingController();
   WeatherSnapshot? weatherSnapshot;
@@ -464,6 +474,30 @@ Future<void> _handlePowerPress(_ClickerScreenState state) async {
               try {
                 final repo = await PrefsRepository.create();
                 final user = FirebaseAuth.instance.currentUser;
+                final goalFishCount = parseStrictInt(goalFishCtrl.text.trim(), min: 0);
+                final goalTargetPaceSeconds = parseStrictInt(
+                  goalPaceCtrl.text.trim(),
+                  min: 0,
+                );
+                final goalMaxTries = parseStrictInt(
+                  goalTriesCtrl.text.trim(),
+                  min: 0,
+                );
+                final goalStabilityPercent = parseStrictInt(
+                  goalStabilityCtrl.text.trim(),
+                  min: 0,
+                );
+
+                if (goalFishCount == null ||
+                    goalTargetPaceSeconds == null ||
+                    goalMaxTries == null ||
+                    goalStabilityPercent == null) {
+                  messenger.showSnackBar(
+                    SnackBar(content: Text(l10n.errorSavingSession)),
+                  );
+                  return;
+                }
+
                 final session = ClickerController.buildSession(
                   id: DateTime.now().millisecondsSinceEpoch.toString(),
                   name: nameCtrl.text,
@@ -484,12 +518,10 @@ Future<void> _handlePowerPress(_ClickerScreenState state) async {
                   trainingType: trainingTypeCtrl.text,
                   fishingMethod: fishingMethodCtrl.text,
                   targetPace: targetPaceCtrl.text,
-                  goalFishCount: int.tryParse(goalFishCtrl.text.trim()) ?? 0,
-                  goalTargetPaceSeconds:
-                      int.tryParse(goalPaceCtrl.text.trim()) ?? 0,
-                  goalMaxTries: int.tryParse(goalTriesCtrl.text.trim()) ?? 0,
-                  goalStabilityPercent:
-                      int.tryParse(goalStabilityCtrl.text.trim()) ?? 0,
+                  goalFishCount: goalFishCount,
+                  goalTargetPaceSeconds: goalTargetPaceSeconds,
+                  goalMaxTries: goalMaxTries,
+                  goalStabilityPercent: goalStabilityPercent,
                   conditions: conditionsCtrl.text,
                   baitNotes: baitNotesCtrl.text,
                   weather: weatherSnapshot,
@@ -575,7 +607,27 @@ String shakeSensitivityLabel(
   }
 }
 
-int clampInt(int? value, {int min = 0, int fallback = 0}) {
-  final parsed = value ?? fallback;
-  return parsed < min ? min : parsed;
+int? parseStrictInt(String value, {required int min}) {
+  final parsed = int.tryParse(value.trim());
+  if (parsed == null || parsed < min) return null;
+  return parsed;
+}
+
+Duration? parseStrictDuration(String days, String hours, String minutes) {
+  final parsedDays = parseStrictInt(days, min: 0);
+  final parsedHours = parseStrictInt(hours, min: 0);
+  final parsedMinutes = parseStrictInt(minutes, min: 0);
+  if (parsedDays == null || parsedHours == null || parsedMinutes == null) {
+    return null;
+  }
+  if (parsedHours >= 24 || parsedMinutes >= 60) {
+    return null;
+  }
+
+  final duration = Duration(
+    days: parsedDays,
+    hours: parsedHours,
+    minutes: parsedMinutes,
+  );
+  return duration.inSeconds > 0 ? duration : null;
 }

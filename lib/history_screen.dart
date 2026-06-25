@@ -8,6 +8,9 @@ import 'package:fish_counter/progress_screen.dart';
 import 'package:fish_counter/session_comparison_screen.dart';
 import 'package:fish_counter/services/cloud_history_service.dart';
 import 'package:fish_counter/services/prefs_repository.dart';
+import 'package:fish_counter/utils/error_handler.dart';
+import 'package:fish_counter/widgets/history_widgets.dart';
+import 'package:fish_counter/widgets/session_edit_dialog.dart';
 import 'package:flutter/material.dart';
 
 class HistoryScreen extends StatefulWidget {
@@ -116,26 +119,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Future<void> _deleteSession(GameSession session) async {
     final l10n = AppLocalizations.of(context);
-    final messenger = ScaffoldMessenger.of(context);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.deleteSessionQuestion),
-        content: Text(l10n.deleteSessionWarning),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton.tonal(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(l10n.delete),
-          ),
-        ],
-      ),
+    final confirmed = await ErrorHandler.showConfirmDialog(
+      context,
+      l10n.deleteSessionQuestion,
+      l10n.deleteSessionWarning,
     );
 
-    if (confirmed != true) return;
+    if (!confirmed) return;
 
     Object? syncError;
     try {
@@ -160,85 +150,20 @@ class _HistoryScreenState extends State<HistoryScreen> {
             : '${AppLocalizations.of(context).cloudDeleteFailed}: $syncError';
       });
       widget.onHistoryUpdate();
-      messenger.showSnackBar(SnackBar(content: Text(l10n.sessionDeleted)));
+      ErrorHandler.showSuccess(context, l10n.sessionDeleted);
     } catch (e) {
       debugPrint('Error deleting session: $e');
       if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(content: Text('${l10n.deleteSession}: $e')),
-      );
+      ErrorHandler.showError(context, '${l10n.deleteSession}: $e');
     }
   }
 
   Future<void> _editSession(GameSession session) async {
     final l10n = AppLocalizations.of(context);
-    final messenger = ScaffoldMessenger.of(context);
-    final nameCtrl = TextEditingController(text: session.name);
-    final athleteCtrl = TextEditingController(text: session.athleteName);
-    final coachCtrl = TextEditingController(text: session.coachName);
-    final venueCtrl = TextEditingController(text: session.venue);
-    final sectorCtrl = TextEditingController(text: session.sectorPeg);
-    final trainingCtrl = TextEditingController(text: session.trainingType);
-    final methodCtrl = TextEditingController(text: session.fishingMethod);
-    final paceCtrl = TextEditingController(text: session.targetPace);
-    final conditionsCtrl = TextEditingController(text: session.conditions);
-    final baitCtrl = TextEditingController(text: session.baitNotes);
-    final athleteNoteCtrl = TextEditingController(text: session.athleteNote);
-    final coachCommentCtrl = TextEditingController(text: session.coachComment);
 
-    final saved = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.editSession),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _editField(l10n.sessionName, nameCtrl),
-              _editField(l10n.athleteName, athleteCtrl),
-              _editField(l10n.coachName, coachCtrl),
-              _editField(l10n.venue, venueCtrl),
-              _editField(l10n.sectorPeg, sectorCtrl),
-              _editField(l10n.trainingType, trainingCtrl),
-              _editField(l10n.fishingMethod, methodCtrl),
-              _editField(l10n.targetPace, paceCtrl),
-              _editField(l10n.conditions, conditionsCtrl),
-              _editField(l10n.baitNotes, baitCtrl),
-              _editField(l10n.athleteNote, athleteNoteCtrl, maxLines: 3),
-              _editField(l10n.coachComment, coachCommentCtrl, maxLines: 3),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(l10n.save),
-          ),
-        ],
-      ),
-    );
+    final updated = await SessionEditDialog.show(context, session);
 
-    if (saved != true) return;
-
-    final updated = session.copyWith(
-      name: nameCtrl.text.trim().isEmpty ? session.name : nameCtrl.text.trim(),
-      athleteName: athleteCtrl.text.trim(),
-      coachName: coachCtrl.text.trim(),
-      venue: venueCtrl.text.trim(),
-      sectorPeg: sectorCtrl.text.trim(),
-      trainingType: trainingCtrl.text.trim(),
-      fishingMethod: methodCtrl.text.trim(),
-      targetPace: paceCtrl.text.trim(),
-      conditions: conditionsCtrl.text.trim(),
-      baitNotes: baitCtrl.text.trim(),
-      athleteNote: athleteNoteCtrl.text.trim(),
-      coachComment: coachCommentCtrl.text.trim(),
-      updatedAt: DateTime.now().toIso8601String(),
-    );
+    if (updated == null) return;
 
     Object? syncError;
     try {
@@ -262,29 +187,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
             : '${AppLocalizations.of(context).cloudUpdateFailed}: $syncError';
       });
       widget.onHistoryUpdate();
-      messenger.showSnackBar(SnackBar(content: Text(l10n.save)));
+      ErrorHandler.showSuccess(context, l10n.save);
     } catch (e) {
       debugPrint('Error updating session: $e');
       if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(content: Text('${l10n.editSession}: $e')),
-      );
+      ErrorHandler.showError(context, '${l10n.editSession}: $e');
     }
-  }
-
-  Widget _editField(
-    String label,
-    TextEditingController controller, {
-    int maxLines = 1,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: TextField(
-        controller: controller,
-        maxLines: maxLines,
-        decoration: InputDecoration(labelText: label),
-      ),
-    );
   }
 
   Widget _syncStatusTile() {

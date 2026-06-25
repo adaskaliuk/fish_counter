@@ -61,9 +61,7 @@ class CloudHistoryService {
         .toList();
   }
 
-  Future<CloudHistorySyncResult> syncLocalAndRemote(
-    PrefsRepository repo,
-  ) async {
+  Future<CloudHistorySyncResult> syncLocalAndRemote(PrefsRepository repo) async {
     if (!canSync) {
       await repo.saveSyncStatus(status: 'localOnly');
       return const CloudHistorySyncResult(

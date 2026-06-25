@@ -1,9 +1,11 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:fish_counter/auth_gate.dart';
 import 'package:fish_counter/l10n/app_localizations.dart';
+import 'package:fish_counter/services/prefs_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 import 'firebase_options.dart';
 
@@ -11,11 +13,20 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-  runApp(const CatchClickerApp());
+  
+  final prefsRepository = await PrefsRepository.create();
+  
+  runApp(
+    Provider<PrefsRepository>.value(
+      value: prefsRepository,
+      child: const CatchClickerApp(),
+    ),
+  );
 }
 
 class CatchClickerApp extends StatelessWidget {
   const CatchClickerApp({super.key});
+
   @override
   Widget build(BuildContext context) => MaterialApp(
     debugShowCheckedModeBanner: false,

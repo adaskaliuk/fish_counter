@@ -13,22 +13,23 @@ class CloudSettingsService {
 
   User? get _user => _auth.currentUser;
 
-  bool get canSync => _user != null && !_user!.isAnonymous;
-
   Future<void> uploadLocalSettings(PrefsRepository repo) async {
-    if (!canSync) return;
+    final user = _user;
+    if (user == null || user.isAnonymous) return;
+
     final settings = repo.loadAppSettings();
-    await _settingsRef(_user!.uid).set({
+    await _settingsRef(user.uid).set({
       ...settings.toJson(),
       'syncedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }
 
   Future<void> syncLocalAndRemote(PrefsRepository repo) async {
-    if (!canSync) return;
+    final user = _user;
+    if (user == null || user.isAnonymous) return;
 
     final local = repo.loadAppSettings();
-    final snapshot = await _settingsRef(_user!.uid).get();
+    final snapshot = await _settingsRef(user.uid).get();
     if (!snapshot.exists) {
       await uploadLocalSettings(repo);
       return;

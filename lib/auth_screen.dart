@@ -1,5 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fish_counter/l10n/app_localizations.dart';
+import 'package:fish_counter/utils/error_handler.dart';
+import 'package:fish_counter/widgets/auth_widgets.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -47,7 +49,9 @@ class _AuthScreenState extends State<AuthScreen> {
     } on FirebaseAuthException catch (e) {
       setState(() => _error = e.message ?? e.code);
     } catch (e) {
-      setState(() => _error = e.toString());
+      if (mounted) {
+        ErrorHandler.showError(context, 'Authentication failed: ${e.toString()}');
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -78,7 +82,9 @@ class _AuthScreenState extends State<AuthScreen> {
     } on GoogleSignInException catch (e) {
       setState(() => _error = e.description ?? e.code.name);
     } catch (e) {
-      setState(() => _error = e.toString());
+      if (mounted) {
+        ErrorHandler.showError(context, 'Google sign-in failed: ${e.toString()}');
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -95,7 +101,9 @@ class _AuthScreenState extends State<AuthScreen> {
     } on FirebaseAuthException catch (e) {
       setState(() => _error = e.message ?? e.code);
     } catch (e) {
-      setState(() => _error = e.toString());
+      if (mounted) {
+        ErrorHandler.showError(context, 'Guest sign-in failed: ${e.toString()}');
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -115,33 +123,7 @@ class _AuthScreenState extends State<AuthScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Center(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(28),
-                      child: Image.asset(
-                        'assets/branding/app_logo.png',
-                        width: 128,
-                        height: 128,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    l10n.appTitle,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.orange,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    l10n.authSubtitle,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.grey),
-                  ),
+                  const AuthHeader(),
                   const SizedBox(height: 32),
                   TextField(
                     controller: _emailCtrl,
@@ -157,23 +139,11 @@ class _AuthScreenState extends State<AuthScreen> {
                     autofillHints: const [AutofillHints.password],
                   ),
                   const SizedBox(height: 16),
-                  if (_error != null) ...[
-                    Text(
-                      _error!,
-                      style: const TextStyle(color: Colors.redAccent),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                  ElevatedButton(
-                    onPressed: _isLoading ? null : _submit,
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 18,
-                            width: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(_isRegister ? l10n.register : l10n.signIn),
+                  if (_error != null) AuthErrorMessage(_error!),
+                  LoadingButton(
+                    label: _isRegister ? l10n.register : l10n.signIn,
+                    isLoading: _isLoading,
+                    onPressed: _submit,
                   ),
                   TextButton(
                     onPressed: _isLoading

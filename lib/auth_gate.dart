@@ -42,8 +42,13 @@ class StartupSyncedClickerScreen extends StatefulWidget {
 
 class _StartupSyncedClickerScreenState
     extends State<StartupSyncedClickerScreen> {
-  late final Future<void> _startupSync =
-      (widget.startupSyncBuilder ?? _syncHistoryIfEnabled)();
+  late final Future<void> _startupSync;
+
+  @override
+  void initState() {
+    super.initState();
+    _startupSync = (widget.startupSyncBuilder ?? _syncHistoryIfEnabled)();
+  }
 
   Future<void> _syncHistoryIfEnabled() async {
     try {

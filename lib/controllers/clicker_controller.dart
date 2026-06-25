@@ -1,5 +1,9 @@
 import 'package:fish_counter/constants.dart';
 import 'package:fish_counter/game_session.dart';
+import 'package:fish_counter/models/session_goals.dart';
+import 'package:fish_counter/models/session_user_info.dart';
+import 'package:fish_counter/models/session_venue_info.dart';
+import 'package:fish_counter/models/weather_info.dart';
 import 'package:fish_counter/models/weather_snapshot.dart';
 import 'package:flutter/foundation.dart';
 
@@ -129,6 +133,22 @@ class ClickerController extends ChangeNotifier {
     String athleteNote = '',
     String coachComment = '',
   }) {
+    final weatherInfo = weather != null
+        ? WeatherInfo(
+            place: weather.placeName,
+            description: weather.description,
+            fetchedAt: weather.fetchedAt,
+            latitude: weather.latitude,
+            longitude: weather.longitude,
+            temperatureCelsius: weather.temperatureCelsius,
+            feelsLikeCelsius: weather.feelsLikeCelsius,
+            pressureHpa: weather.pressureHpa,
+            humidityPercent: weather.humidityPercent,
+            windSpeedMs: weather.windSpeedMs,
+            windDirectionDegrees: weather.windDirectionDegrees,
+          )
+        : const WeatherInfo();
+
     return GameSession(
       id: id,
       name: name,
@@ -139,35 +159,31 @@ class ClickerController extends ChangeNotifier {
       total: total,
       matchDuration: formatMatchDuration(matchInterval),
       grid: List<Map<String, dynamic>>.from(activityGrid),
-      userId: userId.trim(),
-      userEmail: userEmail.trim(),
-      userDisplayName: userDisplayName.trim(),
       athleteName: athleteName.trim(),
       coachName: coachName.trim(),
-      venue: venue.trim(),
-      sectorPeg: sectorPeg.trim(),
-      trainingType: trainingType.trim(),
-      fishingMethod: fishingMethod.trim(),
-      targetPace: targetPace.trim(),
-      goalFishCount: goalFishCount,
-      goalTargetPaceSeconds: goalTargetPaceSeconds,
-      goalMaxTries: goalMaxTries,
-      goalStabilityPercent: goalStabilityPercent,
-      conditions: conditions.trim(),
-      baitNotes: baitNotes.trim(),
-      weatherPlace: weather?.placeName ?? '',
-      weatherDescription: weather?.description ?? '',
-      weatherFetchedAt: weather?.fetchedAt ?? '',
-      latitude: weather?.latitude,
-      longitude: weather?.longitude,
-      weatherTemperatureCelsius: weather?.temperatureCelsius,
-      weatherFeelsLikeCelsius: weather?.feelsLikeCelsius,
-      weatherPressureHpa: weather?.pressureHpa,
-      weatherHumidityPercent: weather?.humidityPercent,
-      weatherWindSpeedMs: weather?.windSpeedMs,
-      weatherWindDirectionDegrees: weather?.windDirectionDegrees,
+      weatherInfo: weatherInfo,
       athleteNote: athleteNote.trim(),
       coachComment: coachComment.trim(),
+      userInfo: SessionUserInfo(
+        userId: userId.trim(),
+        userEmail: userEmail.trim(),
+        userDisplayName: userDisplayName.trim(),
+      ),
+      venueInfo: SessionVenueInfo(
+        venue: venue.trim(),
+        sectorPeg: sectorPeg.trim(),
+        trainingType: trainingType.trim(),
+        fishingMethod: fishingMethod.trim(),
+        targetPace: targetPace.trim(),
+        conditions: conditions.trim(),
+        baitNotes: baitNotes.trim(),
+      ),
+      goals: SessionGoals(
+        goalFishCount: goalFishCount,
+        goalTargetPaceSeconds: goalTargetPaceSeconds,
+        goalMaxTries: goalMaxTries,
+        goalStabilityPercent: goalStabilityPercent,
+      ),
     );
   }
 
