@@ -8,6 +8,8 @@ class AthleteProfile {
     this.defaultTrainingType = '',
     this.defaultFishingMethod = '',
     this.defaultTargetPace = '',
+    this.defaultSpeciesPreset = '',
+    this.defaultBodyTypePreset = '',
   });
 
   final String athleteName;
@@ -18,6 +20,8 @@ class AthleteProfile {
   final String defaultTrainingType;
   final String defaultFishingMethod;
   final String defaultTargetPace;
+  final String defaultSpeciesPreset;
+  final String defaultBodyTypePreset;
 
   Map<String, dynamic> toJson() => {
     'athleteName': athleteName,
@@ -28,6 +32,8 @@ class AthleteProfile {
     'defaultTrainingType': defaultTrainingType,
     'defaultFishingMethod': defaultFishingMethod,
     'defaultTargetPace': defaultTargetPace,
+    'defaultSpeciesPreset': defaultSpeciesPreset,
+    'defaultBodyTypePreset': defaultBodyTypePreset,
   };
 
   factory AthleteProfile.fromJson(Map<String, dynamic> json) {
@@ -41,6 +47,8 @@ class AthleteProfile {
       defaultTrainingType: read('defaultTrainingType'),
       defaultFishingMethod: read('defaultFishingMethod'),
       defaultTargetPace: read('defaultTargetPace'),
+      defaultSpeciesPreset: read('defaultSpeciesPreset'),
+      defaultBodyTypePreset: read('defaultBodyTypePreset'),
     );
   }
 }

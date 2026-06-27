@@ -1,3 +1,4 @@
+import 'package:fish_counter/models/astronomy_info.dart';
 import 'package:fish_counter/models/session_goals.dart';
 import 'package:fish_counter/models/session_user_info.dart';
 import 'package:fish_counter/models/session_venue_info.dart';
@@ -17,6 +18,7 @@ class GameSession {
   final SessionUserInfo userInfo;
   final SessionVenueInfo venueInfo;
   final SessionGoals goals;
+  final AstronomyInfo astronomyInfo;
   final WeatherInfo weatherInfo;
 
   // Backward-compatible flat accessors.
@@ -28,8 +30,11 @@ class GameSession {
   String get trainingType => venueInfo.trainingType;
   String get fishingMethod => venueInfo.fishingMethod;
   String get targetPace => venueInfo.targetPace;
+  String get speciesPreset => venueInfo.speciesPreset;
+  String get bodyTypePreset => venueInfo.bodyTypePreset;
   String get conditions => venueInfo.conditions;
   String get baitNotes => venueInfo.baitNotes;
+  String get astronomySummary => astronomyInfo.summary;
   int get goalFishCount => goals.goalFishCount;
   int get goalTargetPaceSeconds => goals.goalTargetPaceSeconds;
   int get goalMaxTries => goals.goalMaxTries;
@@ -59,6 +64,7 @@ class GameSession {
     SessionUserInfo? userInfo,
     SessionVenueInfo? venueInfo,
     SessionGoals? goals,
+    AstronomyInfo? astronomyInfo,
     WeatherInfo? weatherInfo,
     String weatherPlace = '',
     String weatherDescription = '',
@@ -79,6 +85,7 @@ class GameSession {
   })  : userInfo = userInfo ?? const SessionUserInfo(),
         venueInfo = venueInfo ?? const SessionVenueInfo(),
         goals = goals ?? const SessionGoals(),
+        astronomyInfo = astronomyInfo ?? const AstronomyInfo.empty(),
         weatherInfo =
             weatherInfo ??
             WeatherInfo(
@@ -108,6 +115,7 @@ class GameSession {
     SessionUserInfo? userInfo,
     SessionVenueInfo? venueInfo,
     SessionGoals? goals,
+    AstronomyInfo? astronomyInfo,
     WeatherInfo? weatherInfo,
     String userId = '',
     String userEmail = '',
@@ -117,6 +125,8 @@ class GameSession {
     String trainingType = '',
     String fishingMethod = '',
     String targetPace = '',
+    String speciesPreset = '',
+    String bodyTypePreset = '',
     String conditions = '',
     String baitNotes = '',
     int goalFishCount = 0,
@@ -161,6 +171,8 @@ class GameSession {
         trainingType: trainingType,
         fishingMethod: fishingMethod,
         targetPace: targetPace,
+        speciesPreset: speciesPreset,
+        bodyTypePreset: bodyTypePreset,
         conditions: conditions,
         baitNotes: baitNotes,
       ),
@@ -170,6 +182,7 @@ class GameSession {
         goalMaxTries: goalMaxTries,
         goalStabilityPercent: goalStabilityPercent,
       ),
+      astronomyInfo: astronomyInfo ?? const AstronomyInfo.empty(),
       weatherInfo: weatherInfo ?? WeatherInfo(
         place: weatherPlace,
         description: weatherDescription,
@@ -198,6 +211,8 @@ class GameSession {
     String? trainingType,
     String? fishingMethod,
     String? targetPace,
+    String? speciesPreset,
+    String? bodyTypePreset,
     String? conditions,
     String? baitNotes,
     String? athleteName,
@@ -208,6 +223,7 @@ class GameSession {
     SessionUserInfo? userInfo,
     SessionVenueInfo? venueInfo,
     SessionGoals? goals,
+    AstronomyInfo? astronomyInfo,
     WeatherInfo? weatherInfo,
   }) {
     return GameSession._(
@@ -227,6 +243,8 @@ class GameSession {
                   trainingType == null &&
                   fishingMethod == null &&
                   targetPace == null &&
+                  speciesPreset == null &&
+                  bodyTypePreset == null &&
                   conditions == null &&
                   baitNotes == null
               ? this.venueInfo
@@ -236,10 +254,13 @@ class GameSession {
                   trainingType: trainingType,
                   fishingMethod: fishingMethod,
                   targetPace: targetPace,
+                  speciesPreset: speciesPreset,
+                  bodyTypePreset: bodyTypePreset,
                   conditions: conditions,
                   baitNotes: baitNotes,
                 )),
       goals: goals ?? this.goals,
+      astronomyInfo: astronomyInfo ?? this.astronomyInfo,
       weatherInfo: weatherInfo ?? this.weatherInfo,
       updatedAt: updatedAt ?? this.updatedAt,
       athleteName: athleteName ?? this.athleteName,
@@ -267,6 +288,7 @@ class GameSession {
     ...userInfo.toJson(),
     ...venueInfo.toJson(),
     ...goals.toJson(),
+    ...astronomyInfo.toJson(),
     ...weatherInfo.toJson(),
   };
 
@@ -287,6 +309,7 @@ class GameSession {
       userInfo: SessionUserInfo.fromJson(json),
       venueInfo: SessionVenueInfo.fromJson(json),
       goals: SessionGoals.fromJson(json),
+      astronomyInfo: AstronomyInfo.fromJson(json),
       weatherInfo: WeatherInfo.fromJson(json),
       updatedAt: TypeUtils.safeString(
         json['updatedAt'],
@@ -307,6 +330,7 @@ class GameSessionBuilder {
   SessionUserInfo? _userInfo;
   SessionVenueInfo? _venueInfo;
   SessionGoals? _goals;
+  AstronomyInfo? _astronomyInfo;
   String? _updatedAt;
   String? _athleteName, _coachName;
   String? _weatherPlace, _weatherDescription, _weatherFetchedAt;
@@ -315,6 +339,7 @@ class GameSessionBuilder {
   double? _weatherPressureHpa, _weatherHumidityPercent;
   double? _weatherWindSpeedMs, _weatherWindDirectionDegrees;
   String? _athleteNote, _coachComment;
+  String? _speciesPreset, _bodyTypePreset;
 
   GameSessionBuilder id(String value) {
     _id = value;
@@ -369,6 +394,11 @@ class GameSessionBuilder {
     return this;
   }
 
+  GameSessionBuilder astronomyInfo(AstronomyInfo value) {
+    _astronomyInfo = value;
+    return this;
+  }
+
   GameSessionBuilder athleteName(String value) {
     _athleteName = value;
     return this;
@@ -391,6 +421,16 @@ class GameSessionBuilder {
 
   GameSessionBuilder weatherFetchedAt(String value) {
     _weatherFetchedAt = value;
+    return this;
+  }
+
+  GameSessionBuilder speciesPreset(String value) {
+    _speciesPreset = value;
+    return this;
+  }
+
+  GameSessionBuilder bodyTypePreset(String value) {
+    _bodyTypePreset = value;
     return this;
   }
 
@@ -432,6 +472,11 @@ class GameSessionBuilder {
   }
 
   GameSession build() {
+    final venueInfo = (_venueInfo ?? const SessionVenueInfo()).copyWith(
+      speciesPreset: _speciesPreset,
+      bodyTypePreset: _bodyTypePreset,
+    );
+
     return GameSession._(
       id: _id ?? DateTime.now().millisecondsSinceEpoch.toString(),
       name: _name ?? 'Session',
@@ -443,8 +488,9 @@ class GameSessionBuilder {
       matchDuration: _matchDuration ?? '00:00:00',
       grid: _grid ?? [],
       userInfo: _userInfo ?? const SessionUserInfo(),
-      venueInfo: _venueInfo ?? const SessionVenueInfo(),
+      venueInfo: venueInfo,
       goals: _goals ?? const SessionGoals(),
+      astronomyInfo: _astronomyInfo ?? const AstronomyInfo.empty(),
       updatedAt: _updatedAt ?? DateTime.now().toIso8601String(),
       athleteName: _athleteName ?? '',
       coachName: _coachName ?? '',

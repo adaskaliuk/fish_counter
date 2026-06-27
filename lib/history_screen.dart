@@ -4,6 +4,7 @@
 import 'package:fish_counter/analytics_screen.dart';
 import 'package:fish_counter/game_session.dart';
 import 'package:fish_counter/l10n/app_localizations.dart';
+import 'package:fish_counter/models/historical_catch_tuning_report.dart';
 import 'package:fish_counter/progress_screen.dart';
 import 'package:fish_counter/session_comparison_screen.dart';
 import 'package:fish_counter/services/cloud_history_service.dart';
@@ -31,6 +32,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   String _lastSyncAt = '';
   bool _compareMode = false;
   final Set<String> _selectedForCompare = {};
+  final Map<String, HistoricalCatchTuningReport> _tuningBySessionId = {};
 
   @override
   void initState() {
@@ -56,6 +58,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         } catch (e) {
           syncError = e;
           await repo.saveSyncStatus(status: 'failed', error: e.toString());
+          container = await repo.loadInitialState();
           debugPrint('Cloud history load error: $e');
         }
       } else {
@@ -65,6 +68,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       if (!mounted) return;
 
       final sessions = container.historySessions.cast<GameSession>().toList();
+      _rebuildTuning(sessions);
 
       setState(() {
         _sessions = sessions.reversed.toList(); // Display newest first
@@ -97,6 +101,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     try {
       await CloudHistoryService().syncLocalAndRemote(repo);
       final state = await repo.loadInitialState();
+      _rebuildTuning(state.historySessions.cast<GameSession>().toList());
       if (!mounted) return;
       setState(() {
         _sessions = state.historySessions.reversed.toList();
@@ -106,14 +111,33 @@ class _HistoryScreenState extends State<HistoryScreen> {
       });
     } catch (e) {
       await repo.saveSyncStatus(status: 'failed', error: e.toString());
+      final state = await repo.loadInitialState();
+      final sessions = state.historySessions.cast<GameSession>().toList();
+      _rebuildTuning(sessions);
       if (!mounted) return;
       setState(() {
-        _syncStatus = 'failed';
+        _sessions = sessions.reversed.toList();
+        _syncStatus = repo.getSyncLastStatus();
         _lastSyncAt = repo.getSyncLastAt();
         _syncWarning = '${AppLocalizations.of(context).cloudSyncFailed}: $e';
         _isSyncing = false;
       });
     }
+  }
+
+  Future<void> _refreshLocalSessions() async {
+    final repo = await PrefsRepository.create();
+    final state = await repo.loadInitialState();
+    if (!mounted) return;
+
+    final sessions = state.historySessions.cast<GameSession>().toList();
+    _rebuildTuning(sessions);
+
+    setState(() {
+      _sessions = sessions.reversed.toList();
+      _syncStatus = repo.getSyncLastStatus();
+      _lastSyncAt = repo.getSyncLastAt();
+    });
   }
 
   Future<void> _deleteSession(GameSession session) async {
@@ -142,13 +166,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
       }
 
       if (!mounted) return;
+      await _refreshLocalSessions();
+      if (!mounted) return;
       setState(() {
-        _sessions.removeWhere((item) => item.id == session.id);
         _syncWarning = syncError == null
             ? null
             : '${AppLocalizations.of(context).cloudDeleteFailed}: $syncError';
       });
       widget.onHistoryUpdate();
+      // ignore: use_build_context_synchronously
       ErrorHandler.showSuccess(context, l10n.sessionDeleted);
     } catch (e) {
       debugPrint('Error deleting session: $e');
@@ -178,14 +204,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
         }
       }
       if (!mounted) return;
+      await _refreshLocalSessions();
+      if (!mounted) return;
       setState(() {
-        final index = _sessions.indexWhere((item) => item.id == updated.id);
-        if (index != -1) _sessions[index] = updated;
         _syncWarning = syncError == null
             ? null
             : '${AppLocalizations.of(context).cloudUpdateFailed}: $syncError';
       });
       widget.onHistoryUpdate();
+      // ignore: use_build_context_synchronously
       ErrorHandler.showSuccess(context, l10n.save);
     } catch (e) {
       debugPrint('Error updating session: $e');
@@ -248,6 +275,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
       context,
       MaterialPageRoute(builder: (_) => ProgressScreen(sessions: _sessions)),
     );
+  }
+
+  void _rebuildTuning(List<GameSession> sessions) {
+    _tuningBySessionId.clear();
+    final ordered = sessions.toList();
+    for (final session in ordered) {
+      _tuningBySessionId[session.id] =
+          HistoricalCatchTuningReport.fromSessions(ordered
+              .takeWhile((item) => item.id != session.id)
+              .toList());
+    }
   }
 
   @override
@@ -321,6 +359,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
       return ListView(
         children: [
           _syncStatusTile(),
+          if (_syncWarning != null)
+            ListTile(
+              leading: const Icon(Icons.cloud_off, color: Colors.orange),
+              title: Text(_syncWarning!),
+              subtitle: Text(AppLocalizations.of(context).retry),
+              onTap: _loadSessions,
+            ),
           const SizedBox(height: 96),
           Center(
             child: Column(
@@ -387,14 +432,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ),
           onTap: _compareMode
               ? () => _toggleCompareSelection(session)
-              : () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (c) => AnalyticsScreen(session: session),
+                : () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (c) => AnalyticsScreen(
+                        session: session,
+                        tuning: _tuningBySessionId[session.id],
+                      ),
+                    ),
                   ),
-                ),
         );
       },
     );
   }
+
 }

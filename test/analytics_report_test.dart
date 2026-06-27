@@ -1,4 +1,7 @@
+import 'package:fish_counter/game_session.dart';
 import 'package:fish_counter/models/analytics_report.dart';
+import 'package:fish_counter/models/historical_catch_tuning_report.dart';
+import 'package:fish_counter/services/readiness_score_calculator.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -25,6 +28,40 @@ void main() {
       expect(report.averageDeviation, 3.75);
       expect(report.stabilityScore, 55);
       expect(report.longestStableStreak, 2);
+
+      final session = GameSession(
+        id: 's-1',
+        name: 'Session',
+        date: '2026-06-25',
+        c1: 3,
+        c2: 2,
+        tries: 1,
+        total: 12,
+        matchDuration: '01:00:00',
+        grid: [],
+        goalFishCount: 10,
+        goalTargetPaceSeconds: 60,
+        goalMaxTries: 5,
+        goalStabilityPercent: 80,
+      );
+
+      expect(ReadinessScoreCalculator.calculate(session, report), 91);
+
+      expect(
+        ReadinessScoreCalculator.calculate(
+          session,
+          report,
+          tuning: const HistoricalCatchTuningReport(
+            sessionCount: 4,
+            fishCountWeight: 1.25,
+            stabilityWeight: 0.75,
+            triesWeight: 0.75,
+            paceWeight: 0.75,
+            trackedMetricCount: 4,
+          ),
+        ),
+        isNot(91),
+      );
     });
 
     test('handles empty grid', () {

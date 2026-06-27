@@ -25,6 +25,8 @@ Future<void> _showSettingsDialog(_ClickerScreenState state) async {
   final trainingCtrl = TextEditingController();
   final methodCtrl = TextEditingController();
   final paceCtrl = TextEditingController();
+  var dialogSpeciesPreset = FishingPresets.defaultSpecies;
+  var dialogBodyTypePreset = FishingPresets.defaultBodyType;
   final dialogContext = state.context;
 
   try {
@@ -38,6 +40,12 @@ Future<void> _showSettingsDialog(_ClickerScreenState state) async {
     trainingCtrl.text = profile.defaultTrainingType;
     methodCtrl.text = profile.defaultFishingMethod;
     paceCtrl.text = profile.defaultTargetPace;
+    dialogSpeciesPreset = profile.defaultSpeciesPreset.isEmpty
+        ? FishingPresets.defaultSpecies
+        : profile.defaultSpeciesPreset;
+    dialogBodyTypePreset = profile.defaultBodyTypePreset.isEmpty
+        ? FishingPresets.defaultBodyType
+        : profile.defaultBodyTypePreset;
 
     if (!dialogContext.mounted) return;
 
@@ -131,6 +139,58 @@ Future<void> _showSettingsDialog(_ClickerScreenState state) async {
                 controller: paceCtrl,
                 decoration: InputDecoration(labelText: l10n.targetPace),
               ),
+              DropdownButtonFormField<String>(
+                initialValue: dialogSpeciesPreset,
+                decoration: InputDecoration(labelText: l10n.speciesPreset),
+                items: [
+                  DropdownMenuItem(
+                    value: FishingPresets.defaultSpecies,
+                    child: Text(l10n.presetNone),
+                  ),
+                  DropdownMenuItem(
+                    value: FishingPresets.speciesCarp,
+                    child: Text(l10n.speciesCarp),
+                  ),
+                  DropdownMenuItem(
+                    value: FishingPresets.speciesBream,
+                    child: Text(l10n.speciesBream),
+                  ),
+                  DropdownMenuItem(
+                    value: FishingPresets.speciesRoach,
+                    child: Text(l10n.speciesRoach),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value == null) return;
+                  setDialogState(() => dialogSpeciesPreset = value);
+                },
+              ),
+              DropdownButtonFormField<String>(
+                initialValue: dialogBodyTypePreset,
+                decoration: InputDecoration(labelText: l10n.bodyTypePreset),
+                items: [
+                  DropdownMenuItem(
+                    value: FishingPresets.defaultBodyType,
+                    child: Text(l10n.presetNone),
+                  ),
+                  DropdownMenuItem(
+                    value: FishingPresets.bodyStocky,
+                    child: Text(l10n.bodyStocky),
+                  ),
+                  DropdownMenuItem(
+                    value: FishingPresets.bodyBalanced,
+                    child: Text(l10n.bodyBalanced),
+                  ),
+                  DropdownMenuItem(
+                    value: FishingPresets.bodySlim,
+                    child: Text(l10n.bodySlim),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value == null) return;
+                  setDialogState(() => dialogBodyTypePreset = value);
+                },
+              ),
               const Divider(),
               Text(l10n.matchDuration),
               Row(
@@ -193,6 +253,8 @@ Future<void> _showSettingsDialog(_ClickerScreenState state) async {
                 defaultTrainingType: trainingCtrl.text.trim(),
                 defaultFishingMethod: methodCtrl.text.trim(),
                 defaultTargetPace: paceCtrl.text.trim(),
+                defaultSpeciesPreset: dialogSpeciesPreset,
+                defaultBodyTypePreset: dialogBodyTypePreset,
               );
               final changed =
                   newResetDelay != state.resetDelay ||

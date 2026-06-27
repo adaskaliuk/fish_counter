@@ -1,4 +1,5 @@
 import 'package:fish_counter/game_session.dart';
+import 'package:fish_counter/models/historical_catch_tuning_report.dart';
 import 'package:fish_counter/services/report_exporter.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -81,5 +82,49 @@ void main() {
     expect(csv, contains('"goals","fish_count","5"'));
     expect(csv, contains('"analytics","stability_score","100"'));
     expect(csv, contains('"10:00:00","C1","60","green"'));
+  });
+
+  test('includes forecast and tuning in plain text report', () {
+    final session = GameSession(
+      id: '1',
+      name: 'Pace drill',
+      date: '06.06.26 10:00',
+      c1: 2,
+      c2: 3,
+      tries: 1,
+      total: 5,
+      goalFishCount: 5,
+      goalTargetPaceSeconds: 60,
+      goalMaxTries: 2,
+      goalStabilityPercent: 80,
+      matchDuration: '5:00',
+      athleteName: 'Andrew',
+      coachName: 'Coach',
+      grid: const [
+        {
+          'type': 1,
+          'status': 'green',
+          'interval': 60,
+          'target': 60,
+          'timestamp': '10:00:00',
+        },
+      ],
+    );
+
+    final text = ReportExporter.buildPlainText(
+      session,
+      tuning: const HistoricalCatchTuningReport(
+        sessionCount: 2,
+        fishCountWeight: 1.1,
+        stabilityWeight: 0.9,
+        triesWeight: 1.05,
+        paceWeight: 0.95,
+        trackedMetricCount: 4,
+      ),
+    );
+
+    expect(text, contains('Forecast'));
+    expect(text, contains('Readiness score'));
+    expect(text, contains('Historical tuning'));
   });
 }

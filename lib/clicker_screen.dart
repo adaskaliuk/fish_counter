@@ -3,6 +3,7 @@
 // ==========================================
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fish_counter/models/athlete_profile.dart';
+import 'package:fish_counter/models/fishing_presets.dart';
 import 'package:fish_counter/history_screen.dart';
 import 'package:fish_counter/l10n/app_localizations.dart';
 import 'package:fish_counter/providers/clicker_provider.dart';

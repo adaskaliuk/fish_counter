@@ -4,6 +4,7 @@ import 'package:fish_counter/game_session.dart';
 import 'package:fish_counter/l10n/app_localizations.dart';
 import 'package:fish_counter/models/activity_log.dart';
 import 'package:fish_counter/models/analytics_report.dart';
+import 'package:fish_counter/models/historical_catch_tuning_report.dart';
 import 'package:fish_counter/services/report_exporter.dart';
 import 'package:fish_counter/widgets/analytics_screen_body.dart';
 import 'package:flutter/material.dart';
@@ -18,9 +19,10 @@ List<ActivityLog> _activityLogs(List<Map<String, dynamic>> grid) {
 }
 
 class AnalyticsScreen extends StatelessWidget {
-  const AnalyticsScreen({super.key, required this.session});
+  const AnalyticsScreen({super.key, required this.session, this.tuning});
 
   final GameSession session;
+  final HistoricalCatchTuningReport? tuning;
 
   @override
   Widget build(BuildContext context) {
@@ -47,6 +49,7 @@ class AnalyticsScreen extends StatelessWidget {
         report: report,
         activityLogs: activityLogs,
         l10n: l10n,
+        tuning: tuning,
       ),
     );
   }
@@ -56,10 +59,20 @@ class AnalyticsScreen extends StatelessWidget {
 
     showModalBottomSheet<void>(
       context: context,
+      showDragHandle: true,
+      constraints: const BoxConstraints(maxWidth: 420),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: ListView(
+          shrinkWrap: true,
           children: [
+            ListTile(
+              leading: const Icon(Icons.ios_share),
+              title: Text(l10n.precisionReport),
+              subtitle: Text(session.name),
+            ),
             ListTile(
               leading: const Icon(Icons.ios_share),
               title: Text(l10n.shareTextReport),
@@ -94,8 +107,14 @@ class AnalyticsScreen extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     await _shareOrCopy(
       context,
-      text: ReportExporter.buildPlainText(session, l10n: l10n),
+      text: ReportExporter.buildPlainText(
+        session,
+        l10n: l10n,
+        tuning: tuning,
+      ),
       debugLabel: l10n.shareTextReport,
+      successMessage: l10n.reportShared,
+      fallbackMessage: l10n.reportCopied,
     );
   }
 
@@ -103,15 +122,19 @@ class AnalyticsScreen extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     await _shareOrCopy(
       context,
-      text: ReportExporter.buildCsv(session, l10n: l10n),
+      text: ReportExporter.buildCsv(session, l10n: l10n, tuning: tuning),
       debugLabel: l10n.shareCsvReport,
+      successMessage: l10n.csvShared,
+      fallbackMessage: l10n.csvCopied,
     );
   }
 
   Future<void> _copyCsvReport(BuildContext context) async {
     final l10n = AppLocalizations.of(context);
     await Clipboard.setData(
-      ClipboardData(text: ReportExporter.buildCsv(session, l10n: l10n)),
+      ClipboardData(
+        text: ReportExporter.buildCsv(session, l10n: l10n, tuning: tuning),
+      ),
     );
     if (!context.mounted) return;
     ScaffoldMessenger.of(
@@ -123,14 +146,21 @@ class AnalyticsScreen extends StatelessWidget {
     BuildContext context, {
     required String text,
     required String debugLabel,
+    required String successMessage,
+    required String fallbackMessage,
   }) async {
-    final l10n = AppLocalizations.of(context);
-
     try {
       final result = await SharePlus.instance.share(
         ShareParams(subject: session.name, text: text),
       );
-      if (result.status != ShareResultStatus.unavailable) return;
+      if (result.status == ShareResultStatus.success) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(successMessage)));
+        return;
+      }
+      if (result.status == ShareResultStatus.dismissed) return;
     } catch (e) {
       debugPrint('$debugLabel error: $e');
     }
@@ -139,7 +169,7 @@ class AnalyticsScreen extends StatelessWidget {
     if (!context.mounted) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text(l10n.reportCopied)));
+    ).showSnackBar(SnackBar(content: Text(fallbackMessage)));
   }
 
   void _showInfoDialog(BuildContext context) {

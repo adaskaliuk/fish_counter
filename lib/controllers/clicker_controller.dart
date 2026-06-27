@@ -5,6 +5,7 @@ import 'package:fish_counter/models/session_user_info.dart';
 import 'package:fish_counter/models/session_venue_info.dart';
 import 'package:fish_counter/models/weather_info.dart';
 import 'package:fish_counter/models/weather_snapshot.dart';
+import 'package:fish_counter/services/astronomy_service.dart';
 import 'package:flutter/foundation.dart';
 
 @immutable
@@ -123,6 +124,8 @@ class ClickerController extends ChangeNotifier {
     String trainingType = '',
     String fishingMethod = '',
     String targetPace = '',
+    String speciesPreset = '',
+    String bodyTypePreset = '',
     int goalFishCount = 0,
     int goalTargetPaceSeconds = 0,
     int goalMaxTries = 0,
@@ -148,6 +151,11 @@ class ClickerController extends ChangeNotifier {
             windDirectionDegrees: weather.windDirectionDegrees,
           )
         : const WeatherInfo();
+    final astronomyInfo = AstronomyService.build(
+      date: DateTime.tryParse(weather?.fetchedAt ?? '') ?? DateTime.now(),
+      latitude: weather?.latitude,
+      longitude: weather?.longitude,
+    );
 
     return GameSession(
       id: id,
@@ -162,6 +170,7 @@ class ClickerController extends ChangeNotifier {
       athleteName: athleteName.trim(),
       coachName: coachName.trim(),
       weatherInfo: weatherInfo,
+      astronomyInfo: astronomyInfo,
       athleteNote: athleteNote.trim(),
       coachComment: coachComment.trim(),
       userInfo: SessionUserInfo(
@@ -175,6 +184,8 @@ class ClickerController extends ChangeNotifier {
         trainingType: trainingType.trim(),
         fishingMethod: fishingMethod.trim(),
         targetPace: targetPace.trim(),
+        speciesPreset: speciesPreset.trim(),
+        bodyTypePreset: bodyTypePreset.trim(),
         conditions: conditions.trim(),
         baitNotes: baitNotes.trim(),
       ),

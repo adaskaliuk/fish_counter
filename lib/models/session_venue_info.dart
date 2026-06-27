@@ -7,6 +7,8 @@ class SessionVenueInfo {
   final String trainingType;
   final String fishingMethod;
   final String targetPace;
+  final String speciesPreset;
+  final String bodyTypePreset;
   final String conditions;
   final String baitNotes;
 
@@ -16,6 +18,8 @@ class SessionVenueInfo {
     this.trainingType = '',
     this.fishingMethod = '',
     this.targetPace = '',
+    this.speciesPreset = '',
+    this.bodyTypePreset = '',
     this.conditions = '',
     this.baitNotes = '',
   });
@@ -26,6 +30,8 @@ class SessionVenueInfo {
     'trainingType': trainingType,
     'fishingMethod': fishingMethod,
     'targetPace': targetPace,
+    'speciesPreset': speciesPreset,
+    'bodyTypePreset': bodyTypePreset,
     'conditions': conditions,
     'baitNotes': baitNotes,
   };
@@ -37,6 +43,8 @@ class SessionVenueInfo {
       trainingType: TypeUtils.safeString(json['trainingType']),
       fishingMethod: TypeUtils.safeString(json['fishingMethod']),
       targetPace: TypeUtils.safeString(json['targetPace']),
+      speciesPreset: TypeUtils.safeString(json['speciesPreset']),
+      bodyTypePreset: TypeUtils.safeString(json['bodyTypePreset']),
       conditions: TypeUtils.safeString(json['conditions']),
       baitNotes: TypeUtils.safeString(json['baitNotes']),
     );
@@ -48,6 +56,8 @@ class SessionVenueInfo {
     String? trainingType,
     String? fishingMethod,
     String? targetPace,
+    String? speciesPreset,
+    String? bodyTypePreset,
     String? conditions,
     String? baitNotes,
   }) {
@@ -57,6 +67,8 @@ class SessionVenueInfo {
       trainingType: trainingType ?? this.trainingType,
       fishingMethod: fishingMethod ?? this.fishingMethod,
       targetPace: targetPace ?? this.targetPace,
+      speciesPreset: speciesPreset ?? this.speciesPreset,
+      bodyTypePreset: bodyTypePreset ?? this.bodyTypePreset,
       conditions: conditions ?? this.conditions,
       baitNotes: baitNotes ?? this.baitNotes,
     );

@@ -224,6 +224,7 @@ void main() {
       expect(session.latitude, 50.45);
       expect(session.longitude, 30.52);
       expect(session.weatherTemperatureCelsius, 21.5);
+      expect(session.astronomySummary, isNotEmpty);
       expect(session.athleteNote, 'Good drill');
       expect(session.coachComment, 'Keep pace');
       expect(session.grid.single['type'], 1);

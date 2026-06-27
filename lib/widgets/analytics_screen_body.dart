@@ -2,12 +2,14 @@ import 'package:fish_counter/game_session.dart';
 import 'package:fish_counter/l10n/app_localizations.dart';
 import 'package:fish_counter/models/activity_log.dart';
 import 'package:fish_counter/models/analytics_report.dart';
+import 'package:fish_counter/models/historical_catch_tuning_report.dart';
 import 'package:flutter/material.dart';
 
 import 'analytics_charts_section.dart';
+import 'analytics_coach_dashboard_section.dart';
+import 'analytics_dashboard_section.dart';
 import 'analytics_goals_section.dart';
 import 'analytics_notes_section.dart';
-import 'analytics_summary_section.dart';
 import 'analytics_timeline_section.dart';
 
 class AnalyticsScreenBody extends StatelessWidget {
@@ -17,12 +19,14 @@ class AnalyticsScreenBody extends StatelessWidget {
     required this.report,
     required this.activityLogs,
     required this.l10n,
+    this.tuning,
   });
 
   final GameSession session;
   final AnalyticsReport report;
   final List<ActivityLog> activityLogs;
   final AppLocalizations l10n;
+  final HistoricalCatchTuningReport? tuning;
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +35,20 @@ class AnalyticsScreenBody extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AnalyticsSummarySection(session: session, report: report, l10n: l10n),
+          AnalyticsDashboardSection(
+            session: session,
+            report: report,
+            l10n: l10n,
+            tuning: tuning,
+          ),
+          const SizedBox(height: 24),
+          AnalyticsCoachDashboardSection(
+            session: session,
+            report: report,
+            l10n: l10n,
+            tuning: tuning,
+          ),
+          const SizedBox(height: 24),
           AnalyticsChartsSection(
             session: session,
             report: report,

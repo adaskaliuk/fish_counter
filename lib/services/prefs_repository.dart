@@ -225,20 +225,33 @@ class PrefsRepository {
     }
 
     final merged = byId.values.toList();
-    merged.sort((a, b) => _sessionTimestamp(a).compareTo(_sessionTimestamp(b)));
+    merged.sort((a, b) {
+      final timestampCompare = _sessionSortTimestamp(a).compareTo(
+        _sessionSortTimestamp(b),
+      );
+      if (timestampCompare != 0) return timestampCompare;
+      return a.id.compareTo(b.id);
+    });
     return merged;
   }
 
   static bool _isNewer(GameSession candidate, GameSession existing) {
-    return _sessionTimestamp(
-          candidate,
-        ).compareTo(_sessionTimestamp(existing)) >=
-        0;
+    return _sessionFreshness(candidate).compareTo(_sessionFreshness(existing)) >= 0;
   }
 
-  static DateTime _sessionTimestamp(GameSession session) {
+  static DateTime _sessionFreshness(GameSession session) {
     return DateTime.tryParse(session.updatedAt) ??
-        DateTime.fromMillisecondsSinceEpoch(int.tryParse(session.id) ?? 0);
+        DateTime.fromMillisecondsSinceEpoch(0);
+  }
+
+  static DateTime _sessionSortTimestamp(GameSession session) {
+    final createdAt = int.tryParse(session.id);
+    if (createdAt != null) {
+      return DateTime.fromMillisecondsSinceEpoch(createdAt);
+    }
+
+    return DateTime.tryParse(session.updatedAt) ??
+        DateTime.fromMillisecondsSinceEpoch(0);
   }
 
   Future<void> saveSessionHistory(List<GameSession> sessions) async {
@@ -289,6 +302,8 @@ class PrefsRepository {
       }
     }
 
+    final enrichedSessions = mergeSessionLists(sessions, const []);
+
     return StateContainer(
       c1: TypeUtils.safeInt(_prefs.getInt(PrefsKeys.counter1)),
       c2: TypeUtils.safeInt(_prefs.getInt(PrefsKeys.counter2)),
@@ -303,12 +318,13 @@ class PrefsRepository {
       matchSeconds: TypeUtils.safeInt(_prefs.getInt(PrefsKeys.matchSeconds), defaultValue: Defaults.defaultMatchDurationSeconds),
       activityGrid: activityLogs,
       rawActivityGrid: rawActivityGrid,
-      historySessions: sessions,
+      historySessions: enrichedSessions,
       syncHistoryEnabled: TypeUtils.safeBool(_prefs.getBool(PrefsKeys.syncHistoryEnabled), defaultValue: Defaults.defaultSyncHistoryEnabled),
       shakeUndoEnabled: TypeUtils.safeBool(_prefs.getBool(PrefsKeys.shakeUndoEnabled), defaultValue: Defaults.defaultShakeUndoEnabled),
       shakeSensitivity: TypeUtils.safeString(_prefs.getString(PrefsKeys.shakeSensitivity), defaultValue: Defaults.defaultShakeSensitivity),
     );
   }
+
 }
 
 /// Container class for loaded app state.
