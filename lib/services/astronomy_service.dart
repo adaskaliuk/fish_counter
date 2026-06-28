@@ -103,7 +103,7 @@ class AstronomyService {
     final age = _moonAge(date);
     final phase = age / 29.53058867;
     final illumination = (1 - math.cos(2 * math.pi * phase)) / 2 * 100;
-    return illumination.round().clamp(0, 100);
+    return illumination.round();
   }
 
   static double _moonAge(DateTime date) {

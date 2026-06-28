@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fish_counter/game_session.dart';
+import 'package:fish_counter/services/cloud_sync_error.dart';
 import 'package:fish_counter/services/prefs_repository.dart';
 
 class CloudHistorySyncResult {
@@ -111,7 +112,7 @@ class CloudHistoryService {
       );
     } catch (e) {
       await repo.saveSyncStatus(status: 'failed', error: e.toString());
-      await repo.setSyncPending(true);
+      await repo.setSyncPending(isRetryableCloudSyncError(e));
       rethrow;
     }
   }

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fish_counter/models/app_settings.dart';
+import 'package:fish_counter/services/cloud_sync_error.dart';
 import 'package:fish_counter/services/prefs_repository.dart';
 
 class CloudSettingsService {
@@ -26,7 +27,7 @@ class CloudSettingsService {
       await repo.setSyncPending(false);
     } catch (e) {
       await repo.saveSyncStatus(status: 'failed', error: e.toString());
-      await repo.setSyncPending(true);
+      await repo.setSyncPending(isRetryableCloudSyncError(e));
       rethrow;
     }
   }
@@ -52,7 +53,7 @@ class CloudSettingsService {
       await repo.setSyncPending(false);
     } catch (e) {
       await repo.saveSyncStatus(status: 'failed', error: e.toString());
-      await repo.setSyncPending(true);
+      await repo.setSyncPending(isRetryableCloudSyncError(e));
       rethrow;
     }
   }

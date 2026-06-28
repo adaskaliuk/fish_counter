@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fish_counter/models/athlete_profile.dart';
 import 'package:fish_counter/models/fishing_presets.dart';
 import 'package:fish_counter/widgets/sync_badge_button.dart';
+import 'package:fish_counter/widgets/sync_status_banner.dart';
 import 'package:fish_counter/history_screen.dart';
 import 'package:fish_counter/l10n/app_localizations.dart';
 import 'package:fish_counter/providers/clicker_provider.dart';
@@ -59,6 +60,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
   ClickerProvider? _provider;
   bool _syncPending = false;
   bool _isRetryingSync = false;
+  String _syncError = '';
 
   @override
   void initState() {
@@ -71,6 +73,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
     final repo = await PrefsRepository.create();
     _prefsRepository = repo;
     _syncPending = widget.initialSyncPending ?? repo.isSyncPending();
+    _syncError = repo.getSyncLastError();
     final provider = ClickerProvider(prefs: repo);
     await provider.initialize();
     if (widget.enableBackgroundTasks) {
@@ -117,10 +120,19 @@ class _ClickerScreenState extends State<ClickerScreen> {
       if (mounted) {
         setState(() {
           _syncPending = repo.isSyncPending();
+          _syncError = repo.getSyncLastError();
           _isRetryingSync = false;
         });
       }
     }
+  }
+
+  Future<void> _refreshSyncState(PrefsRepository repo) async {
+    if (!mounted) return;
+    setState(() {
+      _syncPending = repo.isSyncPending();
+      _syncError = repo.getSyncLastError();
+    });
   }
 
   Future<ClickerProvider> _ensureProvider() async {
@@ -532,6 +544,17 @@ class _ClickerScreenState extends State<ClickerScreen> {
                 const Center(
                   child: Icon(Icons.hourglass_top, color: Colors.white54, size: 36),
                 ),
+                if (_syncError.isNotEmpty)
+                  Align(
+                    alignment: Alignment.topCenter,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: SyncStatusBanner(
+                      title: l10n.cloudSyncFailed,
+                      message: _syncError,
+                    ),
+                  ),
+                  ),
                 if (_syncPending)
                   Align(
                     alignment: Alignment.topRight,
@@ -675,11 +698,6 @@ class _ClickerScreenState extends State<ClickerScreen> {
 
   Future<void> _saveData() => _providerOrThrow.saveData();
 
-  Future<void> _syncBadgeFromRepo(PrefsRepository repo) async {
-    if (!mounted) return;
-    setState(() => _syncPending = repo.isSyncPending());
-  }
-
   // UTILS
   // ==========================================
   static int _safeInt(dynamic value, {int defaultValue = 0}) {
@@ -698,22 +716,35 @@ class _ClickerScreenState extends State<ClickerScreen> {
       child: Scaffold(
         body: SafeArea(
           child: Center(
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 420),
-              margin: const EdgeInsets.all(12),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFF333333),
-                borderRadius: BorderRadius.circular(40),
-                border: Border.all(color: Colors.black, width: 4),
-              ),
-              child: Column(
-                children: [
-                  Builder(builder: _buildLCD),
-                  const SizedBox(height: 12),
-                  Builder(builder: _buildControls),
-                ],
-              ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_syncError.isNotEmpty)
+                  SizedBox(
+                    width: 420,
+                    child: SyncStatusBanner(
+                      title: AppLocalizations.of(context).cloudSyncFailed,
+                      message: _syncError,
+                    ),
+                  ),
+                Container(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  margin: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF333333),
+                    borderRadius: BorderRadius.circular(40),
+                    border: Border.all(color: Colors.black, width: 4),
+                  ),
+                  child: Column(
+                    children: [
+                      Builder(builder: _buildLCD),
+                      const SizedBox(height: 12),
+                      Builder(builder: _buildControls),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ),
