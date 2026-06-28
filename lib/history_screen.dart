@@ -11,6 +11,8 @@ import 'package:fish_counter/services/cloud_history_service.dart';
 import 'package:fish_counter/services/prefs_repository.dart';
 import 'package:fish_counter/utils/error_handler.dart';
 import 'package:fish_counter/widgets/session_edit_dialog.dart';
+import 'package:fish_counter/widgets/sync_badge_button.dart';
+import 'package:fish_counter/widgets/sync_status_banner.dart';
 import 'package:flutter/material.dart';
 
 class HistoryScreen extends StatefulWidget {
@@ -22,14 +24,15 @@ class HistoryScreen extends StatefulWidget {
   State<HistoryScreen> createState() => _HistoryScreenState();
 }
 
-class _HistoryScreenState extends State<HistoryScreen> {
+class _HistoryScreenState extends State<HistoryScreen>
+    with WidgetsBindingObserver {
   List<GameSession> _sessions = [];
   bool _isLoading = true;
   bool _isSyncing = false;
   String? _error;
   String? _syncWarning;
-  String _syncStatus = 'localOnly';
-  String _lastSyncAt = '';
+  String _syncError = '';
+  bool _syncPending = false;
   bool _compareMode = false;
   final Set<String> _selectedForCompare = {};
   final Map<String, HistoricalCatchTuningReport> _tuningBySessionId = {};
@@ -37,7 +40,25 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadSessions();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    _retryPendingSync();
+  }
+
+  Future<void> _retryPendingSync() async {
+    if (!_syncPending || _isSyncing || _isLoading) return;
+    await _syncNow();
   }
 
   Future<void> _loadSessions() async {
@@ -75,8 +96,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
         _syncWarning = syncError == null
             ? null
             : '${AppLocalizations.of(context).cloudSyncFailed}: $syncError';
-        _syncStatus = repo.getSyncLastStatus();
-        _lastSyncAt = repo.getSyncLastAt();
+        _syncError = repo.getSyncLastError();
+        _syncPending = repo.isSyncPending();
         _isLoading = false;
       });
     } catch (e) {
@@ -93,7 +114,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Future<void> _syncNow() async {
     setState(() {
       _isSyncing = true;
-      _syncStatus = 'syncing';
       _syncWarning = null;
     });
 
@@ -105,8 +125,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
       if (!mounted) return;
       setState(() {
         _sessions = state.historySessions.reversed.toList();
-        _syncStatus = repo.getSyncLastStatus();
-        _lastSyncAt = repo.getSyncLastAt();
+        _syncError = repo.getSyncLastError();
+        _syncPending = repo.isSyncPending();
         _isSyncing = false;
       });
     } catch (e) {
@@ -117,8 +137,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
       if (!mounted) return;
       setState(() {
         _sessions = sessions.reversed.toList();
-        _syncStatus = repo.getSyncLastStatus();
-        _lastSyncAt = repo.getSyncLastAt();
+        _syncError = repo.getSyncLastError();
+        _syncPending = repo.isSyncPending();
         _syncWarning = '${AppLocalizations.of(context).cloudSyncFailed}: $e';
         _isSyncing = false;
       });
@@ -135,9 +155,21 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     setState(() {
       _sessions = sessions.reversed.toList();
-      _syncStatus = repo.getSyncLastStatus();
-      _lastSyncAt = repo.getSyncLastAt();
+      _syncError = repo.getSyncLastError();
+      _syncPending = repo.isSyncPending();
     });
+  }
+
+  Widget _syncErrorBanner() {
+    if (_syncError.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final l10n = AppLocalizations.of(context);
+    return SyncStatusBanner(
+      title: l10n.cloudSyncFailed,
+      message: _syncError,
+    );
   }
 
   Future<void> _deleteSession(GameSession session) async {
@@ -221,29 +253,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
   }
 
-  Widget _syncStatusTile() {
-    final l10n = AppLocalizations.of(context);
-    final (icon, color, title) = switch (_syncStatus) {
-      'off' => (Icons.cloud_off, Colors.grey, l10n.syncOff),
-      'synced' => (Icons.cloud_done, Colors.green, l10n.synced),
-      'failed' => (Icons.cloud_off, Colors.orange, l10n.syncFailed),
-      'syncing' => (Icons.sync, Colors.blue, l10n.syncing),
-      _ => (Icons.cloud_queue, Colors.grey, l10n.localOnly),
-    };
-
-    return ListTile(
-      leading: Icon(icon, color: color),
-      title: Text(title),
-      subtitle: _lastSyncAt.isEmpty
-          ? null
-          : Text('${l10n.lastSync}: $_lastSyncAt'),
-      trailing: TextButton(
-        onPressed: _isSyncing ? null : _syncNow,
-        child: Text(l10n.syncNow),
-      ),
-    );
-  }
-
   void _toggleCompareSelection(GameSession session) {
     setState(() {
       if (_selectedForCompare.contains(session.id)) {
@@ -295,6 +304,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
       appBar: AppBar(
         title: Text(_compareMode ? l10n.selectTwoSessions : l10n.history),
         actions: [
+          if (_syncPending || _isSyncing)
+            SyncBadgeButton(
+              tooltip: l10n.syncNow,
+              isLoading: _isSyncing,
+              onPressed: _isSyncing ? null : _syncNow,
+            ),
           if (_compareMode)
             TextButton(
               onPressed: _selectedForCompare.length == 2
@@ -317,10 +332,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _isLoading ? null : _loadSessions,
-          ),
-          IconButton(
-            icon: const Icon(Icons.cloud_sync),
-            onPressed: _isLoading || _isSyncing ? null : _syncNow,
           ),
         ],
       ),
@@ -358,7 +369,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     if (_sessions.isEmpty) {
       return ListView(
         children: [
-          _syncStatusTile(),
+          _syncErrorBanner(),
           if (_syncWarning != null)
             ListTile(
               leading: const Icon(Icons.cloud_off, color: Colors.orange),
@@ -384,12 +395,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
 
     return ListView.builder(
-      itemCount: _sessions.length + 1 + (_syncWarning == null ? 0 : 1),
+      itemCount: _sessions.length + (_syncWarning == null ? 0 : 1),
       itemBuilder: (context, index) {
-        if (index == 0) return _syncStatusTile();
-
-        final warningOffset = _syncWarning == null ? 0 : 1;
-        if (_syncWarning != null && index == 1) {
+        if (_syncWarning != null && index == 0) {
           return ListTile(
             leading: const Icon(Icons.cloud_off, color: Colors.orange),
             title: Text(_syncWarning!),
@@ -398,7 +406,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
           );
         }
 
-        final sessionIndex = index - 1 - warningOffset;
+        final warningOffset = _syncWarning == null ? 0 : 1;
+        final sessionIndex = index - warningOffset;
         final session = _sessions[sessionIndex];
         final selected = _selectedForCompare.contains(session.id);
         return ListTile(

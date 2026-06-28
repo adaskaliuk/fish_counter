@@ -6,6 +6,14 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+abstract final class AuthScreenStateKeys {
+  static const emailFieldKey = ValueKey('auth_email_field');
+  static const passwordFieldKey = ValueKey('auth_password_field');
+  static const submitButtonKey = ValueKey('auth_submit_button');
+  static const googleButtonKey = ValueKey('auth_google_button');
+  static const guestButtonKey = ValueKey('auth_guest_button');
+}
+
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
 
@@ -126,6 +134,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   const AuthHeader(),
                   const SizedBox(height: 32),
                   TextField(
+                    key: AuthScreenStateKeys.emailFieldKey,
                     controller: _emailCtrl,
                     decoration: InputDecoration(labelText: l10n.email),
                     keyboardType: TextInputType.emailAddress,
@@ -133,6 +142,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
                   const SizedBox(height: 12),
                   TextField(
+                    key: AuthScreenStateKeys.passwordFieldKey,
                     controller: _passwordCtrl,
                     decoration: InputDecoration(labelText: l10n.password),
                     obscureText: true,
@@ -141,6 +151,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   const SizedBox(height: 16),
                   if (_error != null) AuthErrorMessage(_error!),
                   LoadingButton(
+                    key: AuthScreenStateKeys.submitButtonKey,
                     label: _isRegister ? l10n.register : l10n.signIn,
                     isLoading: _isLoading,
                     onPressed: _submit,
@@ -155,12 +166,14 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
                   const Divider(height: 32),
                   OutlinedButton.icon(
+                    key: AuthScreenStateKeys.googleButtonKey,
                     onPressed: _isLoading ? null : _signInWithGoogle,
                     icon: const Icon(Icons.g_mobiledata),
                     label: Text(l10n.continueWithGoogle),
                   ),
                   const SizedBox(height: 8),
                   OutlinedButton(
+                    key: AuthScreenStateKeys.guestButtonKey,
                     onPressed: _isLoading ? null : _continueAsGuest,
                     child: Text(l10n.continueAsGuest),
                   ),

@@ -5,17 +5,17 @@ import 'package:fish_counter/game_session.dart';
 import 'package:fish_counter/models/activity_log.dart';
 import 'package:fish_counter/models/app_settings.dart';
 import 'package:fish_counter/models/athlete_profile.dart';
+import 'package:fish_counter/services/local_storage.dart';
 import 'package:fish_counter/utils/type_utils.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 /// Handles persistence for sessions and optional typed activity logs.
 class PrefsRepository {
-  final SharedPreferences _prefs;
+  final LocalStorage _prefs;
 
   PrefsRepository(this._prefs);
 
   static Future<PrefsRepository> create() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await HiveLocalStorage.create();
     return PrefsRepository(prefs);
   }
 
@@ -67,6 +67,12 @@ class PrefsRepository {
       DateTime.now().toIso8601String(),
     );
     await _prefs.setString(PrefsKeys.syncLastError, error);
+  }
+
+  bool isSyncPending() => _prefs.getBool(PrefsKeys.syncPending) ?? false;
+
+  Future<void> setSyncPending(bool pending) async {
+    await _prefs.setBool(PrefsKeys.syncPending, pending);
   }
 
   String getSyncLastStatus() =>

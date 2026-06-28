@@ -23,7 +23,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('SETTINGS'));
+    await _pumpUntilVisible(
+      tester,
+      find.byKey(ClickerScreenKeys.settingsButtonKey),
+    );
+    await tester.tap(find.byKey(ClickerScreenKeys.settingsButtonKey));
     await tester.pumpAndSettle();
 
     expect(find.text('Shake Undo'), findsOneWidget);
@@ -36,4 +40,12 @@ void main() {
     expect(find.text('Low'), findsOneWidget);
     expect(find.text('High'), findsOneWidget);
   });
+}
+
+Future<void> _pumpUntilVisible(WidgetTester tester, Finder finder) async {
+  for (var i = 0; i < 30; i++) {
+    if (finder.evaluate().isNotEmpty) return;
+    await tester.pump(const Duration(milliseconds: 200));
+  }
+  fail('Timed out waiting for settings button');
 }

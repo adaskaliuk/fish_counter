@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:fish_counter/constants.dart';
 import 'package:fish_counter/game_session.dart';
 import 'package:fish_counter/models/activity_log.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:fish_counter/services/local_storage.dart';
 
 class StateContainer {
   final int counter1;
@@ -50,12 +50,12 @@ class StateContainer {
 }
 
 class StateRepository {
-  final SharedPreferences _prefs;
+  final LocalStorage _prefs;
 
   StateRepository(this._prefs);
 
   static Future<StateRepository> create() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await HiveLocalStorage.create();
     return StateRepository(prefs);
   }
 
