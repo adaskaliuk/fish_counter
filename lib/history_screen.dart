@@ -10,6 +10,7 @@ import 'package:fish_counter/session_comparison_screen.dart';
 import 'package:fish_counter/services/cloud_history_service.dart';
 import 'package:fish_counter/services/prefs_repository.dart';
 import 'package:fish_counter/utils/error_handler.dart';
+import 'package:fish_counter/widgets/history_session_details.dart';
 import 'package:fish_counter/widgets/session_edit_dialog.dart';
 import 'package:fish_counter/widgets/sync_badge_button.dart';
 import 'package:fish_counter/widgets/sync_status_banner.dart';
@@ -418,8 +419,19 @@ class _HistoryScreenState extends State<HistoryScreen>
                 )
               : null,
           title: Text(session.name),
-          subtitle: Text(
-            '${AppLocalizations.of(context).date}: ${session.date} | ${AppLocalizations.of(context).duration}: ${session.matchDuration}',
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${AppLocalizations.of(context).date}: ${session.date} | ${AppLocalizations.of(context).duration}: ${session.matchDuration}',
+              ),
+              const SizedBox(height: 8),
+              HistorySessionDetails(
+                session: session,
+                l10n: AppLocalizations.of(context),
+              ),
+            ],
           ),
           trailing: _compareMode
               ? null

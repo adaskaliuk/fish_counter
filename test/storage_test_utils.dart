@@ -4,6 +4,10 @@ import 'package:fish_counter/services/prefs_repository.dart';
 class MemoryLocalStorage implements LocalStorage {
   final Map<String, Object?> _values = {};
 
+  void seed(Map<String, Object?> values) {
+    _values.addAll(values);
+  }
+
   @override
   int? getInt(String key) => _values[key] is int ? _values[key] as int : null;
 
@@ -50,6 +54,14 @@ class MemoryLocalStorage implements LocalStorage {
 
 Future<MemoryLocalStorage> useMemoryStorage() async {
   final storage = MemoryLocalStorage();
+  PrefsRepository.useTestStorage(storage);
+  return storage;
+}
+
+Future<MemoryLocalStorage> useSeededMemoryStorage(
+  Map<String, Object?> values,
+) async {
+  final storage = MemoryLocalStorage()..seed(values);
   PrefsRepository.useTestStorage(storage);
   return storage;
 }

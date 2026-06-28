@@ -5,6 +5,7 @@ import 'package:battery_plus/battery_plus.dart';
 import 'package:fish_counter/constants.dart';
 import 'package:fish_counter/controllers/clicker_controller.dart';
 import 'package:fish_counter/services/prefs_repository.dart';
+import 'package:fish_counter/services/cloud_history_service.dart';
 import 'package:fish_counter/services/timer_manager.dart';
 import 'package:fish_counter/shake_undo_settings.dart';
 import 'package:fish_counter/undo_manager.dart' as undo;
@@ -361,12 +362,33 @@ class ClickerProvider extends ChangeNotifier {
   }
 
   Future<void> togglePause() async {
+    final wasSessionActive = _state.isSessionActive;
     final pauseState = ClickerController.togglePause(
       isSessionActive: _state.isSessionActive,
       isPaused: _state.isPaused,
     );
 
     var newActivityGrid = _state.activityGrid;
+    var newCounter1 = _state.counter1;
+    var newCounter2 = _state.counter2;
+    var newTries = _state.tries;
+    var newTotal = _state.total;
+    // ponytail: keep elapsed duration across pause so save retains session time.
+    var newDuration = _state.duration;
+    var newMatchInterval = _state.matchInterval;
+
+    final isStartingFresh = !pauseState.isPaused && !wasSessionActive;
+    if (isStartingFresh) {
+      _countdownTimer?.cancel();
+      newActivityGrid = [];
+      newCounter1 = 0;
+      newCounter2 = 0;
+      newTries = 0;
+      newTotal = 0;
+      newDuration = Duration.zero;
+      newMatchInterval = _state.matchInterval;
+    }
+
     if (pauseState.shouldAddPauseMarker) {
       newActivityGrid = List<Map<String, dynamic>>.from(_state.activityGrid);
       newActivityGrid.add(
@@ -380,8 +402,15 @@ class ClickerProvider extends ChangeNotifier {
       isSessionActive: pauseState.isSessionActive,
       isPaused: pauseState.isPaused,
       isDataHidden: pauseState.isDataHidden,
-      duration: pauseState.shouldResetDuration ? Duration.zero : _state.duration,
+      duration: newDuration,
       activityGrid: newActivityGrid,
+      counter1: newCounter1,
+      counter2: newCounter2,
+      tries: newTries,
+      total: newTotal,
+      matchInterval: newMatchInterval,
+      isActionDelay: isStartingFresh ? false : _state.isActionDelay,
+      delayCountdown: isStartingFresh ? 0 : _state.delayCountdown,
     );
     notifyListeners();
 
@@ -413,6 +442,70 @@ class ClickerProvider extends ChangeNotifier {
       isActionDelay: powerState.isActionDelay,
       delayCountdown: powerState.delayCountdown,
       duration: powerState.duration,
+    );
+    notifyListeners();
+    await _saveData();
+  }
+
+  bool get _shouldSaveSessionOnPowerOff {
+    return _state.isSessionActive ||
+        _state.activityGrid.isNotEmpty ||
+        _state.counter1 > 0 ||
+        _state.counter2 > 0 ||
+        _state.tries > 0 ||
+        _state.total > 0;
+  }
+
+  Future<void> finishSessionAndPowerOff() async {
+    final shouldSave = _shouldSaveSessionOnPowerOff;
+    if (shouldSave) {
+      final settings = _prefs.loadAppSettings();
+      final now = DateTime.now();
+      final session = ClickerController.buildSession(
+        id: now.millisecondsSinceEpoch.toString(),
+        name: 'Session',
+        date: DateFormat('dd.MM.yy HH:mm').format(now),
+        counter1: _state.counter1,
+        counter2: _state.counter2,
+        tries: _state.tries,
+        total: _state.total,
+        matchInterval: _state.duration,
+        activityGrid: _state.activityGrid,
+        athleteName: settings.athleteProfile.athleteName,
+        coachName: settings.athleteProfile.coachName,
+        venue: settings.athleteProfile.defaultVenue,
+        sectorPeg: settings.athleteProfile.defaultSectorPeg,
+        trainingType: settings.athleteProfile.defaultTrainingType,
+        fishingMethod: settings.athleteProfile.defaultFishingMethod,
+        targetPace: settings.athleteProfile.defaultTargetPace,
+      );
+
+      await _prefs.addHistorySession(session);
+      if (await _prefs.isSyncHistoryEnabled()) {
+        try {
+          await CloudHistoryService().uploadSession(session);
+        } catch (e) {
+          debugPrint('Cloud history upload error: $e');
+        }
+      }
+    }
+
+    final powerState = ClickerController.resetAfterSessionSaved();
+    _state = _state.copyWith(
+      isPowerOn: powerState.isPowerOn,
+      isPaused: powerState.isPaused,
+      isSessionActive: powerState.isSessionActive,
+      isDataHidden: powerState.isDataHidden,
+      isActionDelay: powerState.isActionDelay,
+      delayCountdown: powerState.delayCountdown,
+      duration: powerState.duration,
+      counter1: powerState.shouldResetCounters ? 0 : _state.counter1,
+      counter2: powerState.shouldResetCounters ? 0 : _state.counter2,
+      tries: powerState.shouldResetCounters ? 0 : _state.tries,
+      total: powerState.shouldResetCounters ? 0 : _state.total,
+      activityGrid: powerState.shouldClearActivity ? [] : _state.activityGrid,
+      hasHistory: powerState.hasHistory || shouldSave,
+      matchInterval: powerState.matchInterval,
     );
     notifyListeners();
     await _saveData();
@@ -466,6 +559,7 @@ class ClickerProvider extends ChangeNotifier {
 
   Future<void> resetAfterSessionSaved() async {
     final powerState = ClickerController.resetAfterSessionSaved();
+    final savedMatchInterval = _state.matchInterval;
     _state = _state.copyWith(
       isPowerOn: powerState.isPowerOn,
       isPaused: powerState.isPaused,
@@ -480,7 +574,7 @@ class ClickerProvider extends ChangeNotifier {
       total: powerState.shouldResetCounters ? 0 : _state.total,
       activityGrid: powerState.shouldClearActivity ? [] : _state.activityGrid,
       hasHistory: powerState.hasHistory,
-      matchInterval: powerState.matchInterval,
+      matchInterval: savedMatchInterval,
     );
     notifyListeners();
     await _saveData();

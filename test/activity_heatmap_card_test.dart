@@ -44,6 +44,7 @@ void main() {
 
     expect(find.text('Activity heatmap'), findsOneWidget);
     expect(find.text('PAUSE / RESET'), findsOneWidget);
+    expect(find.text('Grey'), findsNothing);
     expect(find.byType(Tooltip), findsNWidgets(3));
   });
 }

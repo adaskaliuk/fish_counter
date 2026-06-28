@@ -650,7 +650,16 @@ class _ClickerScreenState extends State<ClickerScreen> {
     final state = provider.state;
     
     if (state.isPowerOn) {
-      await provider.turnPowerOff();
+      if (state.isSessionActive ||
+          state.activityGrid.isNotEmpty ||
+          state.counter1 > 0 ||
+          state.counter2 > 0 ||
+          state.tries > 0 ||
+          state.total > 0) {
+        await provider.finishSessionAndPowerOff();
+      } else {
+        await provider.turnPowerOff();
+      }
     } else {
       await provider.turnPowerOn();
     }

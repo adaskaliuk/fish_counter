@@ -86,22 +86,14 @@ class ActivityHeatmapCard extends StatelessWidget {
                               child: Container(
                                 margin: const EdgeInsets.all(1.5),
                                 decoration: BoxDecoration(
-                                  color: log.status.toColor().withValues(
-                                    alpha: log.status == Status.pause
-                                        ? .35
-                                        : .9,
-                                  ),
+                                  color: _cellColor(log.status),
                                   borderRadius: BorderRadius.circular(6),
                                   border: Border.all(
-                                    color: Colors.white.withValues(alpha: .10),
+                                    color: Colors.white.withValues(alpha: .26),
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: log.status.toColor().withValues(
-                                        alpha: log.status == Status.pause
-                                            ? .08
-                                            : .18,
-                                      ),
+                                      color: _shadowColor(log.status),
                                       blurRadius: 10,
                                       offset: const Offset(0, 2),
                                     ),
@@ -124,11 +116,10 @@ class ActivityHeatmapCard extends StatelessWidget {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    _legendItem(l10n.green, Colors.green.shade700),
-                    _legendItem(l10n.orange, Colors.orange.shade800),
-                    _legendItem(l10n.red, Colors.red.shade800),
-                    _legendItem(l10n.grey, Colors.grey.shade700),
-                    _legendItem(l10n.pauseReset, Colors.blueGrey.shade600),
+                    _legendItem(l10n.green, const Color(0xFF23D18B)),
+                    _legendItem(l10n.orange, const Color(0xFFFFB020)),
+                    _legendItem(l10n.red, const Color(0xFFFF5C5C)),
+                    _legendItem(l10n.pauseReset, const Color(0xFF5B7CFF)),
                   ],
                 ),
                 const SizedBox(height: 2),
@@ -150,6 +141,23 @@ class ActivityHeatmapCard extends StatelessWidget {
     );
   }
 
+  Color _cellColor(Status status) {
+    return switch (status) {
+      Status.perfect => const Color(0xFF23D18B),
+      Status.good => const Color(0xFF23D18B),
+      Status.average => const Color(0xFFFFB020),
+      Status.poor => const Color(0xFFFF5C5C),
+      Status.early => const Color(0xFF5B7CFF),
+      Status.pause => const Color(0xFF5B7CFF),
+    };
+  }
+
+  Color _shadowColor(Status status) {
+    return _cellColor(
+      status,
+    ).withValues(alpha: status == Status.pause ? .16 : .26);
+  }
+
   String _statusLabel(Status status) {
     switch (status) {
       case Status.perfect:
@@ -160,7 +168,7 @@ class ActivityHeatmapCard extends StatelessWidget {
       case Status.poor:
         return l10n.red;
       case Status.early:
-        return l10n.grey;
+        return l10n.pauseReset;
       case Status.pause:
         return l10n.pauseReset;
     }
