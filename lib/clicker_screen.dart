@@ -4,6 +4,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fish_counter/models/athlete_profile.dart';
 import 'package:fish_counter/models/fishing_presets.dart';
+import 'package:fish_counter/widgets/sync_badge_button.dart';
 import 'package:fish_counter/history_screen.dart';
 import 'package:fish_counter/l10n/app_localizations.dart';
 import 'package:fish_counter/providers/clicker_provider.dart';
@@ -477,35 +478,11 @@ class _ClickerScreenState extends State<ClickerScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (_syncPending || _isRetryingSync)
-                          IconButton(
+                          SyncBadgeButton(
                             key: ClickerScreenKeys.syncBadgeButtonKey,
                             tooltip: AppLocalizations.of(context).syncNow,
-                            icon: _isRetryingSync
-                                ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
-                                  )
-                                : const Stack(
-                                    clipBehavior: Clip.none,
-                                    children: [
-                                      Icon(
-                                        Icons.cloud_queue,
-                                        size: 32,
-                                        color: Colors.orangeAccent,
-                                      ),
-                                      Positioned(
-                                        right: -1,
-                                        top: -1,
-                                        child: Icon(
-                                          Icons.circle,
-                                          size: 9,
-                                          color: Colors.redAccent,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                            onPressed: _isRetryingSync ? null : _retrySyncNow,
+                            isLoading: _isRetryingSync,
+                            onPressed: _retrySyncNow,
                           ),
                         IconButton(
                           key: ClickerScreenKeys.signOutButtonKey,
@@ -558,28 +535,9 @@ class _ClickerScreenState extends State<ClickerScreen> {
                 if (_syncPending)
                   Align(
                     alignment: Alignment.topRight,
-                    child: IconButton(
+                    child: SyncBadgeButton(
                       key: ClickerScreenKeys.syncBadgeButtonKey,
                       tooltip: l10n.syncNow,
-                      icon: const Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Icon(
-                            Icons.cloud_queue,
-                            size: 32,
-                            color: Colors.orangeAccent,
-                          ),
-                          Positioned(
-                            right: -1,
-                            top: -1,
-                            child: Icon(
-                              Icons.circle,
-                              size: 9,
-                              color: Colors.redAccent,
-                            ),
-                          ),
-                        ],
-                      ),
                       onPressed: _retrySyncNow,
                     ),
                   ),
