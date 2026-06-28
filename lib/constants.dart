@@ -2,7 +2,7 @@
 // This file centralizes all global constants and keys.
 import 'package:flutter/material.dart';
 
-// --- SharedPreferences Keys ---
+// --- Local Storage Keys ---
 class PrefsKeys {
   // Counters and Status
   static const String counter1 = 'counter1';

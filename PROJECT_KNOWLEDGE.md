@@ -32,7 +32,7 @@ lib/
 
 ### Dependencies
 - `firebase_core` - Firebase initialization
-- `shared_preferences` - Local data persistence
+- `hive_ce` - Local data persistence
 - `battery_plus` - Battery level monitoring
 - `intl` - Date/time formatting
 - `flutter/services` - Haptic feedback

@@ -550,10 +550,10 @@ class _ClickerScreenState extends State<ClickerScreen> {
                     child: Padding(
                       padding: const EdgeInsets.only(top: 8),
                       child: SyncStatusBanner(
-                      title: l10n.cloudSyncFailed,
-                      message: _syncError,
+                        title: l10n.cloudSyncFailed,
+                        message: _syncError,
+                      ),
                     ),
-                  ),
                   ),
                 if (_syncPending)
                   Align(
@@ -716,34 +716,41 @@ class _ClickerScreenState extends State<ClickerScreen> {
       child: Scaffold(
         body: SafeArea(
           child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.topCenter,
               children: [
-                if (_syncError.isNotEmpty)
-                  SizedBox(
-                    width: 420,
-                    child: SyncStatusBanner(
-                      title: AppLocalizations.of(context).cloudSyncFailed,
-                      message: _syncError,
+                Padding(
+                  padding: EdgeInsets.only(top: _syncError.isNotEmpty ? 72 : 0),
+                  child: Container(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    margin: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF333333),
+                      borderRadius: BorderRadius.circular(40),
+                      border: Border.all(color: Colors.black, width: 4),
+                    ),
+                    child: Column(
+                      children: [
+                        Builder(builder: _buildLCD),
+                        const SizedBox(height: 12),
+                        Builder(builder: _buildControls),
+                      ],
                     ),
                   ),
-                Container(
-                  constraints: const BoxConstraints(maxWidth: 420),
-                  margin: const EdgeInsets.all(12),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF333333),
-                    borderRadius: BorderRadius.circular(40),
-                    border: Border.all(color: Colors.black, width: 4),
-                  ),
-                  child: Column(
-                    children: [
-                      Builder(builder: _buildLCD),
-                      const SizedBox(height: 12),
-                      Builder(builder: _buildControls),
-                    ],
-                  ),
                 ),
+                if (_syncError.isNotEmpty)
+                  Positioned(
+                    top: 0,
+                    child: SizedBox(
+                      width: 420,
+                      child: SyncStatusBanner(
+                        title: AppLocalizations.of(context).cloudSyncFailed,
+                        message: _syncError,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),

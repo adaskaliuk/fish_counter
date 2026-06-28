@@ -11,10 +11,19 @@ import 'package:fish_counter/utils/type_utils.dart';
 /// Handles persistence for sessions and optional typed activity logs.
 class PrefsRepository {
   final LocalStorage _prefs;
+  static LocalStorage? _testStorage;
 
   PrefsRepository(this._prefs);
 
+  static void useTestStorage(LocalStorage? storage) {
+    _testStorage = storage;
+  }
+
   static Future<PrefsRepository> create() async {
+    final testStorage = _testStorage;
+    if (testStorage != null) {
+      return PrefsRepository(testStorage);
+    }
     final prefs = await HiveLocalStorage.create();
     return PrefsRepository(prefs);
   }

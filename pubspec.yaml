@@ -12,7 +12,6 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   intl: ^0.20.2
-  shared_preferences: ^2.2.2
   battery_plus: ^7.0.0
   firebase_core: ^4.3.0
   sensors_plus: ^7.0.0
