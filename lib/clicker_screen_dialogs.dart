@@ -393,6 +393,7 @@ class _SettingsDialogBodyState extends State<_SettingsDialogBody> {
                 debugPrint('Error syncing history: $e');
               }
             }
+            await widget.state._syncBadgeFromRepo(repo);
             navigator.pop();
           },
           child: Text(l10n.save),

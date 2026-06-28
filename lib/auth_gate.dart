@@ -44,10 +44,12 @@ class StartupSyncedClickerScreen extends StatefulWidget {
   const StartupSyncedClickerScreen({
     super.key,
     this.startupSyncBuilder,
+    this.foregroundSyncBuilder,
     this.enableBackgroundTasks = true,
   });
 
   final Future<void> Function()? startupSyncBuilder;
+  final Future<void> Function()? foregroundSyncBuilder;
   final bool enableBackgroundTasks;
 
   @override
@@ -56,16 +58,34 @@ class StartupSyncedClickerScreen extends StatefulWidget {
 }
 
 class _StartupSyncedClickerScreenState
-    extends State<StartupSyncedClickerScreen> {
+    extends State<StartupSyncedClickerScreen> with WidgetsBindingObserver {
   late final Future<void> _startupSync;
+  var _startupFinished = false;
+  var _foregroundSyncRunning = false;
 
   @override
   void initState() {
     super.initState();
-    _startupSync = (widget.startupSyncBuilder ?? _syncHistoryIfEnabled)();
+    WidgetsBinding.instance.addObserver(this);
+    _startupSync = (widget.startupSyncBuilder ?? _syncStartupSync)();
+    _startupSync.whenComplete(() {
+      _startupFinished = true;
+    });
   }
 
-  Future<void> _syncHistoryIfEnabled() async {
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    _retryPendingSyncIfNeeded();
+  }
+
+  Future<void> _syncStartupSync() async {
     try {
       final repo = await PrefsRepository.create();
       await CloudSettingsService().syncLocalAndRemote(repo);
@@ -75,6 +95,32 @@ class _StartupSyncedClickerScreenState
       await CloudHistoryService().syncLocalAndRemote(repo);
     } catch (e) {
       debugPrint('Startup history sync error: $e');
+    }
+  }
+
+  Future<void> _retryPendingSyncIfNeeded() async {
+    if (!_startupFinished || _foregroundSyncRunning) return;
+    _foregroundSyncRunning = true;
+    try {
+      await (widget.foregroundSyncBuilder ?? _syncPendingSync)();
+    } catch (e) {
+      debugPrint('Foreground sync error: $e');
+    } finally {
+      _foregroundSyncRunning = false;
+    }
+  }
+
+  Future<void> _syncPendingSync() async {
+    try {
+      final repo = await PrefsRepository.create();
+      if (!repo.isSyncPending()) return;
+
+      await CloudSettingsService().syncLocalAndRemote(repo);
+      if (await repo.isSyncHistoryEnabled()) {
+        await CloudHistoryService().syncLocalAndRemote(repo);
+      }
+    } catch (e) {
+      debugPrint('Foreground pending sync retry error: $e');
     }
   }
 

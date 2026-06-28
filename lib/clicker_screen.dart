@@ -29,6 +29,7 @@ abstract final class ClickerScreenKeys {
   static const undoButtonKey = ValueKey('clicker_undo_button');
   static const settingsButtonKey = ValueKey('clicker_settings_button');
   static const historyButtonKey = ValueKey('clicker_history_button');
+  static const syncBadgeButtonKey = ValueKey('clicker_sync_badge_button');
   static const powerButtonKey = ValueKey('clicker_power_button');
   static const signOutButtonKey = ValueKey('clicker_sign_out_button');
 }
@@ -37,9 +38,14 @@ abstract final class ClickerScreenKeys {
 // MAIN WIDGET
 // ==========================================
 class ClickerScreen extends StatefulWidget {
-  const ClickerScreen({super.key, this.enableBackgroundTasks = true});
+  const ClickerScreen({
+    super.key,
+    this.enableBackgroundTasks = true,
+    this.initialSyncPending,
+  });
 
   final bool enableBackgroundTasks;
+  final bool? initialSyncPending;
 
   @override
   State<ClickerScreen> createState() => _ClickerScreenState();
@@ -50,16 +56,20 @@ class _ClickerScreenState extends State<ClickerScreen> {
   late final Future<ClickerProvider> _providerFuture;
   PrefsRepository? _prefsRepository;
   ClickerProvider? _provider;
+  bool _syncPending = false;
+  bool _isRetryingSync = false;
 
   @override
   void initState() {
     super.initState();
+    _syncPending = widget.initialSyncPending ?? false;
     _providerFuture = _loadProvider();
   }
 
   Future<ClickerProvider> _loadProvider() async {
     final repo = await PrefsRepository.create();
     _prefsRepository = repo;
+    _syncPending = widget.initialSyncPending ?? repo.isSyncPending();
     final provider = ClickerProvider(prefs: repo);
     await provider.initialize();
     if (widget.enableBackgroundTasks) {
@@ -74,19 +84,48 @@ class _ClickerScreenState extends State<ClickerScreen> {
     return provider;
   }
 
-  Future<ClickerProvider> _ensureProvider() async {
-    final provider = _provider;
-    if (provider != null) return provider;
-    return _providerFuture;
-  }
-
   @override
   void dispose() {
     _provider?.dispose();
     _provider = null;
-    
     _gridScrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _retrySyncNow() async {
+    final repo = _prefsRepository ?? await PrefsRepository.create();
+    if (!repo.isSyncPending()) {
+      if (mounted) {
+        setState(() => _syncPending = false);
+      }
+      return;
+    }
+
+    if (mounted) {
+      setState(() => _isRetryingSync = true);
+    }
+
+    try {
+      await CloudSettingsService().syncLocalAndRemote(repo);
+      if (await repo.isSyncHistoryEnabled()) {
+        await CloudHistoryService().syncLocalAndRemote(repo);
+      }
+    } catch (e) {
+      debugPrint('Manual sync retry error: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _syncPending = repo.isSyncPending();
+          _isRetryingSync = false;
+        });
+      }
+    }
+  }
+
+  Future<ClickerProvider> _ensureProvider() async {
+    final provider = _provider;
+    if (provider != null) return provider;
+    return _providerFuture;
   }
 
   ClickerProvider get _providerOrThrow {
@@ -434,22 +473,58 @@ class _ClickerScreenState extends State<ClickerScreen> {
                   alignment: Alignment.centerRight,
                   child: Padding(
                     padding: const EdgeInsets.only(right: 20),
-                    child: IconButton(
-                      key: ClickerScreenKeys.signOutButtonKey,
-                      tooltip: AppLocalizations.of(context).signOut,
-                      icon: const Icon(
-                        Icons.account_circle,
-                        size: 34,
-                        color: Colors.white54,
-                      ),
-                      onPressed: () async {
-                        await FirebaseAuth.instance.signOut();
-                        try {
-                          await GoogleSignIn.instance.signOut();
-                        } catch (e) {
-                          debugPrint('Google sign-out error: $e');
-                        }
-                      },
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_syncPending || _isRetryingSync)
+                          IconButton(
+                            key: ClickerScreenKeys.syncBadgeButtonKey,
+                            tooltip: AppLocalizations.of(context).syncNow,
+                            icon: _isRetryingSync
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : const Stack(
+                                    clipBehavior: Clip.none,
+                                    children: [
+                                      Icon(
+                                        Icons.cloud_queue,
+                                        size: 32,
+                                        color: Colors.orangeAccent,
+                                      ),
+                                      Positioned(
+                                        right: -1,
+                                        top: -1,
+                                        child: Icon(
+                                          Icons.circle,
+                                          size: 9,
+                                          color: Colors.redAccent,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                            onPressed: _isRetryingSync ? null : _retrySyncNow,
+                          ),
+                        IconButton(
+                          key: ClickerScreenKeys.signOutButtonKey,
+                          tooltip: AppLocalizations.of(context).signOut,
+                          icon: const Icon(
+                            Icons.account_circle,
+                            size: 34,
+                            color: Colors.white54,
+                          ),
+                          onPressed: () async {
+                            await FirebaseAuth.instance.signOut();
+                            try {
+                              await GoogleSignIn.instance.signOut();
+                            } catch (e) {
+                              debugPrint('Google sign-out error: $e');
+                            }
+                          },
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -480,6 +555,34 @@ class _ClickerScreenState extends State<ClickerScreen> {
                 const Center(
                   child: Icon(Icons.hourglass_top, color: Colors.white54, size: 36),
                 ),
+                if (_syncPending)
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: IconButton(
+                      key: ClickerScreenKeys.syncBadgeButtonKey,
+                      tooltip: l10n.syncNow,
+                      icon: const Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Icon(
+                            Icons.cloud_queue,
+                            size: 32,
+                            color: Colors.orangeAccent,
+                          ),
+                          Positioned(
+                            right: -1,
+                            top: -1,
+                            child: Icon(
+                              Icons.circle,
+                              size: 9,
+                              color: Colors.redAccent,
+                            ),
+                          ),
+                        ],
+                      ),
+                      onPressed: _retrySyncNow,
+                    ),
+                  ),
                 Align(
                   alignment: Alignment.bottomCenter,
                   child: Padding(
@@ -613,6 +716,11 @@ class _ClickerScreenState extends State<ClickerScreen> {
   }
 
   Future<void> _saveData() => _providerOrThrow.saveData();
+
+  Future<void> _syncBadgeFromRepo(PrefsRepository repo) async {
+    if (!mounted) return;
+    setState(() => _syncPending = repo.isSyncPending());
+  }
 
   // UTILS
   // ==========================================
