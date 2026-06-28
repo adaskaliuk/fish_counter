@@ -18,6 +18,21 @@ import 'package:provider/provider.dart';
 
 part 'clicker_screen_dialogs.dart';
 
+abstract final class ClickerScreenKeys {
+  static const c1ValueKey = ValueKey('clicker_c1_value');
+  static const totalValueKey = ValueKey('clicker_total_value');
+  static const c2ValueKey = ValueKey('clicker_c2_value');
+  static const c1ButtonKey = ValueKey('clicker_c1_button');
+  static const c2ButtonKey = ValueKey('clicker_c2_button');
+  static const tryButtonKey = ValueKey('clicker_try_button');
+  static const startPauseButtonKey = ValueKey('clicker_start_pause_button');
+  static const undoButtonKey = ValueKey('clicker_undo_button');
+  static const settingsButtonKey = ValueKey('clicker_settings_button');
+  static const historyButtonKey = ValueKey('clicker_history_button');
+  static const powerButtonKey = ValueKey('clicker_power_button');
+  static const signOutButtonKey = ValueKey('clicker_sign_out_button');
+}
+
 // ==========================================
 // MAIN WIDGET
 // ==========================================
@@ -32,25 +47,37 @@ class ClickerScreen extends StatefulWidget {
 
 class _ClickerScreenState extends State<ClickerScreen> {
   final ScrollController _gridScrollController = ScrollController();
+  late final Future<ClickerProvider> _providerFuture;
+  PrefsRepository? _prefsRepository;
   ClickerProvider? _provider;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) return;
-      final provider = ClickerProvider(prefs: await PrefsRepository.create());
-      await provider.initialize();
-      if (widget.enableBackgroundTasks) {
-        provider.startGlobalTimer();
-        provider.startShakeListener();
-      }
-      if (!mounted) {
-        provider.dispose();
-        return;
-      }
-      setState(() => _provider = provider);
-    });
+    _providerFuture = _loadProvider();
+  }
+
+  Future<ClickerProvider> _loadProvider() async {
+    final repo = await PrefsRepository.create();
+    _prefsRepository = repo;
+    final provider = ClickerProvider(prefs: repo);
+    await provider.initialize();
+    if (widget.enableBackgroundTasks) {
+      provider.startGlobalTimer();
+      provider.startShakeListener();
+    }
+    if (!mounted) {
+      provider.dispose();
+      return provider;
+    }
+    setState(() => _provider = provider);
+    return provider;
+  }
+
+  Future<ClickerProvider> _ensureProvider() async {
+    final provider = _provider;
+    if (provider != null) return provider;
+    return _providerFuture;
   }
 
   @override
@@ -137,13 +164,22 @@ class _ClickerScreenState extends State<ClickerScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _lcdStat('C1', state.isDataHidden ? null : state.counter1),
+                        _lcdStat(
+                          'C1',
+                          state.isDataHidden ? null : state.counter1,
+                          valueKey: ClickerScreenKeys.c1ValueKey,
+                        ),
                         _lcdStat(
                           'TOTAL',
                           state.isDataHidden ? null : state.total,
                           isBold: true,
+                          valueKey: ClickerScreenKeys.totalValueKey,
                         ),
-                        _lcdStat('C2', state.isDataHidden ? null : state.counter2),
+                        _lcdStat(
+                          'C2',
+                          state.isDataHidden ? null : state.counter2,
+                          valueKey: ClickerScreenKeys.c2ValueKey,
+                        ),
                       ],
                     ),
                     const Divider(color: Colors.black, thickness: 1, height: 8),
@@ -250,10 +286,16 @@ class _ClickerScreenState extends State<ClickerScreen> {
     }
   }
 
-  Widget _lcdStat(String label, int? value, {bool isBold = false}) => Column(
+  Widget _lcdStat(
+    String label,
+    int? value, {
+    bool isBold = false,
+    Key? valueKey,
+  }) => Column(
     children: [
       Text(label, style: const TextStyle(color: Colors.black, fontSize: 9)),
       Text(
+        key: valueKey,
         value == null ? '--' : '$value',
         style: TextStyle(
           color: Colors.black,
@@ -284,6 +326,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
                 'C 1',
                 () => context.read<ClickerProvider>().handleIncrement(1),
                 mainSize,
+                buttonKey: ClickerScreenKeys.c1ButtonKey,
                 isActionBtn: true,
                 state: state,
               ),
@@ -291,6 +334,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
                 l10n.tryButton,
                 () => context.read<ClickerProvider>().handleIncrement(3),
                 55,
+                buttonKey: ClickerScreenKeys.tryButtonKey,
                 isSmall: true,
                 isActionBtn: true,
                 state: state,
@@ -299,6 +343,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
                 'C 2',
                 () => context.read<ClickerProvider>().handleIncrement(2),
                 mainSize,
+                buttonKey: ClickerScreenKeys.c2ButtonKey,
                 isActionBtn: true,
                 state: state,
               ),
@@ -311,6 +356,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
                 state.isPaused ? l10n.start : l10n.pause,
                 () => context.read<ClickerProvider>().togglePause(),
                 mainSize,
+                buttonKey: ClickerScreenKeys.startPauseButtonKey,
                 isAccent: true,
                 state: state,
               ),
@@ -318,6 +364,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
                 l10n.undo,
                 () => context.read<ClickerProvider>().undoLastAction(),
                 55,
+                buttonKey: ClickerScreenKeys.undoButtonKey,
                 isSmall: true,
                 isUndoBtn: true,
                 enabledWhenPowerOff: true,
@@ -327,6 +374,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
                 l10n.settings,
                 _showSettings,
                 mainSize,
+                buttonKey: ClickerScreenKeys.settingsButtonKey,
                 isSmall: true,
                 enabledWhenPowerOff: true,
                 state: state,
@@ -342,6 +390,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
                         child: Padding(
                           padding: const EdgeInsets.only(left: 20),
                           child: IconButton(
+                            key: ClickerScreenKeys.historyButtonKey,
                             icon: const Icon(
                               Icons.history,
                               size: 34,
@@ -364,6 +413,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
               Expanded(
                 child: Center(
                   child: GestureDetector(
+                    key: ClickerScreenKeys.powerButtonKey,
                     onTap: _handlePower,
                     child: CircleAvatar(
                       backgroundColor: state.isPowerOn
@@ -385,6 +435,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
                   child: Padding(
                     padding: const EdgeInsets.only(right: 20),
                     child: IconButton(
+                      key: ClickerScreenKeys.signOutButtonKey,
                       tooltip: AppLocalizations.of(context).signOut,
                       icon: const Icon(
                         Icons.account_circle,
@@ -410,10 +461,61 @@ class _ClickerScreenState extends State<ClickerScreen> {
     );
   }
 
+  Widget _buildLoadingShell(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 420),
+            margin: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF333333),
+              borderRadius: BorderRadius.circular(40),
+              border: Border.all(color: Colors.black, width: 4),
+            ),
+            child: Stack(
+              children: [
+                const Center(
+                  child: Icon(Icons.hourglass_top, color: Colors.white54, size: 36),
+                ),
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 24),
+                    child: GestureDetector(
+                      key: ClickerScreenKeys.settingsButtonKey,
+                      onTap: _showSettings,
+                      child: CircleAvatar(
+                        backgroundColor: Colors.white,
+                        radius: 26,
+                        child: Text(
+                          l10n.settings,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _btn(
     String label,
     VoidCallback onTap,
     double size, {
+    Key? buttonKey,
     bool isSmall = false,
     bool isAccent = false,
     bool isActionBtn = false,
@@ -427,6 +529,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
         (isUndoBtn && !state.activityGrid.isNotEmpty);
 
     return GestureDetector(
+      key: buttonKey,
       onTap: isDisabled ? null : onTap,
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 200),
@@ -470,24 +573,26 @@ class _ClickerScreenState extends State<ClickerScreen> {
   }
 
   // ==========================================
-  ClickerState get _clickerState => _providerOrThrow.state;
+  ClickerState get _clickerStateOrDefault =>
+      _provider?.state ?? const ClickerState();
 
-  bool get isPowerOn => _clickerState.isPowerOn;
-  int get resetDelay => _clickerState.resetDelay;
-  int get vibeInterval => _clickerState.vibeInterval;
-  Duration get matchInterval => _clickerState.matchInterval;
-  bool get isSyncHistoryEnabled => _clickerState.isSyncHistoryEnabled;
-  bool get isShakeUndoEnabled => _clickerState.isShakeUndoEnabled;
-  ShakeSensitivity get shakeSensitivity => _clickerState.shakeSensitivity;
-  int get counter1 => _clickerState.counter1;
-  int get counter2 => _clickerState.counter2;
-  int get tries => _clickerState.tries;
-  int get total => _clickerState.total;
-  bool get isSessionActive => _clickerState.isSessionActive;
-  bool get isPaused => _clickerState.isPaused;
-  bool get isActionDelay => _clickerState.isActionDelay;
-  bool get isDataHidden => _clickerState.isDataHidden;
-  List<Map<String, dynamic>> get activityGrid => _clickerState.activityGrid;
+  bool get isPowerOn => _clickerStateOrDefault.isPowerOn;
+  int get resetDelay => _clickerStateOrDefault.resetDelay;
+  int get vibeInterval => _clickerStateOrDefault.vibeInterval;
+  Duration get matchInterval => _clickerStateOrDefault.matchInterval;
+  bool get isSyncHistoryEnabled => _clickerStateOrDefault.isSyncHistoryEnabled;
+  bool get isShakeUndoEnabled => _clickerStateOrDefault.isShakeUndoEnabled;
+  ShakeSensitivity get shakeSensitivity => _clickerStateOrDefault.shakeSensitivity;
+  int get counter1 => _clickerStateOrDefault.counter1;
+  int get counter2 => _clickerStateOrDefault.counter2;
+  int get tries => _clickerStateOrDefault.tries;
+  int get total => _clickerStateOrDefault.total;
+  bool get isSessionActive => _clickerStateOrDefault.isSessionActive;
+  bool get isPaused => _clickerStateOrDefault.isPaused;
+  bool get isActionDelay => _clickerStateOrDefault.isActionDelay;
+  bool get isDataHidden => _clickerStateOrDefault.isDataHidden;
+  List<Map<String, dynamic>> get activityGrid =>
+      _clickerStateOrDefault.activityGrid;
 
   void _applySettings({
     required int resetDelay,
@@ -519,7 +624,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
   Widget build(BuildContext context) {
     final provider = _provider;
     if (provider == null) {
-      return const SizedBox.shrink();
+      return _buildLoadingShell(context);
     }
 
     return ChangeNotifierProvider.value(

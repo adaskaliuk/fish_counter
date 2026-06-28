@@ -62,51 +62,58 @@ class CloudHistoryService {
   }
 
   Future<CloudHistorySyncResult> syncLocalAndRemote(PrefsRepository repo) async {
-    if (!canSync) {
-      await repo.saveSyncStatus(status: 'localOnly');
-      return const CloudHistorySyncResult(
-        localCount: 0,
-        remoteCount: 0,
-        mergedCount: 0,
-        uploadedCount: 0,
-        skipped: true,
-      );
-    }
+    try {
+      if (!canSync) {
+        await repo.saveSyncStatus(status: 'localOnly');
+        return const CloudHistorySyncResult(
+          localCount: 0,
+          remoteCount: 0,
+          mergedCount: 0,
+          uploadedCount: 0,
+          skipped: true,
+        );
+      }
 
-    final state = await repo.loadInitialState();
-    if (!state.syncHistoryEnabled) {
-      await repo.saveSyncStatus(status: 'off');
+      final state = await repo.loadInitialState();
+      if (!state.syncHistoryEnabled) {
+        await repo.saveSyncStatus(status: 'off');
+        return CloudHistorySyncResult(
+          localCount: state.historySessions.length,
+          remoteCount: 0,
+          mergedCount: state.historySessions.length,
+          uploadedCount: 0,
+          skipped: true,
+        );
+      }
+
+      final remoteSessions = await loadSessions();
+      final merged = PrefsRepository.mergeSessionLists(
+        state.historySessions,
+        remoteSessions,
+      );
+      await repo.saveSessionHistory(merged);
+
+      var uploaded = 0;
+      for (final session in merged) {
+        await uploadSession(session);
+        uploaded += 1;
+      }
+
+      await repo.saveSyncStatus(status: 'synced');
+      await repo.setSyncPending(false);
+
       return CloudHistorySyncResult(
         localCount: state.historySessions.length,
-        remoteCount: 0,
-        mergedCount: state.historySessions.length,
-        uploadedCount: 0,
-        skipped: true,
+        remoteCount: remoteSessions.length,
+        mergedCount: merged.length,
+        uploadedCount: uploaded,
+        skipped: false,
       );
+    } catch (e) {
+      await repo.saveSyncStatus(status: 'failed', error: e.toString());
+      await repo.setSyncPending(true);
+      rethrow;
     }
-
-    final remoteSessions = await loadSessions();
-    final merged = PrefsRepository.mergeSessionLists(
-      state.historySessions,
-      remoteSessions,
-    );
-    await repo.saveSessionHistory(merged);
-
-    var uploaded = 0;
-    for (final session in merged) {
-      await uploadSession(session);
-      uploaded += 1;
-    }
-
-    await repo.saveSyncStatus(status: 'synced');
-
-    return CloudHistorySyncResult(
-      localCount: state.historySessions.length,
-      remoteCount: remoteSessions.length,
-      mergedCount: merged.length,
-      uploadedCount: uploaded,
-      skipped: false,
-    );
   }
 
   CollectionReference<Map<String, dynamic>> _sessionsRef(String uid) {
