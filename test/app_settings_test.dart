@@ -2,7 +2,8 @@ import 'package:fish_counter/models/app_settings.dart';
 import 'package:fish_counter/models/athlete_profile.dart';
 import 'package:fish_counter/services/prefs_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
+import 'storage_test_utils.dart';
 
 void main() {
   test('AppSettings serializes profile and settings', () {
@@ -26,7 +27,8 @@ void main() {
   });
 
   test('PrefsRepository applies and loads app settings', () async {
-    SharedPreferences.setMockInitialValues({});
+    await useMemoryStorage();
+    addTearDown(resetMemoryStorage);
     final repo = await PrefsRepository.create();
 
     await repo.applyAppSettings(
@@ -52,7 +54,8 @@ void main() {
   });
 
   test('PrefsRepository touchSettingsUpdatedAt bumps updatedAt', () async {
-    SharedPreferences.setMockInitialValues({});
+    await useMemoryStorage();
+    addTearDown(resetMemoryStorage);
     final repo = await PrefsRepository.create();
 
     await repo.touchSettingsUpdatedAt();

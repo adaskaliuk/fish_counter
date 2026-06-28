@@ -1,7 +1,8 @@
 import 'package:fish_counter/game_session.dart';
 import 'package:fish_counter/services/prefs_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
+import 'storage_test_utils.dart';
 
 GameSession _session({
   required String id,
@@ -60,7 +61,8 @@ void main() {
     });
 
     test('deletes a local history session by id', () async {
-      SharedPreferences.setMockInitialValues({});
+      await useMemoryStorage();
+      addTearDown(resetMemoryStorage);
       final repo = await PrefsRepository.create();
       await repo.saveSessionHistory([
         _session(id: '1', name: 'Keep', updatedAt: '2026-06-07T10:00:00Z'),
@@ -74,7 +76,8 @@ void main() {
     });
 
     test('updates a local history session by id', () async {
-      SharedPreferences.setMockInitialValues({});
+      await useMemoryStorage();
+      addTearDown(resetMemoryStorage);
       final repo = await PrefsRepository.create();
       await repo.saveSessionHistory([
         _session(id: '1', name: 'Old', updatedAt: '2026-06-07T10:00:00Z'),

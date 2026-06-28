@@ -1,7 +1,8 @@
 import 'package:fish_counter/models/athlete_profile.dart';
 import 'package:fish_counter/services/prefs_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
+import 'storage_test_utils.dart';
 
 void main() {
   test('AthleteProfile serializes defaults', () {
@@ -24,7 +25,8 @@ void main() {
   });
 
   test('PrefsRepository saves and loads athlete profile', () async {
-    SharedPreferences.setMockInitialValues({});
+    await useMemoryStorage();
+    addTearDown(resetMemoryStorage);
     final repo = await PrefsRepository.create();
 
     await repo.saveAthleteProfile(const AthleteProfile(athleteName: 'A'));
