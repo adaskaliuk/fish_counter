@@ -1,4 +1,5 @@
 import 'package:fish_counter/game_session.dart';
+import 'package:fish_counter/models/weather_snapshot.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -37,6 +38,21 @@ void main() {
         longitude: 30.52,
         weatherTemperatureCelsius: 21.5,
         weatherWindSpeedMs: 3.2,
+        weatherSnapshots: [
+          WeatherSnapshot(
+            latitude: 50.45,
+            longitude: 30.52,
+            placeName: 'Kyiv',
+            description: 'clear sky',
+            temperatureCelsius: 21.5,
+            feelsLikeCelsius: 20.8,
+            pressureHpa: 1012,
+            humidityPercent: 55,
+            windSpeedMs: 3.2,
+            windDirectionDegrees: 180,
+            fetchedAt: '2026-06-06T10:00:00Z',
+          ),
+        ],
         updatedAt: '2026-06-06T10:01:00Z',
         athleteNote: 'Athlete note',
         coachComment: 'Coach comment',
@@ -67,6 +83,8 @@ void main() {
       expect(parsed.longitude, 30.52);
       expect(parsed.weatherTemperatureCelsius, 21.5);
       expect(parsed.weatherWindSpeedMs, 3.2);
+      expect(parsed.weatherSnapshots, hasLength(1));
+      expect(parsed.weatherSnapshots.first.temperatureCelsius, 21.5);
       expect(parsed.updatedAt, '2026-06-06T10:01:00Z');
       expect(parsed.athleteNote, 'Athlete note');
       expect(parsed.coachComment, 'Coach comment');

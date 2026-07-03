@@ -4,6 +4,8 @@ import 'dart:math' as math;
 import 'package:battery_plus/battery_plus.dart';
 import 'package:fish_counter/constants.dart';
 import 'package:fish_counter/controllers/clicker_controller.dart';
+import 'package:fish_counter/models/weather_snapshot.dart';
+import 'package:fish_counter/services/weather_service.dart';
 import 'package:fish_counter/services/prefs_repository.dart';
 import 'package:fish_counter/services/cloud_history_service.dart';
 import 'package:fish_counter/services/timer_manager.dart';
@@ -39,6 +41,7 @@ class ClickerState {
   final String currentDate;
   final int batteryLevel;
   final List<Map<String, dynamic>> activityGrid;
+  final List<WeatherSnapshot> weatherSnapshots;
 
   const ClickerState({
     this.counter1 = 0,
@@ -66,6 +69,7 @@ class ClickerState {
     this.currentDate = '--.--.--',
     this.batteryLevel = 0,
     this.activityGrid = const [],
+    this.weatherSnapshots = const [],
   });
 
   ClickerState copyWith({
@@ -92,6 +96,7 @@ class ClickerState {
     String? currentDate,
     int? batteryLevel,
     List<Map<String, dynamic>>? activityGrid,
+    List<WeatherSnapshot>? weatherSnapshots,
   }) {
     return ClickerState(
       counter1: counter1 ?? this.counter1,
@@ -117,6 +122,7 @@ class ClickerState {
       currentDate: currentDate ?? this.currentDate,
       batteryLevel: batteryLevel ?? this.batteryLevel,
       activityGrid: activityGrid ?? this.activityGrid,
+      weatherSnapshots: weatherSnapshots ?? this.weatherSnapshots,
     );
   }
 }
@@ -132,6 +138,9 @@ class ClickerProvider extends ChangeNotifier {
   Timer? _countdownTimer;
   StreamSubscription<AccelerometerEvent>? _shakeSubscription;
   DateTime? _lastShakeUndoAt;
+  DateTime? _lastWeatherCaptureAt;
+  var _weatherCaptureInFlight = false;
+  final SessionWeatherService _weatherService = SessionWeatherService();
 
   ClickerProvider({
     required PrefsRepository prefs,
@@ -161,8 +170,14 @@ class ClickerProvider extends ChangeNotifier {
         initialState.shakeSensitivity,
       ),
       activityGrid: initialState.rawActivityGrid,
+      weatherSnapshots: initialState.weatherSnapshots,
       hasHistory: initialState.historySessions.isNotEmpty,
     );
+    if (initialState.weatherSnapshots.isNotEmpty) {
+      _lastWeatherCaptureAt = DateTime.tryParse(
+        initialState.weatherSnapshots.last.fetchedAt,
+      );
+    }
     notifyListeners();
   }
 
@@ -189,6 +204,8 @@ class ClickerProvider extends ChangeNotifier {
         if (_state.isSessionActive && _state.matchInterval.inSeconds > 0) {
           newMatchInterval = _state.matchInterval - const Duration(seconds: 1);
         }
+
+        await _maybeCaptureWeatherSample(now);
 
         var newDuration = _state.duration;
         if (!_state.isPaused &&
@@ -376,11 +393,13 @@ class ClickerProvider extends ChangeNotifier {
     // ponytail: keep elapsed duration across pause so save retains session time.
     var newDuration = _state.duration;
     var newMatchInterval = _state.matchInterval;
+    var newWeatherSnapshots = _state.weatherSnapshots;
 
     final isStartingFresh = !pauseState.isPaused && !wasSessionActive;
     if (isStartingFresh) {
       _countdownTimer?.cancel();
       newActivityGrid = [];
+      newWeatherSnapshots = [];
       newCounter1 = 0;
       newCounter2 = 0;
       newTries = 0;
@@ -409,10 +428,15 @@ class ClickerProvider extends ChangeNotifier {
       tries: newTries,
       total: newTotal,
       matchInterval: newMatchInterval,
+      weatherSnapshots: newWeatherSnapshots,
       isActionDelay: isStartingFresh ? false : _state.isActionDelay,
       delayCountdown: isStartingFresh ? 0 : _state.delayCountdown,
     );
     notifyListeners();
+
+    if (isStartingFresh) {
+      await _maybeCaptureWeatherSample(DateTime.now(), force: true);
+    }
 
     await _saveData();
   }
@@ -457,6 +481,7 @@ class ClickerProvider extends ChangeNotifier {
   }
 
   Future<void> finishSessionAndPowerOff() async {
+    await _maybeCaptureWeatherSample(DateTime.now(), force: true);
     final shouldSave = _shouldSaveSessionOnPowerOff;
     if (shouldSave) {
       final settings = _prefs.loadAppSettings();
@@ -471,6 +496,7 @@ class ClickerProvider extends ChangeNotifier {
         total: _state.total,
         matchInterval: _state.duration,
         activityGrid: _state.activityGrid,
+        weatherHistory: _state.weatherSnapshots,
         athleteName: settings.athleteProfile.athleteName,
         coachName: settings.athleteProfile.coachName,
         venue: settings.athleteProfile.defaultVenue,
@@ -506,6 +532,7 @@ class ClickerProvider extends ChangeNotifier {
       activityGrid: powerState.shouldClearActivity ? [] : _state.activityGrid,
       hasHistory: powerState.hasHistory || shouldSave,
       matchInterval: powerState.matchInterval,
+      weatherSnapshots: [],
     );
     notifyListeners();
     await _saveData();
@@ -553,6 +580,37 @@ class ClickerProvider extends ChangeNotifier {
 
   Future<void> saveData() => _saveData();
 
+  Future<void> _maybeCaptureWeatherSample(
+    DateTime now, {
+    bool force = false,
+  }) async {
+    if (SessionWeatherService.apiKey.isEmpty) return;
+    if (_weatherCaptureInFlight) return;
+    if (!force) {
+      if (!_state.isPowerOn || !_state.isSessionActive || _state.isPaused) {
+        return;
+      }
+      final lastCapture = _lastWeatherCaptureAt;
+      if (lastCapture != null && now.difference(lastCapture) < const Duration(minutes: 15)) {
+        return;
+      }
+    }
+
+    _weatherCaptureInFlight = true;
+    try {
+      _lastWeatherCaptureAt = now;
+      final snapshot = await _weatherService.fetchCurrentWeather();
+      _state = _state.copyWith(
+        weatherSnapshots: [..._state.weatherSnapshots, snapshot],
+      );
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Weather capture error: $e');
+    } finally {
+      _weatherCaptureInFlight = false;
+    }
+  }
+
   void cancelCountdown() {
     _countdownTimer?.cancel();
   }
@@ -597,6 +655,7 @@ class ClickerProvider extends ChangeNotifier {
       shakeUndoEnabled: _state.isShakeUndoEnabled,
       shakeSensitivity: _state.shakeSensitivity.value,
       activityGrid: _state.activityGrid,
+      weatherSnapshots: _state.weatherSnapshots.map((snapshot) => snapshot.toJson()).toList(),
     );
   }
 

@@ -133,28 +133,35 @@ class ClickerController extends ChangeNotifier {
     String conditions = '',
     String baitNotes = '',
     WeatherSnapshot? weather,
+    List<WeatherSnapshot> weatherHistory = const [],
     String athleteNote = '',
     String coachComment = '',
   }) {
-    final weatherInfo = weather != null
+    final snapshots = weatherHistory.isNotEmpty
+        ? weatherHistory
+        : weather == null
+            ? const <WeatherSnapshot>[]
+            : <WeatherSnapshot>[weather];
+    final latestWeather = snapshots.isNotEmpty ? snapshots.last : weather;
+    final weatherInfo = latestWeather != null
         ? WeatherInfo(
-            place: weather.placeName,
-            description: weather.description,
-            fetchedAt: weather.fetchedAt,
-            latitude: weather.latitude,
-            longitude: weather.longitude,
-            temperatureCelsius: weather.temperatureCelsius,
-            feelsLikeCelsius: weather.feelsLikeCelsius,
-            pressureHpa: weather.pressureHpa,
-            humidityPercent: weather.humidityPercent,
-            windSpeedMs: weather.windSpeedMs,
-            windDirectionDegrees: weather.windDirectionDegrees,
+            place: latestWeather.placeName,
+            description: latestWeather.description,
+            fetchedAt: latestWeather.fetchedAt,
+            latitude: latestWeather.latitude,
+            longitude: latestWeather.longitude,
+            temperatureCelsius: latestWeather.temperatureCelsius,
+            feelsLikeCelsius: latestWeather.feelsLikeCelsius,
+            pressureHpa: latestWeather.pressureHpa,
+            humidityPercent: latestWeather.humidityPercent,
+            windSpeedMs: latestWeather.windSpeedMs,
+            windDirectionDegrees: latestWeather.windDirectionDegrees,
           )
         : const WeatherInfo();
     final astronomyInfo = AstronomyService.build(
-      date: DateTime.tryParse(weather?.fetchedAt ?? '') ?? DateTime.now(),
-      latitude: weather?.latitude,
-      longitude: weather?.longitude,
+      date: DateTime.tryParse(latestWeather?.fetchedAt ?? '') ?? DateTime.now(),
+      latitude: latestWeather?.latitude,
+      longitude: latestWeather?.longitude,
     );
 
     return GameSession(
@@ -173,6 +180,7 @@ class ClickerController extends ChangeNotifier {
       astronomyInfo: astronomyInfo,
       athleteNote: athleteNote.trim(),
       coachComment: coachComment.trim(),
+      weatherSnapshots: snapshots,
       userInfo: SessionUserInfo(
         userId: userId.trim(),
         userEmail: userEmail.trim(),

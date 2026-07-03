@@ -1,5 +1,6 @@
 import 'package:fish_counter/game_session.dart';
 import 'package:fish_counter/l10n/app_localizations.dart';
+import 'package:fish_counter/models/weather_snapshot.dart';
 import 'package:flutter/material.dart';
 
 class AnalyticsWeatherSection extends StatelessWidget {
@@ -123,6 +124,29 @@ class AnalyticsWeatherSection extends StatelessWidget {
                   ),
                 ),
               ],
+              if (session.weatherSnapshots.length > 1) ...[
+                const SizedBox(height: 14),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: session.weatherSnapshots
+                        .asMap()
+                        .entries
+                        .map(
+                          (entry) => Padding(
+                            padding: const EdgeInsets.only(right: 10),
+                            child: _snapshotCard(
+                              entry.value,
+                              isFirst: entry.key == 0,
+                              isLast:
+                                  entry.key == session.weatherSnapshots.length - 1,
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -163,6 +187,57 @@ class AnalyticsWeatherSection extends StatelessWidget {
     );
   }
 
+  Widget _snapshotCard(
+    WeatherSnapshot snapshot, {
+    required bool isFirst,
+    required bool isLast,
+  }) {
+    return Container(
+      width: 180,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: isLast ? Colors.white12 : Colors.black12,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isFirst
+              ? Colors.greenAccent.withValues(alpha: .35)
+              : isLast
+              ? Colors.orangeAccent.withValues(alpha: .35)
+              : Colors.white.withValues(alpha: .05),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _timeLabel(snapshot.fetchedAt),
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            snapshot.placeName.isNotEmpty ? snapshot.placeName : snapshot.description,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '${_temperature(snapshot.temperatureCelsius)} / ${_temperature(snapshot.feelsLikeCelsius)}',
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
+          ),
+          Text(
+            '${_pressure(snapshot.pressureHpa)} • ${_percentage(snapshot.humidityPercent)} • ${_windSpeed(snapshot.windSpeedMs)}',
+            style: const TextStyle(color: Colors.white54, fontSize: 11),
+          ),
+        ],
+      ),
+    );
+  }
+
   String _temperature(double? value) =>
       value == null ? '--' : '${value.toStringAsFixed(1)}°C';
 
@@ -177,4 +252,9 @@ class AnalyticsWeatherSection extends StatelessWidget {
 
   String _windDirection(double? value) =>
       value == null ? '--' : '${value.toStringAsFixed(0)}°';
+
+  String _timeLabel(String value) {
+    if (value.length >= 16) return value.substring(11, 16);
+    return value;
+  }
 }

@@ -1,6 +1,7 @@
 import 'package:fish_counter/game_session.dart';
 import 'package:fish_counter/l10n/app_localizations.dart';
 import 'package:fish_counter/models/astronomy_info.dart';
+import 'package:fish_counter/models/weather_snapshot.dart';
 import 'package:fish_counter/widgets/analytics_weather_section.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -27,6 +28,34 @@ void main() {
       weatherHumidityPercent: 55,
       weatherWindSpeedMs: 3.2,
       weatherWindDirectionDegrees: 180,
+      weatherSnapshots: const [
+        WeatherSnapshot(
+          latitude: 50,
+          longitude: 30,
+          placeName: 'Kyiv',
+          description: 'clear sky',
+          temperatureCelsius: 21.5,
+          feelsLikeCelsius: 20.0,
+          pressureHpa: 1012,
+          humidityPercent: 55,
+          windSpeedMs: 3.2,
+          windDirectionDegrees: 180,
+          fetchedAt: '2026-06-25T10:00:00',
+        ),
+        WeatherSnapshot(
+          latitude: 50,
+          longitude: 30,
+          placeName: 'Kyiv',
+          description: 'clear sky',
+          temperatureCelsius: 22.1,
+          feelsLikeCelsius: 20.9,
+          pressureHpa: 1010,
+          humidityPercent: 52,
+          windSpeedMs: 4.0,
+          windDirectionDegrees: 195,
+          fetchedAt: '2026-06-25T10:15:00',
+        ),
+      ],
       astronomyInfo: const AstronomyInfo.empty(),
     );
 
@@ -54,5 +83,6 @@ void main() {
     expect(find.text('Wind direction'), findsOneWidget);
     expect(find.text('180°'), findsOneWidget);
     expect(find.text('Fetched at: 2026-06-25 10:00'), findsOneWidget);
+    expect(find.text('10:15'), findsOneWidget);
   });
 }

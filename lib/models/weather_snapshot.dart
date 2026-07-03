@@ -25,6 +25,36 @@ class WeatherSnapshot {
     required this.fetchedAt,
   });
 
+  Map<String, dynamic> toJson() => {
+    'latitude': latitude,
+    'longitude': longitude,
+    'placeName': placeName,
+    'description': description,
+    'temperatureCelsius': temperatureCelsius,
+    'feelsLikeCelsius': feelsLikeCelsius,
+    'pressureHpa': pressureHpa,
+    'humidityPercent': humidityPercent,
+    'windSpeedMs': windSpeedMs,
+    'windDirectionDegrees': windDirectionDegrees,
+    'fetchedAt': fetchedAt,
+  };
+
+  factory WeatherSnapshot.fromJson(Map<String, dynamic> json) {
+    return WeatherSnapshot(
+      latitude: _toDouble(json['latitude']) ?? 0,
+      longitude: _toDouble(json['longitude']) ?? 0,
+      placeName: json['placeName']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
+      temperatureCelsius: _toDouble(json['temperatureCelsius']),
+      feelsLikeCelsius: _toDouble(json['feelsLikeCelsius']),
+      pressureHpa: _toDouble(json['pressureHpa']),
+      humidityPercent: _toDouble(json['humidityPercent']),
+      windSpeedMs: _toDouble(json['windSpeedMs']),
+      windDirectionDegrees: _toDouble(json['windDirectionDegrees']),
+      fetchedAt: json['fetchedAt']?.toString() ?? '',
+    );
+  }
+
   String get summary {
     final parts = <String>[];
     if (placeName.isNotEmpty) parts.add(placeName);
@@ -36,5 +66,11 @@ class WeatherSnapshot {
       parts.add('wind ${windSpeedMs!.toStringAsFixed(1)} m/s');
     }
     return parts.join(' • ');
+  }
+
+  static double? _toDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString());
   }
 }

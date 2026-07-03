@@ -5,6 +5,7 @@ import 'package:fish_counter/game_session.dart';
 import 'package:fish_counter/models/activity_log.dart';
 import 'package:fish_counter/models/app_settings.dart';
 import 'package:fish_counter/models/athlete_profile.dart';
+import 'package:fish_counter/models/weather_snapshot.dart';
 import 'package:fish_counter/services/local_storage.dart';
 import 'package:fish_counter/utils/type_utils.dart';
 
@@ -170,6 +171,7 @@ class PrefsRepository {
     required bool shakeUndoEnabled,
     required String shakeSensitivity,
     required List<Map<String, dynamic>> activityGrid,
+    required List<Map<String, dynamic>> weatherSnapshots,
   }) async {
     await _prefs.setInt(PrefsKeys.counter1, c1);
     await _prefs.setInt(PrefsKeys.counter2, c2);
@@ -186,6 +188,7 @@ class PrefsRepository {
     await _prefs.setBool(PrefsKeys.shakeUndoEnabled, shakeUndoEnabled);
     await _prefs.setString(PrefsKeys.shakeSensitivity, shakeSensitivity);
     await _prefs.setString(PrefsKeys.activityGrid, jsonEncode(activityGrid));
+    await _prefs.setString(PrefsKeys.weatherSnapshots, jsonEncode(weatherSnapshots));
   }
 
   Future<void> addHistorySession(GameSession session) async {
@@ -281,6 +284,8 @@ class PrefsRepository {
     final gridJson = _prefs.getString(PrefsKeys.activityGrid);
     final activityLogs = <ActivityLog>[];
     final rawActivityGrid = <Map<String, dynamic>>[];
+    final weatherSnapshots = <WeatherSnapshot>[];
+    final weatherJson = _prefs.getString(PrefsKeys.weatherSnapshots);
 
     if (gridJson != null) {
       try {
@@ -297,6 +302,23 @@ class PrefsRepository {
       } catch (_) {
         activityLogs.clear();
         rawActivityGrid.clear();
+      }
+    }
+
+    if (weatherJson != null) {
+      try {
+        final rawData = jsonDecode(weatherJson);
+        if (rawData is List) {
+          for (final raw in rawData) {
+            if (raw is Map) {
+              weatherSnapshots.add(
+                WeatherSnapshot.fromJson(Map<String, dynamic>.from(raw)),
+              );
+            }
+          }
+        }
+      } catch (_) {
+        weatherSnapshots.clear();
       }
     }
 
@@ -333,6 +355,7 @@ class PrefsRepository {
       matchSeconds: TypeUtils.safeInt(_prefs.getInt(PrefsKeys.matchSeconds), defaultValue: Defaults.defaultMatchDurationSeconds),
       activityGrid: activityLogs,
       rawActivityGrid: rawActivityGrid,
+      weatherSnapshots: weatherSnapshots,
       historySessions: enrichedSessions,
       syncHistoryEnabled: TypeUtils.safeBool(_prefs.getBool(PrefsKeys.syncHistoryEnabled), defaultValue: Defaults.defaultSyncHistoryEnabled),
       shakeUndoEnabled: TypeUtils.safeBool(_prefs.getBool(PrefsKeys.shakeUndoEnabled), defaultValue: Defaults.defaultShakeUndoEnabled),
@@ -357,6 +380,7 @@ class StateContainer {
   final int matchSeconds;
   final List<ActivityLog> activityGrid;
   final List<Map<String, dynamic>> rawActivityGrid;
+  final List<WeatherSnapshot> weatherSnapshots;
   final List<GameSession> historySessions;
   final bool syncHistoryEnabled;
   final bool shakeUndoEnabled;
@@ -376,6 +400,7 @@ class StateContainer {
     required this.matchSeconds,
     required this.activityGrid,
     required this.rawActivityGrid,
+    required this.weatherSnapshots,
     required this.historySessions,
     required this.syncHistoryEnabled,
     required this.shakeUndoEnabled,

@@ -37,6 +37,7 @@ class PrefsKeys {
 
   // Grid/History
   static const String activityGrid = 'activity_grid_final';
+  static const String weatherSnapshots = 'weather_snapshots';
   static const String historySessions = 'history_sessions';
   static const String athleteProfile = 'athlete_profile';
 }

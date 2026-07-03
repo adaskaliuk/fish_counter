@@ -3,6 +3,7 @@ import 'package:fish_counter/models/session_goals.dart';
 import 'package:fish_counter/models/session_user_info.dart';
 import 'package:fish_counter/models/session_venue_info.dart';
 import 'package:fish_counter/models/weather_info.dart';
+import 'package:fish_counter/models/weather_snapshot.dart';
 import 'package:fish_counter/utils/type_utils.dart';
 
 // ==========================================
@@ -20,6 +21,7 @@ class GameSession {
   final SessionGoals goals;
   final AstronomyInfo astronomyInfo;
   final WeatherInfo weatherInfo;
+  final List<WeatherSnapshot> weatherSnapshots;
 
   // Backward-compatible flat accessors.
   String get userId => userInfo.userId;
@@ -66,6 +68,7 @@ class GameSession {
     SessionGoals? goals,
     AstronomyInfo? astronomyInfo,
     WeatherInfo? weatherInfo,
+    this.weatherSnapshots = const [],
     String weatherPlace = '',
     String weatherDescription = '',
     String weatherFetchedAt = '',
@@ -149,6 +152,7 @@ class GameSession {
     String? updatedAt,
     String athleteName = '',
     String coachName = '',
+    List<WeatherSnapshot>? weatherSnapshots,
   }) {
     return GameSession._(
       id: id,
@@ -196,6 +200,7 @@ class GameSession {
         windSpeedMs: weatherWindSpeedMs,
         windDirectionDegrees: weatherWindDirectionDegrees,
       ),
+      weatherSnapshots: weatherSnapshots ?? const [],
       updatedAt: updatedAt ?? DateTime.now().toIso8601String(),
       athleteName: athleteName,
       coachName: coachName,
@@ -225,6 +230,7 @@ class GameSession {
     SessionGoals? goals,
     AstronomyInfo? astronomyInfo,
     WeatherInfo? weatherInfo,
+    List<WeatherSnapshot>? weatherSnapshots,
   }) {
     return GameSession._(
       id: id,
@@ -262,6 +268,7 @@ class GameSession {
       goals: goals ?? this.goals,
       astronomyInfo: astronomyInfo ?? this.astronomyInfo,
       weatherInfo: weatherInfo ?? this.weatherInfo,
+      weatherSnapshots: weatherSnapshots ?? this.weatherSnapshots,
       updatedAt: updatedAt ?? this.updatedAt,
       athleteName: athleteName ?? this.athleteName,
       coachName: coachName ?? this.coachName,
@@ -290,6 +297,7 @@ class GameSession {
     ...goals.toJson(),
     ...astronomyInfo.toJson(),
     ...weatherInfo.toJson(),
+    'weatherSnapshots': weatherSnapshots.map((snapshot) => snapshot.toJson()).toList(),
   };
 
   factory GameSession.fromJson(Map<String, dynamic> json) {
@@ -311,6 +319,7 @@ class GameSession {
       goals: SessionGoals.fromJson(json),
       astronomyInfo: AstronomyInfo.fromJson(json),
       weatherInfo: WeatherInfo.fromJson(json),
+      weatherSnapshots: _parseWeatherSnapshots(json['weatherSnapshots']),
       updatedAt: TypeUtils.safeString(
         json['updatedAt'],
         defaultValue: TypeUtils.safeString(json['id']),
@@ -320,6 +329,14 @@ class GameSession {
       athleteNote: TypeUtils.safeString(json['athleteNote']),
       coachComment: TypeUtils.safeString(json['coachComment']),
     );
+  }
+
+  static List<WeatherSnapshot> _parseWeatherSnapshots(dynamic value) {
+    if (value is! List) return const [];
+    return value
+        .whereType<Map>()
+        .map((entry) => WeatherSnapshot.fromJson(Map<String, dynamic>.from(entry)))
+        .toList();
   }
 }
 
@@ -331,6 +348,7 @@ class GameSessionBuilder {
   SessionVenueInfo? _venueInfo;
   SessionGoals? _goals;
   AstronomyInfo? _astronomyInfo;
+  List<WeatherSnapshot>? _weatherSnapshots;
   String? _updatedAt;
   String? _athleteName, _coachName;
   String? _weatherPlace, _weatherDescription, _weatherFetchedAt;
@@ -396,6 +414,11 @@ class GameSessionBuilder {
 
   GameSessionBuilder astronomyInfo(AstronomyInfo value) {
     _astronomyInfo = value;
+    return this;
+  }
+
+  GameSessionBuilder weatherSnapshots(List<WeatherSnapshot> value) {
+    _weatherSnapshots = value;
     return this;
   }
 
@@ -491,6 +514,7 @@ class GameSessionBuilder {
       venueInfo: venueInfo,
       goals: _goals ?? const SessionGoals(),
       astronomyInfo: _astronomyInfo ?? const AstronomyInfo.empty(),
+      weatherSnapshots: _weatherSnapshots ?? const [],
       updatedAt: _updatedAt ?? DateTime.now().toIso8601String(),
       athleteName: _athleteName ?? '',
       coachName: _coachName ?? '',

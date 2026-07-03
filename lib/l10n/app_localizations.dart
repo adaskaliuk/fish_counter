@@ -124,6 +124,7 @@ class AppLocalizations {
       'fetchedAtLabel': 'Fetched at',
       'astronomyContext': 'Astronomy context',
       'dashboardTitle': 'Readiness dashboard',
+      'phaseSplit': 'Phase split',
       'forecast7Days': '7-day forecast',
       'bestDay': 'Best day',
       'bestDayScore': 'Best day score',
@@ -313,6 +314,7 @@ class AppLocalizations {
       'fetchedAtLabel': 'Abgerufen um',
       'astronomyContext': 'Astronomiekontext',
       'dashboardTitle': 'Bereitschafts-Dashboard',
+      'phaseSplit': 'Phasenaufteilung',
       'forecast7Days': '7-Tage-Prognose',
       'bestDay': 'Bester Tag',
       'bestDayScore': 'Bester Tag – Punktzahl',
@@ -504,6 +506,7 @@ class AppLocalizations {
       'fetchedAtLabel': 'Relevé à',
       'astronomyContext': 'Contexte astral',
       'dashboardTitle': 'Tableau de bord préparation',
+      'phaseSplit': 'Répartition par phase',
       'forecast7Days': 'Prévision sur 7 jours',
       'bestDay': 'Meilleur jour',
       'bestDayScore': 'Score du meilleur jour',
@@ -690,6 +693,7 @@ class AppLocalizations {
       'fetchedAtLabel': 'Pobrano o',
       'astronomyContext': 'Kontekst astronomiczny',
       'dashboardTitle': 'Panel gotowości',
+      'phaseSplit': 'Podział na fazy',
       'forecast7Days': 'Prognoza 7-dniowa',
       'bestDay': 'Najlepszy dzień',
       'bestDayScore': 'Wynik najlepszego dnia',
@@ -879,6 +883,7 @@ class AppLocalizations {
       'fetchedAtLabel': 'Rilevato alle',
       'astronomyContext': 'Contesto astronomico',
       'dashboardTitle': 'Dashboard prontezza',
+      'phaseSplit': 'Suddivisione per fase',
       'forecast7Days': 'Previsione 7 giorni',
       'bestDay': 'Giorno migliore',
       'bestDayScore': 'Punteggio del giorno migliore',
@@ -1065,6 +1070,7 @@ class AppLocalizations {
       'fetchedAtLabel': 'Opgehaald om',
       'astronomyContext': 'Astronomische context',
       'dashboardTitle': 'Gereedheidsdashboard',
+      'phaseSplit': 'Fasesplitsing',
       'forecast7Days': '7-daagse voorspelling',
       'bestDay': 'Beste dag',
       'bestDayScore': 'Score beste dag',
@@ -1254,6 +1260,7 @@ class AppLocalizations {
       'fetchedAtLabel': 'Preluat la',
       'astronomyContext': 'Context astronomic',
       'dashboardTitle': 'Tablou de pregătire',
+      'phaseSplit': 'Împărțire pe faze',
       'forecast7Days': 'Prognoză 7 zile',
       'bestDay': 'Cea mai bună zi',
       'bestDayScore': 'Scorul celei mai bune zile',
@@ -1439,6 +1446,7 @@ class AppLocalizations {
       'fetchedAtLabel': 'Отримано о',
       'astronomyContext': 'Астрономічний контекст',
       'dashboardTitle': 'Панель готовності',
+      'phaseSplit': 'Розбиття по фазах',
       'forecast7Days': 'Прогноз на 7 днів',
       'bestDay': 'Найкращий день',
       'bestDayScore': 'Оцінка найкращого дня',
@@ -1616,6 +1624,7 @@ class AppLocalizations {
   String get weatherSummary => t('weatherSummary');
   String get astronomyContext => t('astronomyContext');
   String get dashboardTitle => t('dashboardTitle');
+  String get phaseSplit => t('phaseSplit');
   String get forecast7Days => t('forecast7Days');
   String get bestDay => t('bestDay');
   String get historicalTuning => t('historicalTuning');
