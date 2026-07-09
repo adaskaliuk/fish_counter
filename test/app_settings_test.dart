@@ -14,6 +14,7 @@ void main() {
       matchSeconds: 3600,
       shakeUndoEnabled: false,
       shakeSensitivity: 'high',
+      role: 'coach',
       athleteProfile: AthleteProfile(athleteName: 'Athlete'),
       updatedAt: '2026-06-14T10:00:00.000',
     );
@@ -23,6 +24,7 @@ void main() {
     expect(parsed.syncHistoryEnabled, true);
     expect(parsed.vibeInterval, 45);
     expect(parsed.shakeUndoEnabled, false);
+    expect(parsed.role, 'coach');
     expect(parsed.athleteProfile.athleteName, 'Athlete');
   });
 
@@ -39,6 +41,7 @@ void main() {
         matchSeconds: 1200,
         shakeUndoEnabled: false,
         shakeSensitivity: 'low',
+        role: 'coach',
         athleteProfile: AthleteProfile(defaultVenue: 'River'),
         updatedAt: '2026-06-14T10:00:00.000Z',
       ),
@@ -49,6 +52,7 @@ void main() {
     expect(loaded.syncHistoryEnabled, true);
     expect(loaded.resetDelay, 9);
     expect(loaded.matchSeconds, 1200);
+    expect(loaded.role, 'coach');
     expect(loaded.athleteProfile.defaultVenue, 'River');
     expect(loaded.updatedAt, '2026-06-14T10:00:00.000Z');
   });

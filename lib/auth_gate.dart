@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fish_counter/auth_screen.dart';
 import 'package:fish_counter/clicker_screen.dart';
+import 'package:fish_counter/l10n/app_localizations.dart';
+import 'package:fish_counter/models/athlete_profile.dart';
 import 'package:fish_counter/services/cloud_history_service.dart';
 import 'package:fish_counter/services/cloud_settings_service.dart';
 import 'package:fish_counter/services/prefs_repository.dart';
@@ -13,8 +15,19 @@ abstract final class AuthGateKeys {
   static const clickerScreenKey = ValueKey('auth_gate_clicker_screen');
 }
 
-class AuthGate extends StatelessWidget {
+class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
+
+  @override
+  State<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<AuthGate> {
+  Future<AthleteProfile>? _profileFuture;
+  String? _lastUid;
+
+  Future<AthleteProfile> _loadProfile() =>
+      PrefsRepository.create().then((r) => r.loadAthleteProfile());
 
   @override
   Widget build(BuildContext context) {
@@ -29,13 +42,104 @@ class AuthGate extends StatelessWidget {
         }
 
         if (snapshot.data == null) {
+          _profileFuture = null;
+          _lastUid = null;
           return const AuthScreen(key: AuthGateKeys.authScreenKey);
         }
 
-        return const StartupSyncedClickerScreen(
-          key: AuthGateKeys.startupSyncScreenKey,
+        final uid = snapshot.data!.uid;
+        if (_profileFuture == null || _lastUid != uid) {
+          _profileFuture = _loadProfile();
+          _lastUid = uid;
+        }
+
+        return FutureBuilder<AthleteProfile>(
+          future: _profileFuture,
+          builder: (context, roleSnapshot) {
+            if (!roleSnapshot.hasData) {
+              return const Scaffold(
+                key: AuthGateKeys.loadingScreenKey,
+                body: Center(child: CircularProgressIndicator()),
+              );
+            }
+            final profile = roleSnapshot.data!;
+            if (profile.role.isEmpty) {
+              return RoleSetupScreen(
+                key: AuthGateKeys.authScreenKey,
+                onSaved: () =>
+                    setState(() => _profileFuture = _loadProfile()),
+              );
+            }
+            return const StartupSyncedClickerScreen(
+              key: AuthGateKeys.startupSyncScreenKey,
+            );
+          },
         );
       },
+    );
+  }
+}
+
+class RoleSetupScreen extends StatefulWidget {
+  const RoleSetupScreen({super.key, this.onSaved});
+
+  final VoidCallback? onSaved;
+
+  @override
+  State<RoleSetupScreen> createState() => _RoleSetupScreenState();
+}
+
+class _RoleSetupScreenState extends State<RoleSetupScreen> {
+  String? _role;
+  bool _saving = false;
+
+  Future<void> _saveRole() async {
+    if (_role == null) return;
+    setState(() => _saving = true);
+    final repo = await PrefsRepository.create();
+    // Preserve existing profile fields; only mutate role.
+    final existing = repo.loadAthleteProfile();
+    await repo.saveAthleteProfile(existing.copyWith(role: _role!));
+    if (!mounted) return;
+    setState(() => _saving = false);
+    widget.onSaved?.call();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(l10n.roleRequired, textAlign: TextAlign.center),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: _role,
+                  hint: Text(l10n.roleLabel),
+                  items: [
+                    DropdownMenuItem(value: 'athlete', child: Text(l10n.roleAthlete)),
+                    DropdownMenuItem(value: 'coach', child: Text(l10n.roleCoach)),
+                  ],
+                  onChanged: (value) => setState(() => _role = value),
+                  decoration: InputDecoration(labelText: l10n.roleLabel),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: _saving || _role == null ? null : _saveRole,
+                  child: Text(_saving ? l10n.busy : l10n.save),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

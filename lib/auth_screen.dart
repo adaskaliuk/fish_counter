@@ -1,5 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fish_counter/l10n/app_localizations.dart';
+import 'package:fish_counter/models/athlete_profile.dart';
+import 'package:fish_counter/services/prefs_repository.dart';
 import 'package:fish_counter/utils/error_handler.dart';
 import 'package:fish_counter/widgets/auth_widgets.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -15,7 +17,9 @@ abstract final class AuthScreenStateKeys {
 }
 
 class AuthScreen extends StatefulWidget {
-  const AuthScreen({super.key});
+  const AuthScreen({super.key, this.auth});
+
+  final FirebaseAuth? auth;
 
   @override
   State<AuthScreen> createState() => _AuthScreenState();
@@ -27,6 +31,7 @@ class _AuthScreenState extends State<AuthScreen> {
   bool _isRegister = false;
   bool _isLoading = false;
   String? _error;
+  String? _role;
 
   @override
   void dispose() {
@@ -42,15 +47,22 @@ class _AuthScreenState extends State<AuthScreen> {
     });
 
     try {
-      final auth = FirebaseAuth.instance;
+      final l10n = AppLocalizations.of(context);
+      final auth = widget.auth ?? FirebaseAuth.instance;
       final email = _emailCtrl.text.trim();
       final password = _passwordCtrl.text;
 
       if (_isRegister) {
+        if (_role == null) {
+          setState(() => _error = l10n.roleRequired);
+          return;
+        }
         await auth.createUserWithEmailAndPassword(
           email: email,
           password: password,
         );
+        final repo = await PrefsRepository.create();
+        await repo.saveAthleteProfile(AthleteProfile(role: _role!));
       } else {
         await auth.signInWithEmailAndPassword(email: email, password: password);
       }
@@ -147,6 +159,23 @@ class _AuthScreenState extends State<AuthScreen> {
                     decoration: InputDecoration(labelText: l10n.password),
                     obscureText: true,
                     autofillHints: const [AutofillHints.password],
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    value: _role,
+                    hint: Text(l10n.roleLabel),
+                    items: [
+                      DropdownMenuItem(
+                        value: 'athlete',
+                        child: Text(l10n.roleAthlete),
+                      ),
+                      DropdownMenuItem(
+                        value: 'coach',
+                        child: Text(l10n.roleCoach),
+                      ),
+                    ],
+                    onChanged: (value) => setState(() => _role = value),
+                    decoration: InputDecoration(labelText: l10n.roleLabel),
                   ),
                   const SizedBox(height: 16),
                   if (_error != null) AuthErrorMessage(_error!),

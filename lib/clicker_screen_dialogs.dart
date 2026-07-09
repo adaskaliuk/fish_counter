@@ -183,14 +183,24 @@ class _SettingsDialogBodyState extends State<_SettingsDialogBody> {
               controller: _athleteCtrl,
               decoration: InputDecoration(labelText: l10n.athleteName),
             ),
-            TextField(
-              controller: _coachCtrl,
-              decoration: InputDecoration(labelText: l10n.coachName),
-            ),
-            TextField(
-              controller: _clubCtrl,
-              decoration: InputDecoration(labelText: l10n.clubTeam),
-            ),
+            if (widget.profile.isCoach) ...[
+              TextField(
+                controller: _coachCtrl,
+                decoration: InputDecoration(labelText: l10n.coachName),
+              ),
+              TextField(
+                controller: _clubCtrl,
+                decoration: InputDecoration(labelText: l10n.clubTeam),
+              ),
+              TextField(
+                controller: _trainingCtrl,
+                decoration: InputDecoration(labelText: l10n.trainingType),
+              ),
+              TextField(
+                controller: _methodCtrl,
+                decoration: InputDecoration(labelText: l10n.fishingMethod),
+              ),
+            ],
             TextField(
               controller: _venueCtrl,
               decoration: InputDecoration(labelText: l10n.venue),
@@ -198,14 +208,6 @@ class _SettingsDialogBodyState extends State<_SettingsDialogBody> {
             TextField(
               controller: _sectorCtrl,
               decoration: InputDecoration(labelText: l10n.sectorPeg),
-            ),
-            TextField(
-              controller: _trainingCtrl,
-              decoration: InputDecoration(labelText: l10n.trainingType),
-            ),
-            TextField(
-              controller: _methodCtrl,
-              decoration: InputDecoration(labelText: l10n.fishingMethod),
             ),
             TextField(
               controller: _paceCtrl,
@@ -318,6 +320,7 @@ class _SettingsDialogBodyState extends State<_SettingsDialogBody> {
               return;
             }
             final newProfile = AthleteProfile(
+              role: currentProfile.role,
               athleteName: _athleteCtrl.text.trim(),
               coachName: _coachCtrl.text.trim(),
               clubTeam: _clubCtrl.text.trim(),

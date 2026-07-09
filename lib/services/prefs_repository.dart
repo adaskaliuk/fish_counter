@@ -113,6 +113,7 @@ class PrefsRepository {
   }
 
   AppSettings loadAppSettings() {
+    final profile = loadAthleteProfile();
     return AppSettings(
       syncHistoryEnabled:
           TypeUtils.safeBool(_prefs.getBool(PrefsKeys.syncHistoryEnabled), defaultValue: Defaults.defaultSyncHistoryEnabled),
@@ -126,7 +127,8 @@ class PrefsRepository {
           TypeUtils.safeBool(_prefs.getBool(PrefsKeys.shakeUndoEnabled), defaultValue: Defaults.defaultShakeUndoEnabled),
       shakeSensitivity:
           TypeUtils.safeString(_prefs.getString(PrefsKeys.shakeSensitivity), defaultValue: Defaults.defaultShakeSensitivity),
-      athleteProfile: loadAthleteProfile(),
+      role: profile.role,
+      athleteProfile: profile,
       updatedAt: TypeUtils.safeString(_prefs.getString(PrefsKeys.settingsUpdatedAt)),
     );
   }
@@ -146,7 +148,21 @@ class PrefsRepository {
     );
     await _prefs.setString(
       PrefsKeys.athleteProfile,
-      jsonEncode(settings.athleteProfile.toJson()),
+      jsonEncode(
+        AthleteProfile(
+          role: settings.role,
+          athleteName: settings.athleteProfile.athleteName,
+          coachName: settings.athleteProfile.coachName,
+          clubTeam: settings.athleteProfile.clubTeam,
+          defaultVenue: settings.athleteProfile.defaultVenue,
+          defaultSectorPeg: settings.athleteProfile.defaultSectorPeg,
+          defaultTrainingType: settings.athleteProfile.defaultTrainingType,
+          defaultFishingMethod: settings.athleteProfile.defaultFishingMethod,
+          defaultTargetPace: settings.athleteProfile.defaultTargetPace,
+          defaultSpeciesPreset: settings.athleteProfile.defaultSpeciesPreset,
+          defaultBodyTypePreset: settings.athleteProfile.defaultBodyTypePreset,
+        ).toJson(),
+      ),
     );
     await _prefs.setString(
       PrefsKeys.settingsUpdatedAt,

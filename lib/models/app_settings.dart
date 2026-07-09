@@ -9,6 +9,7 @@ class AppSettings {
     required this.matchSeconds,
     required this.shakeUndoEnabled,
     required this.shakeSensitivity,
+    required this.role,
     required this.athleteProfile,
     required this.updatedAt,
   });
@@ -19,6 +20,7 @@ class AppSettings {
   final int matchSeconds;
   final bool shakeUndoEnabled;
   final String shakeSensitivity;
+  final String role;
   final AthleteProfile athleteProfile;
   final String updatedAt;
 
@@ -29,6 +31,7 @@ class AppSettings {
     'matchSeconds': matchSeconds,
     'shakeUndoEnabled': shakeUndoEnabled,
     'shakeSensitivity': shakeSensitivity,
+    'role': role,
     'athleteProfile': athleteProfile.toJson(),
     'updatedAt': updatedAt,
   };
@@ -42,6 +45,7 @@ class AppSettings {
       matchSeconds: TypeUtils.safeInt(json['matchSeconds']),
       shakeUndoEnabled: TypeUtils.safeBool(json['shakeUndoEnabled'], defaultValue: true),
       shakeSensitivity: json['shakeSensitivity']?.toString() ?? 'medium',
+      role: json['role']?.toString() ?? 'athlete',
       athleteProfile: rawProfile is Map
           ? AthleteProfile.fromJson(Map<String, dynamic>.from(rawProfile))
           : const AthleteProfile(),

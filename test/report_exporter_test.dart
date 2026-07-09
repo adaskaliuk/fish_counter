@@ -38,7 +38,7 @@ void main() {
       ],
     );
 
-    final text = ReportExporter.buildPlainText(session);
+    final text = ReportExporter.buildPlainText(session, isCoach: true);
 
     expect(text, contains('FishCounter Training Report'));
     expect(text, contains('Athlete: Andrew'));
@@ -74,7 +74,7 @@ void main() {
       ],
     );
 
-    final csv = ReportExporter.buildCsv(session);
+    final csv = ReportExporter.buildCsv(session, isCoach: true);
 
     expect(csv, contains('"session","name","Pace drill"'));
     expect(csv, contains('"context","athlete","Andrew"'));
@@ -82,6 +82,56 @@ void main() {
     expect(csv, contains('"goals","fish_count","5"'));
     expect(csv, contains('"analytics","stability_score","100"'));
     expect(csv, contains('"10:00:00","C1","60","green"'));
+  });
+
+  test('hides coach details for athlete exports', () {
+    final session = GameSession(
+      id: '2',
+      name: 'Pace drill',
+      date: '06.06.26 10:00',
+      c1: 2,
+      c2: 3,
+      tries: 1,
+      total: 5,
+      goalFishCount: 5,
+      matchDuration: '5:00',
+      athleteName: 'Andrew',
+      coachName: 'Coach',
+      coachComment: 'Keep pace',
+      fishingMethod: 'Feeder',
+      grid: const [],
+    );
+
+    final text = ReportExporter.buildPlainText(session, isCoach: false);
+    final csv = ReportExporter.buildCsv(session, isCoach: false);
+
+    expect(text, isNot(contains('Coach Analytics')));
+    expect(text, isNot(contains('Coach comment')));
+    expect(csv, isNot(contains('coach')));
+  });
+
+  test('includes coach details for coach exports', () {
+    final session = GameSession(
+      id: '3',
+      name: 'Pace drill',
+      date: '06.06.26 10:00',
+      c1: 2,
+      c2: 3,
+      tries: 1,
+      total: 5,
+      goalFishCount: 5,
+      matchDuration: '5:00',
+      athleteName: 'Andrew',
+      coachName: 'Coach',
+      coachComment: 'Keep pace',
+      fishingMethod: 'Feeder',
+      grid: const [],
+    );
+
+    final text = ReportExporter.buildPlainText(session, isCoach: true);
+
+    expect(text, contains('Coach Analytics'));
+    expect(text, contains('Coach comment: Keep pace'));
   });
 
   test('includes forecast and tuning in plain text report', () {

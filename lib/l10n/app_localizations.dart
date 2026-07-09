@@ -36,6 +36,11 @@ class AppLocalizations {
       'continueWithGoogle': 'Continue with Google',
       'needAccount': 'Need an account? Register',
       'haveAccount': 'Already have an account? Sign in',
+      'roleLabel': 'Role',
+      'rolePlaceholder': 'Choose role',
+      'roleAthlete': 'Athlete',
+      'roleCoach': 'Coach',
+      'roleRequired': 'Select a role',
       'signOut': 'Sign out',
       'tryButton': 'Try',
       'start': 'START',
@@ -1358,6 +1363,11 @@ class AppLocalizations {
       'continueWithGoogle': 'Продовжити з Google',
       'needAccount': 'Потрібен акаунт? Зареєструватися',
       'haveAccount': 'Вже є акаунт? Увійти',
+      'roleLabel': 'Роль',
+      'rolePlaceholder': 'Оберіть роль',
+      'roleAthlete': 'Спортсмен',
+      'roleCoach': 'Тренер',
+      'roleRequired': 'Оберіть роль',
       'signOut': 'Вийти',
       'tryButton': 'Спроба',
       'start': 'СТАРТ',
@@ -1550,6 +1560,11 @@ class AppLocalizations {
   String get continueWithGoogle => t('continueWithGoogle');
   String get needAccount => t('needAccount');
   String get haveAccount => t('haveAccount');
+  String get roleLabel => t('roleLabel');
+  String get rolePlaceholder => t('rolePlaceholder');
+  String get roleAthlete => t('roleAthlete');
+  String get roleCoach => t('roleCoach');
+  String get roleRequired => t('roleRequired');
   String get signOut => t('signOut');
   String get tryButton => t('tryButton');
   String get start => t('start');

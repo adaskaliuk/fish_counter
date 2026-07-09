@@ -16,6 +16,7 @@ class AnalyticsScreenBody extends StatelessWidget {
     required this.report,
     required this.activityLogs,
     required this.l10n,
+    required this.isCoach,
     this.tuning,
   });
 
@@ -23,6 +24,7 @@ class AnalyticsScreenBody extends StatelessWidget {
   final AnalyticsReport report;
   final List<ActivityLog> activityLogs;
   final AppLocalizations l10n;
+  final bool isCoach;
   final HistoricalCatchTuningReport? tuning;
 
   @override
@@ -39,9 +41,11 @@ class AnalyticsScreenBody extends StatelessWidget {
             l10n: l10n,
             tuning: tuning,
           ),
-          const SizedBox(height: 24),
-          AnalyticsWeatherSection(session: session, l10n: l10n),
-          const SizedBox(height: 24),
+          if (isCoach) ...[
+            const SizedBox(height: 24),
+            AnalyticsWeatherSection(session: session, l10n: l10n),
+            const SizedBox(height: 24),
+          ],
           AnalyticsChartsSection(
             session: session,
             report: report,

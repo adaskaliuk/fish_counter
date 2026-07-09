@@ -4,16 +4,26 @@ import 'package:flutter/material.dart';
 
 class SessionEditDialog extends StatefulWidget {
   final GameSession session;
+  final bool isCoach;
 
-  const SessionEditDialog({super.key, required this.session});
+  const SessionEditDialog({
+    super.key,
+    required this.session,
+    this.isCoach = false,
+  });
 
   @override
   State<SessionEditDialog> createState() => _SessionEditDialogState();
 
-  static Future<GameSession?> show(BuildContext context, GameSession session) {
+  static Future<GameSession?> show(
+    BuildContext context,
+    GameSession session, {
+    bool isCoach = false,
+  }) {
     return showDialog<GameSession>(
       context: context,
-      builder: (context) => SessionEditDialog(session: session),
+      builder: (context) =>
+          SessionEditDialog(session: session, isCoach: isCoach),
     );
   }
 }
@@ -39,14 +49,26 @@ class _SessionEditDialogState extends State<SessionEditDialog> {
     _athleteCtrl = TextEditingController(text: widget.session.athleteName);
     _coachCtrl = TextEditingController(text: widget.session.coachName);
     _venueCtrl = TextEditingController(text: widget.session.venueInfo.venue);
-    _sectorCtrl = TextEditingController(text: widget.session.venueInfo.sectorPeg);
-    _trainingCtrl = TextEditingController(text: widget.session.venueInfo.trainingType);
-    _methodCtrl = TextEditingController(text: widget.session.venueInfo.fishingMethod);
-    _paceCtrl = TextEditingController(text: widget.session.venueInfo.targetPace);
-    _conditionsCtrl = TextEditingController(text: widget.session.venueInfo.conditions);
+    _sectorCtrl = TextEditingController(
+      text: widget.session.venueInfo.sectorPeg,
+    );
+    _trainingCtrl = TextEditingController(
+      text: widget.session.venueInfo.trainingType,
+    );
+    _methodCtrl = TextEditingController(
+      text: widget.session.venueInfo.fishingMethod,
+    );
+    _paceCtrl = TextEditingController(
+      text: widget.session.venueInfo.targetPace,
+    );
+    _conditionsCtrl = TextEditingController(
+      text: widget.session.venueInfo.conditions,
+    );
     _baitCtrl = TextEditingController(text: widget.session.venueInfo.baitNotes);
     _athleteNoteCtrl = TextEditingController(text: widget.session.athleteNote);
-    _coachCommentCtrl = TextEditingController(text: widget.session.coachComment);
+    _coachCommentCtrl = TextEditingController(
+      text: widget.session.coachComment,
+    );
   }
 
   @override
@@ -68,7 +90,9 @@ class _SessionEditDialogState extends State<SessionEditDialog> {
 
   GameSession getUpdatedSession() {
     return widget.session.copyWith(
-      name: _nameCtrl.text.trim().isEmpty ? widget.session.name : _nameCtrl.text.trim(),
+      name: _nameCtrl.text.trim().isEmpty
+          ? widget.session.name
+          : _nameCtrl.text.trim(),
       athleteName: _athleteCtrl.text.trim(),
       coachName: _coachCtrl.text.trim(),
       venueInfo: widget.session.venueInfo.copyWith(
@@ -97,7 +121,8 @@ class _SessionEditDialogState extends State<SessionEditDialog> {
           children: [
             _editField(l10n.sessionName, _nameCtrl),
             _editField(l10n.athleteName, _athleteCtrl),
-            _editField(l10n.coachName, _coachCtrl),
+            if (widget.isCoach && widget.session.coachName.isNotEmpty)
+              _editField(l10n.coachName, _coachCtrl),
             _editField(l10n.venue, _venueCtrl),
             _editField(l10n.sectorPeg, _sectorCtrl),
             _editField(l10n.trainingType, _trainingCtrl),
@@ -106,7 +131,8 @@ class _SessionEditDialogState extends State<SessionEditDialog> {
             _editField(l10n.conditions, _conditionsCtrl),
             _editField(l10n.baitNotes, _baitCtrl),
             _editField(l10n.athleteNote, _athleteNoteCtrl, maxLines: 3),
-            _editField(l10n.coachComment, _coachCommentCtrl, maxLines: 3),
+            if (widget.isCoach)
+              _editField(l10n.coachComment, _coachCommentCtrl, maxLines: 3),
           ],
         ),
       ),
@@ -123,7 +149,11 @@ class _SessionEditDialogState extends State<SessionEditDialog> {
     );
   }
 
-  Widget _editField(String label, TextEditingController controller, {int maxLines = 1}) {
+  Widget _editField(
+    String label,
+    TextEditingController controller, {
+    int maxLines = 1,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: TextField(

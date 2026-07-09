@@ -7,6 +7,7 @@ import 'storage_test_utils.dart';
 void main() {
   test('AthleteProfile serializes defaults', () {
     const profile = AthleteProfile(
+      role: 'coach',
       athleteName: 'Athlete',
       coachName: 'Coach',
       clubTeam: 'Club',
@@ -19,6 +20,7 @@ void main() {
 
     final parsed = AthleteProfile.fromJson(profile.toJson());
 
+    expect(parsed.role, 'coach');
     expect(parsed.athleteName, 'Athlete');
     expect(parsed.clubTeam, 'Club');
     expect(parsed.defaultFishingMethod, 'Feeder');
@@ -29,8 +31,9 @@ void main() {
     addTearDown(resetMemoryStorage);
     final repo = await PrefsRepository.create();
 
-    await repo.saveAthleteProfile(const AthleteProfile(athleteName: 'A'));
+    await repo.saveAthleteProfile(const AthleteProfile(role: 'coach', athleteName: 'A'));
 
+    expect(repo.loadAthleteProfile().role, 'coach');
     expect(repo.loadAthleteProfile().athleteName, 'A');
   });
 }

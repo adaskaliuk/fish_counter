@@ -10,6 +10,7 @@ class ReportExporter {
     GameSession session, {
     AppLocalizations? l10n,
     HistoricalCatchTuningReport? tuning,
+    bool isCoach = false,
   }) {
     final report = AnalyticsReport.fromGrid(session.grid);
     final forecast = FishingWindowForecastReport.fromSession(
@@ -27,7 +28,8 @@ class ReportExporter {
       ['counters', 'total', session.total.toString()],
       ['counters', 'tries', session.tries.toString()],
       ['context', 'athlete', session.athleteName],
-      ['context', 'coach', session.coachName],
+      if (isCoach && session.coachName.isNotEmpty)
+        ['context', 'coach', session.coachName],
       ['context', 'venue', session.venueInfo.venue],
       ['context', 'sector_peg', session.venueInfo.sectorPeg],
       ['context', 'training_type', session.venueInfo.trainingType],
@@ -40,7 +42,11 @@ class ReportExporter {
         session.goals.goalTargetPaceSeconds.toString(),
       ],
       ['goals', 'max_tries', session.goals.goalMaxTries.toString()],
-      ['goals', 'stability_percent', session.goals.goalStabilityPercent.toString()],
+      [
+        'goals',
+        'stability_percent',
+        session.goals.goalStabilityPercent.toString(),
+      ],
       ['context', 'conditions', session.venueInfo.conditions],
       ['context', 'bait_notes', session.venueInfo.baitNotes],
       ['weather', 'place', session.weatherPlace],
@@ -92,17 +98,33 @@ class ReportExporter {
       ['analytics', 'best_streak', report.longestStableStreak.toString()],
       ['forecast', 'readiness_score', '${forecast.baseScore}%'],
       ['forecast', 'best_window', forecast.bestDay.windowLabel()],
-      ['forecast', 'best_day', forecast.bestDay.dayLabel(l10n?.locale.languageCode)],
+      [
+        'forecast',
+        'best_day',
+        forecast.bestDay.dayLabel(l10n?.locale.languageCode),
+      ],
       ['forecast', 'best_day_score', '${forecast.bestDay.score}%'],
       if (tuning != null && !tuning.isEmpty) ...[
         ['history_tuning', 'sessions_analyzed', tuning.sessionCount.toString()],
-        ['history_tuning', 'fish_count_weight', tuning.fishCountWeight.toStringAsFixed(2)],
-        ['history_tuning', 'stability_weight', tuning.stabilityWeight.toStringAsFixed(2)],
-        ['history_tuning', 'tries_weight', tuning.triesWeight.toStringAsFixed(2)],
+        [
+          'history_tuning',
+          'fish_count_weight',
+          tuning.fishCountWeight.toStringAsFixed(2),
+        ],
+        [
+          'history_tuning',
+          'stability_weight',
+          tuning.stabilityWeight.toStringAsFixed(2),
+        ],
+        [
+          'history_tuning',
+          'tries_weight',
+          tuning.triesWeight.toStringAsFixed(2),
+        ],
         ['history_tuning', 'pace_weight', tuning.paceWeight.toStringAsFixed(2)],
       ],
       ['notes', 'athlete_note', session.athleteNote],
-      ['notes', 'coach_comment', session.coachComment],
+      if (isCoach) ['notes', 'coach_comment', session.coachComment],
       [],
       ['timeline_timestamp', 'type', 'interval_seconds', 'status'],
       ...session.grid.map(
@@ -124,6 +146,7 @@ class ReportExporter {
     GameSession session, {
     AppLocalizations? l10n,
     HistoricalCatchTuningReport? tuning,
+    bool isCoach = false,
   }) {
     final report = AnalyticsReport.fromGrid(session.grid);
     final forecast = FishingWindowForecastReport.fromSession(
@@ -147,11 +170,12 @@ class ReportExporter {
 
     _writeSection(buffer, (l10n?.trainingContext ?? 'Training Context'), {
       (l10n?.athleteName ?? 'Athlete'): session.athleteName,
-      (l10n?.coachName ?? 'Coach'): session.coachName,
+      if (isCoach) (l10n?.coachName ?? 'Coach'): session.coachName,
       (l10n?.venue ?? 'Venue'): session.venueInfo.venue,
       (l10n?.sectorPeg ?? 'Sector / peg'): session.venueInfo.sectorPeg,
       (l10n?.trainingType ?? 'Training type'): session.venueInfo.trainingType,
-      (l10n?.fishingMethod ?? 'Fishing method'): session.venueInfo.fishingMethod,
+      (l10n?.fishingMethod ?? 'Fishing method'):
+          session.venueInfo.fishingMethod,
       (l10n?.targetPace ?? 'Target pace'): session.venueInfo.targetPace,
       (l10n?.conditions ?? 'Conditions'): session.venueInfo.conditions,
       (l10n?.baitNotes ?? 'Bait / method notes'): session.venueInfo.baitNotes,
@@ -173,45 +197,75 @@ class ReportExporter {
     _writeSection(buffer, (l10n?.weatherSummary ?? 'Weather'), {
       (l10n?.placeLabel ?? 'Place'): session.weatherPlace,
       (l10n?.descriptionLabel ?? 'Description'): session.weatherDescription,
-      (l10n?.temperatureLabel ?? 'Temperature'): _unit(session.weatherTemperatureCelsius, '°C'),
-      (l10n?.feelsLikeLabel ?? 'Feels like'): _unit(session.weatherFeelsLikeCelsius, '°C'),
-      (l10n?.pressureLabel ?? 'Pressure'): _unit(session.weatherPressureHpa, ' hPa'),
-      (l10n?.humidityLabel ?? 'Humidity'): _unit(session.weatherHumidityPercent, '%'),
-      (l10n?.windSpeedLabel ?? 'Wind speed'): _unit(session.weatherWindSpeedMs, ' m/s'),
-      (l10n?.windDirectionLabel ?? 'Wind direction'): _unit(session.weatherWindDirectionDegrees, '°'),
+      (l10n?.temperatureLabel ?? 'Temperature'): _unit(
+        session.weatherTemperatureCelsius,
+        '°C',
+      ),
+      (l10n?.feelsLikeLabel ?? 'Feels like'): _unit(
+        session.weatherFeelsLikeCelsius,
+        '°C',
+      ),
+      (l10n?.pressureLabel ?? 'Pressure'): _unit(
+        session.weatherPressureHpa,
+        ' hPa',
+      ),
+      (l10n?.humidityLabel ?? 'Humidity'): _unit(
+        session.weatherHumidityPercent,
+        '%',
+      ),
+      (l10n?.windSpeedLabel ?? 'Wind speed'): _unit(
+        session.weatherWindSpeedMs,
+        ' m/s',
+      ),
+      (l10n?.windDirectionLabel ?? 'Wind direction'): _unit(
+        session.weatherWindDirectionDegrees,
+        '°',
+      ),
       (l10n?.fetchedAtLabel ?? 'Fetched at'): session.weatherFetchedAt,
     });
 
-    buffer
-      ..writeln()
-      ..writeln((l10n?.coachSummary ?? 'Coach Analytics'))
-      ..writeln('---------------')
-      ..writeln(
-        '${(l10n?.stabilityScore ?? 'Stability score')}: ${report.stabilityScore}%',
-      )
-      ..writeln(
-        '${l10n?.averageInterval ?? 'Average interval'}: ${report.averageInterval.toStringAsFixed(1)}s',
-      )
-      ..writeln('${l10n?.averageDeviation ?? 'Average deviation'}: ${_signed(report.averageDeviation)}s')
-      ..writeln('${l10n?.bestInterval ?? 'Best interval'}: ${_interval(report.bestIntervalSeconds)}')
-      ..writeln('${l10n?.worstInterval ?? 'Worst interval'}: ${_interval(report.worstIntervalSeconds)}')
-      ..writeln('${l10n?.green ?? 'Green'}: ${report.greenCount}')
-      ..writeln('${l10n?.orange ?? 'Orange'}: ${report.orangeCount}')
-      ..writeln('${l10n?.red ?? 'Red'}: ${report.redCount}')
-      ..writeln('${l10n?.grey ?? 'Grey'}: ${report.greyCount}')
-      ..writeln('${l10n?.earlyCount ?? 'Early'}: ${report.earlyCount}')
-      ..writeln('${l10n?.lateCount ?? 'Late'}: ${report.lateCount}')
-      ..writeln('${l10n?.longestStableStreak ?? 'Best stable streak'}: ${report.longestStableStreak}');
+    if (isCoach) {
+      buffer
+        ..writeln()
+        ..writeln((l10n?.coachSummary ?? 'Coach Analytics'))
+        ..writeln(
+          '${(l10n?.stabilityScore ?? 'Stability score')}: ${report.stabilityScore}%',
+        )
+        ..writeln(
+          '${l10n?.averageInterval ?? 'Average interval'}: ${report.averageInterval.toStringAsFixed(1)}s',
+        )
+        ..writeln(
+          '${l10n?.averageDeviation ?? 'Average deviation'}: ${_signed(report.averageDeviation)}s',
+        )
+        ..writeln(
+          '${l10n?.bestInterval ?? 'Best interval'}: ${_interval(report.bestIntervalSeconds)}',
+        )
+        ..writeln(
+          '${l10n?.worstInterval ?? 'Worst interval'}: ${_interval(report.worstIntervalSeconds)}',
+        )
+        ..writeln('${l10n?.green ?? 'Green'}: ${report.greenCount}')
+        ..writeln('${l10n?.orange ?? 'Orange'}: ${report.orangeCount}')
+        ..writeln('${l10n?.red ?? 'Red'}: ${report.redCount}')
+        ..writeln('${l10n?.grey ?? 'Grey'}: ${report.greyCount}')
+        ..writeln('${l10n?.earlyCount ?? 'Early'}: ${report.earlyCount}')
+        ..writeln('${l10n?.lateCount ?? 'Late'}: ${report.lateCount}')
+        ..writeln(
+          '${l10n?.longestStableStreak ?? 'Best stable streak'}: ${report.longestStableStreak}',
+        );
+    }
 
     _writeSection(buffer, (l10n?.bestWindowForecast ?? 'Forecast'), {
       (l10n?.readinessScore ?? 'Readiness score'): '${forecast.baseScore}%',
       (l10n?.bestWindow ?? 'Best window'): forecast.bestDay.windowLabel(),
-      (l10n?.bestDay ?? 'Best day'): forecast.bestDay.dayLabel(l10n?.locale.languageCode),
-      ((l10n?.bestDayScore ?? 'Best day score')): '${forecast.bestDay.score}%',
+      (l10n?.bestDay ?? 'Best day'): forecast.bestDay.dayLabel(
+        l10n?.locale.languageCode,
+      ),
+      (l10n?.bestDayScore ?? 'Best day score'): '${forecast.bestDay.score}%',
     });
 
     if (tuning != null && !tuning.isEmpty) {
-      final sessionsAnalyzedLabel = (l10n?.sessionsAnalyzed ?? 'Sessions analyzed');
+      final sessionsAnalyzedLabel =
+          (l10n?.sessionsAnalyzed ?? 'Sessions analyzed');
       final fishCountLabel = (l10n?.fishCount ?? 'Fish count');
       final stabilityLabel = (l10n?.stabilityScore ?? 'Stability score');
       final maxTriesLabel = (l10n?.maxTries ?? 'Max tries');
@@ -227,7 +281,8 @@ class ReportExporter {
 
     _writeSection(buffer, l10n?.sessionNotes ?? 'Notes', {
       (l10n?.athleteNote ?? 'Athlete note'): session.athleteNote,
-      (l10n?.coachComment ?? 'Coach comment'): session.coachComment,
+      if (isCoach)
+        (l10n?.coachComment ?? 'Coach comment'): session.coachComment,
     });
 
     if (session.grid.isNotEmpty) {

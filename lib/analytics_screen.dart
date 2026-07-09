@@ -4,7 +4,9 @@ import 'package:fish_counter/game_session.dart';
 import 'package:fish_counter/l10n/app_localizations.dart';
 import 'package:fish_counter/models/activity_log.dart';
 import 'package:fish_counter/models/analytics_report.dart';
+import 'package:fish_counter/models/athlete_profile.dart';
 import 'package:fish_counter/models/historical_catch_tuning_report.dart';
+import 'package:fish_counter/services/prefs_repository.dart';
 import 'package:fish_counter/services/report_exporter.dart';
 import 'package:fish_counter/widgets/analytics_screen_body.dart';
 import 'package:flutter/material.dart';
@@ -30,31 +32,38 @@ class AnalyticsScreen extends StatelessWidget {
     final report = AnalyticsReport.fromGrid(session.grid);
     final activityLogs = _activityLogs(session.grid);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.precisionReport),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.ios_share),
-            onPressed: () => _showExportOptions(context),
+    return FutureBuilder<AthleteProfile>(
+      future: PrefsRepository.create().then((r) => r.loadAthleteProfile()),
+      builder: (context, roleSnapshot) {
+        final isCoach = roleSnapshot.data?.isCoach ?? false;
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(l10n.precisionReport),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.ios_share),
+                onPressed: () => _showExportOptions(context, isCoach),
+              ),
+              IconButton(
+                icon: const Icon(Icons.info_outline),
+                onPressed: () => _showInfoDialog(context),
+              ),
+            ],
           ),
-          IconButton(
-            icon: const Icon(Icons.info_outline),
-            onPressed: () => _showInfoDialog(context),
+          body: AnalyticsScreenBody(
+            session: session,
+            report: report,
+            activityLogs: activityLogs,
+            l10n: l10n,
+            tuning: tuning,
+            isCoach: isCoach,
           ),
-        ],
-      ),
-      body: AnalyticsScreenBody(
-        session: session,
-        report: report,
-        activityLogs: activityLogs,
-        l10n: l10n,
-        tuning: tuning,
-      ),
+        );
+      },
     );
   }
 
-  void _showExportOptions(BuildContext context) {
+  void _showExportOptions(BuildContext context, bool isCoach) {
     final l10n = AppLocalizations.of(context);
 
     showModalBottomSheet<void>(
@@ -78,7 +87,7 @@ class AnalyticsScreen extends StatelessWidget {
               title: Text(l10n.shareTextReport),
               onTap: () {
                 Navigator.pop(sheetContext);
-                _shareTextReport(context);
+                _shareTextReport(context, isCoach);
               },
             ),
             ListTile(
@@ -86,7 +95,7 @@ class AnalyticsScreen extends StatelessWidget {
               title: Text(l10n.shareCsvReport),
               onTap: () {
                 Navigator.pop(sheetContext);
-                _shareCsvReport(context);
+                _shareCsvReport(context, isCoach);
               },
             ),
             ListTile(
@@ -94,7 +103,7 @@ class AnalyticsScreen extends StatelessWidget {
               title: Text(l10n.copyCsvReport),
               onTap: () {
                 Navigator.pop(sheetContext);
-                _copyCsvReport(context);
+                _copyCsvReport(context, isCoach);
               },
             ),
           ],
@@ -103,7 +112,7 @@ class AnalyticsScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _shareTextReport(BuildContext context) async {
+  Future<void> _shareTextReport(BuildContext context, bool isCoach) async {
     final l10n = AppLocalizations.of(context);
     await _shareOrCopy(
       context,
@@ -111,6 +120,7 @@ class AnalyticsScreen extends StatelessWidget {
         session,
         l10n: l10n,
         tuning: tuning,
+        isCoach: isCoach,
       ),
       debugLabel: l10n.shareTextReport,
       successMessage: l10n.reportShared,
@@ -118,22 +128,32 @@ class AnalyticsScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _shareCsvReport(BuildContext context) async {
+  Future<void> _shareCsvReport(BuildContext context, bool isCoach) async {
     final l10n = AppLocalizations.of(context);
     await _shareOrCopy(
       context,
-      text: ReportExporter.buildCsv(session, l10n: l10n, tuning: tuning),
+      text: ReportExporter.buildCsv(
+        session,
+        l10n: l10n,
+        tuning: tuning,
+        isCoach: isCoach,
+      ),
       debugLabel: l10n.shareCsvReport,
       successMessage: l10n.csvShared,
       fallbackMessage: l10n.csvCopied,
     );
   }
 
-  Future<void> _copyCsvReport(BuildContext context) async {
+  Future<void> _copyCsvReport(BuildContext context, bool isCoach) async {
     final l10n = AppLocalizations.of(context);
     await Clipboard.setData(
       ClipboardData(
-        text: ReportExporter.buildCsv(session, l10n: l10n, tuning: tuning),
+        text: ReportExporter.buildCsv(
+          session,
+          l10n: l10n,
+          tuning: tuning,
+          isCoach: isCoach,
+        ),
       ),
     );
     if (!context.mounted) return;

@@ -32,8 +32,6 @@ class AnalyticsNotesSection extends StatelessWidget {
         const SizedBox(height: 10),
         if (session.athleteNote.isNotEmpty)
           _noteBox(l10n.athleteNote, session.athleteNote),
-        if (session.coachComment.isNotEmpty)
-          _noteBox(l10n.coachComment, session.coachComment),
         const SizedBox(height: 20),
       ],
     );

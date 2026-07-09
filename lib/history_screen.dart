@@ -167,10 +167,7 @@ class _HistoryScreenState extends State<HistoryScreen>
     }
 
     final l10n = AppLocalizations.of(context);
-    return SyncStatusBanner(
-      title: l10n.cloudSyncFailed,
-      message: _syncError,
-    );
+    return SyncStatusBanner(title: l10n.cloudSyncFailed, message: _syncError);
   }
 
   Future<void> _deleteSession(GameSession session) async {
@@ -218,8 +215,15 @@ class _HistoryScreenState extends State<HistoryScreen>
 
   Future<void> _editSession(GameSession session) async {
     final l10n = AppLocalizations.of(context);
+    final isCoach = PrefsRepository.create().then(
+      (repo) async => repo.loadAthleteProfile().isCoach,
+    );
 
-    final updated = await SessionEditDialog.show(context, session);
+    final updated = await SessionEditDialog.show(
+      context,
+      session,
+      isCoach: await isCoach,
+    );
 
     if (updated == null) return;
 
@@ -291,10 +295,9 @@ class _HistoryScreenState extends State<HistoryScreen>
     _tuningBySessionId.clear();
     final ordered = sessions.toList();
     for (final session in ordered) {
-      _tuningBySessionId[session.id] =
-          HistoricalCatchTuningReport.fromSessions(ordered
-              .takeWhile((item) => item.id != session.id)
-              .toList());
+      _tuningBySessionId[session.id] = HistoricalCatchTuningReport.fromSessions(
+        ordered.takeWhile((item) => item.id != session.id).toList(),
+      );
     }
   }
 
@@ -453,18 +456,17 @@ class _HistoryScreenState extends State<HistoryScreen>
                 ),
           onTap: _compareMode
               ? () => _toggleCompareSelection(session)
-                : () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (c) => AnalyticsScreen(
-                        session: session,
-                        tuning: _tuningBySessionId[session.id],
-                      ),
+              : () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (c) => AnalyticsScreen(
+                      session: session,
+                      tuning: _tuningBySessionId[session.id],
                     ),
                   ),
+                ),
         );
       },
     );
   }
-
 }
