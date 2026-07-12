@@ -15,6 +15,7 @@ class AnalyticsDashboardSection extends StatelessWidget {
     required this.report,
     required this.activityLogs,
     required this.l10n,
+    required this.isCoach,
     this.tuning,
   });
 
@@ -22,6 +23,7 @@ class AnalyticsDashboardSection extends StatelessWidget {
   final AnalyticsReport report;
   final List<ActivityLog> activityLogs;
   final AppLocalizations l10n;
+  final bool isCoach;
   final HistoricalCatchTuningReport? tuning;
 
   @override
@@ -41,14 +43,16 @@ class AnalyticsDashboardSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          l10n.dashboardTitle,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.orange,
+        if (isCoach) ...[
+          Text(
+            l10n.dashboardTitle,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.orange,
+            ),
           ),
-        ),
-        const SizedBox(height: 10),
+          const SizedBox(height: 10),
+        ],
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(12),
@@ -108,76 +112,78 @@ class AnalyticsDashboardSection extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: [
-                  _metricTile(
-                    l10n.readinessScore,
-                    '${forecast.baseScore}%',
-                    Colors.orange,
-                  ),
-                  _metricTile(l10n.bestWindow, bestDay.windowLabel(), Colors.green),
-                  _metricTile(l10n.bestDay, bestDay.dayLabel(), Colors.lightBlueAccent),
-                ],
-              ),
-              if (phaseCards.isNotEmpty) ...[
-                const SizedBox(height: 14),
-                Text(
-                  l10n.phaseSplit,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 8),
+              if (isCoach) ...[
+                const SizedBox(height: 12),
                 Wrap(
                   spacing: 10,
                   runSpacing: 10,
-                  children: phaseCards
-                      .map((phase) => SizedBox(width: 190, child: _phaseCard(phase)))
-                      .toList(),
+                  children: [
+                    _metricTile(
+                      l10n.readinessScore,
+                      '${forecast.baseScore}%',
+                      Colors.orange,
+                    ),
+                    _metricTile(l10n.bestWindow, bestDay.windowLabel(), Colors.green),
+                    _metricTile(l10n.bestDay, bestDay.dayLabel(), Colors.lightBlueAccent),
+                  ],
                 ),
-              ],
-              const SizedBox(height: 12),
-              Text(
-                l10n.forecast7Days,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: forecast.days
-                      .map((day) => Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: _forecastPill(
-                              day.dayLabel(),
-                              day.windowLabel(),
-                              '${day.score}%',
-                              highlighted: day == bestDay,
-                            ),
-                          ))
-                      .toList(),
-                ),
-              ),
-              if (contextLine.isNotEmpty) ...[
+                if (phaseCards.isNotEmpty) ...[
+                  const SizedBox(height: 14),
+                  Text(
+                    l10n.phaseSplit,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: phaseCards
+                        .map((phase) => SizedBox(width: 190, child: _phaseCard(phase)))
+                        .toList(),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 Text(
-                  contextLine,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: .72),
+                  l10n.forecast7Days,
+                  style: const TextStyle(
+                    color: Colors.white70,
                     fontSize: 12,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
+                const SizedBox(height: 8),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: forecast.days
+                        .map((day) => Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: _forecastPill(
+                                day.dayLabel(),
+                                day.windowLabel(),
+                                '${day.score}%',
+                                highlighted: day == bestDay,
+                              ),
+                            ))
+                        .toList(),
+                  ),
+                ),
+                if (contextLine.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    contextLine,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: .72),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
               ],
             ],
           ),

@@ -121,12 +121,11 @@ class _SessionEditDialogState extends State<SessionEditDialog> {
           children: [
             _editField(l10n.sessionName, _nameCtrl),
             _editField(l10n.athleteName, _athleteCtrl),
-            if (widget.isCoach && widget.session.coachName.isNotEmpty)
-              _editField(l10n.coachName, _coachCtrl),
+            if (widget.isCoach) _editField(l10n.coachName, _coachCtrl),
             _editField(l10n.venue, _venueCtrl),
             _editField(l10n.sectorPeg, _sectorCtrl),
-            _editField(l10n.trainingType, _trainingCtrl),
-            _editField(l10n.fishingMethod, _methodCtrl),
+            if (widget.isCoach) _editField(l10n.trainingType, _trainingCtrl),
+            if (widget.isCoach) _editField(l10n.fishingMethod, _methodCtrl),
             _editField(l10n.targetPace, _paceCtrl),
             _editField(l10n.conditions, _conditionsCtrl),
             _editField(l10n.baitNotes, _baitCtrl),

@@ -83,6 +83,7 @@ void main() {
               report: report,
               activityLogs: activityLogs,
               l10n: l10n,
+              isCoach: true,
             ),
           ),
         ),

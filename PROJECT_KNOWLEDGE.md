@@ -203,7 +203,9 @@ We use the real Fizzy board for task tracking.
 Rules:
 
 - Use Fizzy board `Fish cathcing` for project tasks.
-- Put the task currently being worked on into column `In Todo`.
+- Keep exactly one active task at a time.
+- Put the active task into column `In Todo`.
+- Keep backlog in `Maybe?`.
 - Never write `FIZZY_TOKEN` into repository files.
 - Store token only in local environment variable:
 

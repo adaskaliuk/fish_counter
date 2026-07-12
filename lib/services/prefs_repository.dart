@@ -150,7 +150,9 @@ class PrefsRepository {
       PrefsKeys.athleteProfile,
       jsonEncode(
         AthleteProfile(
-          role: settings.role,
+          role: settings.role.isEmpty
+              ? settings.athleteProfile.role
+              : settings.role,
           athleteName: settings.athleteProfile.athleteName,
           coachName: settings.athleteProfile.coachName,
           clubTeam: settings.athleteProfile.clubTeam,

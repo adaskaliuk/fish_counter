@@ -1,0 +1,29 @@
+{
+  "runId": "7dcb3b7d-9ec0-4c95-9f6e-296591bd1c53",
+  "agent": "worker",
+  "task": "You are a delegated subagent running from a fork of the parent session. Treat the inherited conversation as reference-only context, not a live thread to continue. Do not continue or answer prior messages as if they are waiting for a reply. Your sole job is to execute the task below and return a focused result for that task using your tools.\n\nTask:\nApply review-loop fixes for auth-role only. You are the only writer. Do NOT run subagents.\n\nCurrent target is latest commit `5b18bee Add auth role flow` plus working tree. Fix only blockers/fixes synthesized below; preserve scope.\n\nMust fix:\n1. `flutter analyze --no-pub` blockers:\n   - replace deprecated `DropdownButtonFormField.value` with `initialValue` in auth role dropdowns.\n   - fix `BuildContext` after async gap in `lib/history_screen.dart`.\n2. Migration safety:\n   - `lib/models/app_settings.dart` missing role must default to `''`, not `'athlete'`.\n   - `lib/auth_screen.dart` signup path must preserve existing profile fields when saving role: load existing profile, save `existing.copyWith(role: _role!)`.\n3. AuthScreen UX:\n   - Role dropdown should only render in register mode (`_isRegister`), not login mode.\n4. Athlete visibility leaks:\n   - `defaultTrainingType` / `defaultFishingMethod` are coach-only per spec. Hide them from athlete session edit UI and athlete report exports. Do not wipe existing values when athlete edits.\n5. Coach analytics summary:\n   - Wire `AnalyticsCoachDashboardSection` into `AnalyticsScreenBody` only when `isCoach`. Do not show it to athletes. Keep base analytics for athletes if needed, but coach-specific dashboard/summary only for coach.\n6. Report exporter:\n   - Ensure weather/forecast/readiness/historical tuning/coach sections are only exported when `isCoach == true` if they are hidden in athlete UI.\n7. Tests:\n   - Add/update focused tests for: missing app_settings role default; AuthScreen signup preserves fields; role picker hidden on login; athlete report export hides coach-only fields/sections; coach analytics dashboard appears only when coach.\n\nValidation required:\n- `flutter analyze --no-pub`\n- `flutter test`\n\nReport changed files, commands + exit codes, and anything left undone.\n\n## Acceptance Contract\nAcceptance level: reviewed\nCompletion is not accepted from prose alone. End with a structured acceptance report.\n\nCriteria:\n- criterion-1: Implement the requested change without widening scope\n- criterion-2: Return evidence sufficient for an independent acceptance review\n\nRequired evidence: changed-files, tests-added, commands-run, validation-output, residual-risks, no-staged-files\n\nReview gate: required by reviewer.\n\nFinish with a fenced JSON block tagged `acceptance-report` in this shape:\nUse empty arrays when no items apply; array fields contain strings unless object entries are shown.\n```acceptance-report\n{\n  \"criteriaSatisfied\": [\n    {\n      \"id\": \"criterion-1\",\n      \"status\": \"satisfied\",\n      \"evidence\": \"specific proof\"\n    }\n  ],\n  \"changedFiles\": [\n    \"src/file.ts\"\n  ],\n  \"testsAddedOrUpdated\": [\n    \"test/file.test.ts\"\n  ],\n  \"commandsRun\": [\n    {\n      \"command\": \"command\",\n      \"result\": \"passed\",\n      \"summary\": \"short result\"\n    }\n  ],\n  \"validationOutput\": [\n    \"validation output or concise summary\"\n  ],\n  \"residualRisks\": [\n    \"none\"\n  ],\n  \"noStagedFiles\": true,\n  \"diffSummary\": \"short description of the diff\",\n  \"reviewFindings\": [\n    \"blocker: file.ts:12 - issue found, or no blockers\"\n  ],\n  \"manualNotes\": \"anything else the parent should know\"\n}\n```",
+  "exitCode": 1,
+  "model": "openai-codex/gpt-5.5:off",
+  "attemptedModels": [
+    "openai-codex/gpt-5.5:off"
+  ],
+  "modelAttempts": [
+    {
+      "model": "openai-codex/gpt-5.5:off",
+      "success": false,
+      "exitCode": 1,
+      "error": "bash failed (exit 1): Auto-review failed (2 attempts): spawn /opt/homebrew/Cellar/node/26.4.0/bin/node ENOENT",
+      "usage": {
+        "input": 109372,
+        "output": 12443,
+        "cacheRead": 4354560,
+        "cacheWrite": 0,
+        "cost": 3.09743,
+        "turns": 58
+      }
+    }
+  ],
+  "transcriptPath": "/Users/drongous/workspace/experemental/FishCounter/fish_counter/.pi-subagents/artifacts/7dcb3b7d-9ec0-4c95-9f6e-296591bd1c53_worker_transcript.jsonl",
+  "skills": [],
+  "timestamp": 1783831480848
+}

@@ -45,7 +45,7 @@ class AppSettings {
       matchSeconds: TypeUtils.safeInt(json['matchSeconds']),
       shakeUndoEnabled: TypeUtils.safeBool(json['shakeUndoEnabled'], defaultValue: true),
       shakeSensitivity: json['shakeSensitivity']?.toString() ?? 'medium',
-      role: json['role']?.toString() ?? 'athlete',
+      role: json['role']?.toString() ?? '',
       athleteProfile: rawProfile is Map
           ? AthleteProfile.fromJson(Map<String, dynamic>.from(rawProfile))
           : const AthleteProfile(),

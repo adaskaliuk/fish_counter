@@ -28,6 +28,39 @@ void main() {
     expect(parsed.athleteProfile.athleteName, 'Athlete');
   });
 
+  test('AppSettings missing role stays empty for role setup migration', () {
+    final parsed = AppSettings.fromJson(const {
+      'athleteProfile': {'athleteName': 'Legacy'},
+    });
+
+    expect(parsed.role, '');
+    expect(parsed.athleteProfile.athleteName, 'Legacy');
+  });
+
+  test('PrefsRepository applies nested role when top-level role is missing', () async {
+    await useMemoryStorage();
+    addTearDown(resetMemoryStorage);
+    final repo = await PrefsRepository.create();
+
+    await repo.applyAppSettings(
+      const AppSettings(
+        syncHistoryEnabled: false,
+        resetDelay: 0,
+        vibeInterval: 0,
+        matchSeconds: 0,
+        shakeUndoEnabled: true,
+        shakeSensitivity: 'medium',
+        role: '',
+        athleteProfile: AthleteProfile(role: 'coach', athleteName: 'Legacy'),
+        updatedAt: '',
+      ),
+    );
+
+    final profile = repo.loadAthleteProfile();
+    expect(profile.role, 'coach');
+    expect(profile.athleteName, 'Legacy');
+  });
+
   test('PrefsRepository applies and loads app settings', () async {
     await useMemoryStorage();
     addTearDown(resetMemoryStorage);

@@ -215,14 +215,14 @@ class _HistoryScreenState extends State<HistoryScreen>
 
   Future<void> _editSession(GameSession session) async {
     final l10n = AppLocalizations.of(context);
-    final isCoach = PrefsRepository.create().then(
-      (repo) async => repo.loadAthleteProfile().isCoach,
-    );
+    final repo = await PrefsRepository.create();
+    if (!mounted) return;
+    final isCoach = repo.loadAthleteProfile().isCoach;
 
     final updated = await SessionEditDialog.show(
       context,
       session,
-      isCoach: await isCoach,
+      isCoach: isCoach,
     );
 
     if (updated == null) return;

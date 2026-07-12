@@ -1,6 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fish_counter/l10n/app_localizations.dart';
-import 'package:fish_counter/models/athlete_profile.dart';
 import 'package:fish_counter/services/prefs_repository.dart';
 import 'package:fish_counter/utils/error_handler.dart';
 import 'package:fish_counter/widgets/auth_widgets.dart';
@@ -62,7 +61,8 @@ class _AuthScreenState extends State<AuthScreen> {
           password: password,
         );
         final repo = await PrefsRepository.create();
-        await repo.saveAthleteProfile(AthleteProfile(role: _role!));
+        final existing = repo.loadAthleteProfile();
+        await repo.saveAthleteProfile(existing.copyWith(role: _role!));
       } else {
         await auth.signInWithEmailAndPassword(email: email, password: password);
       }
@@ -160,23 +160,25 @@ class _AuthScreenState extends State<AuthScreen> {
                     obscureText: true,
                     autofillHints: const [AutofillHints.password],
                   ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    value: _role,
-                    hint: Text(l10n.roleLabel),
-                    items: [
-                      DropdownMenuItem(
-                        value: 'athlete',
-                        child: Text(l10n.roleAthlete),
-                      ),
-                      DropdownMenuItem(
-                        value: 'coach',
-                        child: Text(l10n.roleCoach),
-                      ),
-                    ],
-                    onChanged: (value) => setState(() => _role = value),
-                    decoration: InputDecoration(labelText: l10n.roleLabel),
-                  ),
+                  if (_isRegister) ...[
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: _role,
+                      hint: Text(l10n.roleLabel),
+                      items: [
+                        DropdownMenuItem(
+                          value: 'athlete',
+                          child: Text(l10n.roleAthlete),
+                        ),
+                        DropdownMenuItem(
+                          value: 'coach',
+                          child: Text(l10n.roleCoach),
+                        ),
+                      ],
+                      onChanged: (value) => setState(() => _role = value),
+                      decoration: InputDecoration(labelText: l10n.roleLabel),
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   if (_error != null) AuthErrorMessage(_error!),
                   LoadingButton(

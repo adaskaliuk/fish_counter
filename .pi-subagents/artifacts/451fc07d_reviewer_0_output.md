@@ -1,0 +1,4 @@
+- Blocker: none found.
+- Verified: `lib/auth_gate.dart:18-30,50-70,96-105` caches/reloads profile and exits role setup after save.
+- Verified: `lib/models/athlete_profile.dart:31-55` copyWith covers all fields.
+- Verified: `test/auth_role_test.dart:122-159` preserves profile fields regression passes.

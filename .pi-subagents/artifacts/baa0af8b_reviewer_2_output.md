@@ -1,0 +1,4 @@
+## Review
+- Blocker: `lib/widgets/analytics_dashboard_section.dart:117`, `:146`, `:170` still renders readiness/forecast/weather-context summaries for everyone. `lib/widgets/analytics_screen_body.dart:40-45` always includes this dashboard before the `isCoach` gate. Exports now treat forecast/weather as coach-only (`lib/services/report_exporter.dart:52`, `:101`, `:203`, `:265`), so athlete UI still violates “athlete never sees coach-only summaries.”
+- Fix worth doing now: pass `isCoach` into `AnalyticsDashboardSection` and hide/move forecast + weather context behind coach gate; add athlete widget assertion for no `readinessScore` / `forecast7Days`.
+- Optional/defer: none.

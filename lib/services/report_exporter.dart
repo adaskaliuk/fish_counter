@@ -32,8 +32,8 @@ class ReportExporter {
         ['context', 'coach', session.coachName],
       ['context', 'venue', session.venueInfo.venue],
       ['context', 'sector_peg', session.venueInfo.sectorPeg],
-      ['context', 'training_type', session.venueInfo.trainingType],
-      ['context', 'fishing_method', session.venueInfo.fishingMethod],
+      if (isCoach) ['context', 'training_type', session.venueInfo.trainingType],
+      if (isCoach) ['context', 'fishing_method', session.venueInfo.fishingMethod],
       ['context', 'target_pace', session.venueInfo.targetPace],
       ['goals', 'fish_count', session.goals.goalFishCount.toString()],
       [
@@ -49,25 +49,27 @@ class ReportExporter {
       ],
       ['context', 'conditions', session.venueInfo.conditions],
       ['context', 'bait_notes', session.venueInfo.baitNotes],
-      ['weather', 'place', session.weatherPlace],
-      ['weather', 'description', session.weatherDescription],
-      [
-        'weather',
-        'temperature_celsius',
-        _num(session.weatherTemperatureCelsius),
+      if (isCoach) ...[
+        ['weather', 'place', session.weatherPlace],
+        ['weather', 'description', session.weatherDescription],
+        [
+          'weather',
+          'temperature_celsius',
+          _num(session.weatherTemperatureCelsius),
+        ],
+        ['weather', 'feels_like_celsius', _num(session.weatherFeelsLikeCelsius)],
+        ['weather', 'pressure_hpa', _num(session.weatherPressureHpa)],
+        ['weather', 'humidity_percent', _num(session.weatherHumidityPercent)],
+        ['weather', 'wind_speed_ms', _num(session.weatherWindSpeedMs)],
+        [
+          'weather',
+          'wind_direction_degrees',
+          _num(session.weatherWindDirectionDegrees),
+        ],
+        ['weather', 'latitude', _num(session.latitude)],
+        ['weather', 'longitude', _num(session.longitude)],
+        ['weather', 'fetched_at', session.weatherFetchedAt],
       ],
-      ['weather', 'feels_like_celsius', _num(session.weatherFeelsLikeCelsius)],
-      ['weather', 'pressure_hpa', _num(session.weatherPressureHpa)],
-      ['weather', 'humidity_percent', _num(session.weatherHumidityPercent)],
-      ['weather', 'wind_speed_ms', _num(session.weatherWindSpeedMs)],
-      [
-        'weather',
-        'wind_direction_degrees',
-        _num(session.weatherWindDirectionDegrees),
-      ],
-      ['weather', 'latitude', _num(session.latitude)],
-      ['weather', 'longitude', _num(session.longitude)],
-      ['weather', 'fetched_at', session.weatherFetchedAt],
       ['analytics', 'stability_score', report.stabilityScore.toString()],
       [
         'analytics',
@@ -96,15 +98,17 @@ class ReportExporter {
       ['analytics', 'early', report.earlyCount.toString()],
       ['analytics', 'late', report.lateCount.toString()],
       ['analytics', 'best_streak', report.longestStableStreak.toString()],
-      ['forecast', 'readiness_score', '${forecast.baseScore}%'],
-      ['forecast', 'best_window', forecast.bestDay.windowLabel()],
-      [
-        'forecast',
-        'best_day',
-        forecast.bestDay.dayLabel(l10n?.locale.languageCode),
+      if (isCoach) ...[
+        ['forecast', 'readiness_score', '${forecast.baseScore}%'],
+        ['forecast', 'best_window', forecast.bestDay.windowLabel()],
+        [
+          'forecast',
+          'best_day',
+          forecast.bestDay.dayLabel(l10n?.locale.languageCode),
+        ],
+        ['forecast', 'best_day_score', '${forecast.bestDay.score}%'],
       ],
-      ['forecast', 'best_day_score', '${forecast.bestDay.score}%'],
-      if (tuning != null && !tuning.isEmpty) ...[
+      if (isCoach && tuning != null && !tuning.isEmpty) ...[
         ['history_tuning', 'sessions_analyzed', tuning.sessionCount.toString()],
         [
           'history_tuning',
@@ -173,9 +177,11 @@ class ReportExporter {
       if (isCoach) (l10n?.coachName ?? 'Coach'): session.coachName,
       (l10n?.venue ?? 'Venue'): session.venueInfo.venue,
       (l10n?.sectorPeg ?? 'Sector / peg'): session.venueInfo.sectorPeg,
-      (l10n?.trainingType ?? 'Training type'): session.venueInfo.trainingType,
-      (l10n?.fishingMethod ?? 'Fishing method'):
-          session.venueInfo.fishingMethod,
+      if (isCoach)
+        (l10n?.trainingType ?? 'Training type'): session.venueInfo.trainingType,
+      if (isCoach)
+        (l10n?.fishingMethod ?? 'Fishing method'):
+            session.venueInfo.fishingMethod,
       (l10n?.targetPace ?? 'Target pace'): session.venueInfo.targetPace,
       (l10n?.conditions ?? 'Conditions'): session.venueInfo.conditions,
       (l10n?.baitNotes ?? 'Bait / method notes'): session.venueInfo.baitNotes,
@@ -194,35 +200,37 @@ class ReportExporter {
       ),
     });
 
-    _writeSection(buffer, (l10n?.weatherSummary ?? 'Weather'), {
-      (l10n?.placeLabel ?? 'Place'): session.weatherPlace,
-      (l10n?.descriptionLabel ?? 'Description'): session.weatherDescription,
-      (l10n?.temperatureLabel ?? 'Temperature'): _unit(
-        session.weatherTemperatureCelsius,
-        '°C',
-      ),
-      (l10n?.feelsLikeLabel ?? 'Feels like'): _unit(
-        session.weatherFeelsLikeCelsius,
-        '°C',
-      ),
-      (l10n?.pressureLabel ?? 'Pressure'): _unit(
-        session.weatherPressureHpa,
-        ' hPa',
-      ),
-      (l10n?.humidityLabel ?? 'Humidity'): _unit(
-        session.weatherHumidityPercent,
-        '%',
-      ),
-      (l10n?.windSpeedLabel ?? 'Wind speed'): _unit(
-        session.weatherWindSpeedMs,
-        ' m/s',
-      ),
-      (l10n?.windDirectionLabel ?? 'Wind direction'): _unit(
-        session.weatherWindDirectionDegrees,
-        '°',
-      ),
-      (l10n?.fetchedAtLabel ?? 'Fetched at'): session.weatherFetchedAt,
-    });
+    if (isCoach) {
+      _writeSection(buffer, (l10n?.weatherSummary ?? 'Weather'), {
+        (l10n?.placeLabel ?? 'Place'): session.weatherPlace,
+        (l10n?.descriptionLabel ?? 'Description'): session.weatherDescription,
+        (l10n?.temperatureLabel ?? 'Temperature'): _unit(
+          session.weatherTemperatureCelsius,
+          '°C',
+        ),
+        (l10n?.feelsLikeLabel ?? 'Feels like'): _unit(
+          session.weatherFeelsLikeCelsius,
+          '°C',
+        ),
+        (l10n?.pressureLabel ?? 'Pressure'): _unit(
+          session.weatherPressureHpa,
+          ' hPa',
+        ),
+        (l10n?.humidityLabel ?? 'Humidity'): _unit(
+          session.weatherHumidityPercent,
+          '%',
+        ),
+        (l10n?.windSpeedLabel ?? 'Wind speed'): _unit(
+          session.weatherWindSpeedMs,
+          ' m/s',
+        ),
+        (l10n?.windDirectionLabel ?? 'Wind direction'): _unit(
+          session.weatherWindDirectionDegrees,
+          '°',
+        ),
+        (l10n?.fetchedAtLabel ?? 'Fetched at'): session.weatherFetchedAt,
+      });
+    }
 
     if (isCoach) {
       buffer
@@ -254,16 +262,18 @@ class ReportExporter {
         );
     }
 
-    _writeSection(buffer, (l10n?.bestWindowForecast ?? 'Forecast'), {
-      (l10n?.readinessScore ?? 'Readiness score'): '${forecast.baseScore}%',
-      (l10n?.bestWindow ?? 'Best window'): forecast.bestDay.windowLabel(),
-      (l10n?.bestDay ?? 'Best day'): forecast.bestDay.dayLabel(
-        l10n?.locale.languageCode,
-      ),
-      (l10n?.bestDayScore ?? 'Best day score'): '${forecast.bestDay.score}%',
-    });
+    if (isCoach) {
+      _writeSection(buffer, (l10n?.bestWindowForecast ?? 'Forecast'), {
+        (l10n?.readinessScore ?? 'Readiness score'): '${forecast.baseScore}%',
+        (l10n?.bestWindow ?? 'Best window'): forecast.bestDay.windowLabel(),
+        (l10n?.bestDay ?? 'Best day'): forecast.bestDay.dayLabel(
+          l10n?.locale.languageCode,
+        ),
+        (l10n?.bestDayScore ?? 'Best day score'): '${forecast.bestDay.score}%',
+      });
+    }
 
-    if (tuning != null && !tuning.isEmpty) {
+    if (isCoach && tuning != null && !tuning.isEmpty) {
       final sessionsAnalyzedLabel =
           (l10n?.sessionsAnalyzed ?? 'Sessions analyzed');
       final fishCountLabel = (l10n?.fishCount ?? 'Fish count');

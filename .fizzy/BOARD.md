@@ -4,6 +4,6 @@
 
 | Todo | In Todo / Now | Done |
 | --- | --- | --- |
-| Session metadata | Fizzy board: add current-work column | Code-quality fixes after review |
+| Session metadata |  | Code-quality fixes after review |
 | Better analytics |  | Session notes and coach comments |
 | Export / share report |  |  |

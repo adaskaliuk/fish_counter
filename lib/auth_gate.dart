@@ -121,7 +121,7 @@ class _RoleSetupScreenState extends State<RoleSetupScreen> {
                 Text(l10n.roleRequired, textAlign: TextAlign.center),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                  value: _role,
+                  initialValue: _role,
                   hint: Text(l10n.roleLabel),
                   items: [
                     DropdownMenuItem(value: 'athlete', child: Text(l10n.roleAthlete)),

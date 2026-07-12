@@ -84,7 +84,7 @@ void main() {
     expect(csv, contains('"10:00:00","C1","60","green"'));
   });
 
-  test('hides coach details for athlete exports', () {
+  test('hides coach-only details and summaries for athlete exports', () {
     final session = GameSession(
       id: '2',
       name: 'Pace drill',
@@ -98,16 +98,52 @@ void main() {
       athleteName: 'Andrew',
       coachName: 'Coach',
       coachComment: 'Keep pace',
+      trainingType: 'Pace drill',
       fishingMethod: 'Feeder',
+      weatherPlace: 'Kyiv',
+      weatherDescription: 'Clear',
       grid: const [],
     );
 
-    final text = ReportExporter.buildPlainText(session, isCoach: false);
-    final csv = ReportExporter.buildCsv(session, isCoach: false);
+    final text = ReportExporter.buildPlainText(
+      session,
+      isCoach: false,
+      tuning: const HistoricalCatchTuningReport(
+        sessionCount: 2,
+        fishCountWeight: 1.1,
+        stabilityWeight: 0.9,
+        triesWeight: 1.05,
+        paceWeight: 0.95,
+        trackedMetricCount: 4,
+      ),
+    );
+    final csv = ReportExporter.buildCsv(
+      session,
+      isCoach: false,
+      tuning: const HistoricalCatchTuningReport(
+        sessionCount: 2,
+        fishCountWeight: 1.1,
+        stabilityWeight: 0.9,
+        triesWeight: 1.05,
+        paceWeight: 0.95,
+        trackedMetricCount: 4,
+      ),
+    );
 
     expect(text, isNot(contains('Coach Analytics')));
     expect(text, isNot(contains('Coach comment')));
+    expect(text, isNot(contains('Training type')));
+    expect(text, isNot(contains('Fishing method')));
+    expect(text, isNot(contains('Weather')));
+    expect(text, isNot(contains('Forecast')));
+    expect(text, isNot(contains('Readiness score')));
+    expect(text, isNot(contains('Historical tuning')));
     expect(csv, isNot(contains('coach')));
+    expect(csv, isNot(contains('training_type')));
+    expect(csv, isNot(contains('fishing_method')));
+    expect(csv, isNot(contains('weather')));
+    expect(csv, isNot(contains('forecast')));
+    expect(csv, isNot(contains('history_tuning')));
   });
 
   test('includes coach details for coach exports', () {
@@ -163,6 +199,7 @@ void main() {
 
     final text = ReportExporter.buildPlainText(
       session,
+      isCoach: true,
       tuning: const HistoricalCatchTuningReport(
         sessionCount: 2,
         fishCountWeight: 1.1,

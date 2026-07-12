@@ -205,7 +205,9 @@ Use the real Fizzy board for task tracking.
 Rules:
 
 - Tasks go to Fizzy board `Fish cathcing`.
+- Keep exactly one active task at a time.
 - The task currently being worked on goes into `In Todo`.
+- Keep backlog in `Maybe?`.
 - Never commit or write real `FIZZY_TOKEN` to files.
 - Use local env var only:
 

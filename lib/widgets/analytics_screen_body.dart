@@ -5,6 +5,7 @@ import 'package:fish_counter/models/analytics_report.dart';
 import 'package:fish_counter/models/historical_catch_tuning_report.dart';
 import 'package:flutter/material.dart';
 
+import 'analytics_coach_dashboard_section.dart';
 import 'analytics_dashboard_section.dart';
 import 'analytics_charts_section.dart';
 import 'analytics_weather_section.dart';
@@ -39,9 +40,17 @@ class AnalyticsScreenBody extends StatelessWidget {
             report: report,
             activityLogs: activityLogs,
             l10n: l10n,
+            isCoach: isCoach,
             tuning: tuning,
           ),
           if (isCoach) ...[
+            const SizedBox(height: 24),
+            AnalyticsCoachDashboardSection(
+              session: session,
+              report: report,
+              l10n: l10n,
+              tuning: tuning,
+            ),
             const SizedBox(height: 24),
             AnalyticsWeatherSection(session: session, l10n: l10n),
             const SizedBox(height: 24),
