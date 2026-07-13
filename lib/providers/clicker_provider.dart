@@ -140,6 +140,7 @@ class ClickerProvider extends ChangeNotifier {
   DateTime? _lastShakeUndoAt;
   DateTime? _lastWeatherCaptureAt;
   var _weatherCaptureInFlight = false;
+  Future<void>? _weatherCaptureFuture;
   final SessionWeatherService _weatherService = SessionWeatherService();
 
   ClickerProvider({
@@ -187,28 +188,21 @@ class ClickerProvider extends ChangeNotifier {
 
       try {
         final now = DateTime.now();
-        var level = _state.batteryLevel;
         final shouldPollBattery = _timerManager.shouldPoll;
-
-        if (shouldPollBattery) {
-          try {
-            level = await _battery.batteryLevel;
-          } catch (e) {
-            debugPrint('Battery level error: $e');
-          }
-        }
 
         var shouldTriggerVibe = false;
         var newMatchInterval = _state.matchInterval;
+        var sessionEnded = false;
 
         if (_state.isSessionActive && _state.matchInterval.inSeconds > 0) {
-          newMatchInterval = _state.matchInterval - const Duration(seconds: 1);
+          final next = _state.matchInterval - const Duration(seconds: 1);
+          sessionEnded = next.inSeconds <= 0;
+          newMatchInterval = sessionEnded ? Duration.zero : next;
         }
 
-        await _maybeCaptureWeatherSample(now);
-
         var newDuration = _state.duration;
-        if (!_state.isPaused &&
+        if (!sessionEnded &&
+            !_state.isPaused &&
             _state.isSessionActive &&
             !_state.isActionDelay) {
           newDuration = _state.duration + const Duration(seconds: 1);
@@ -221,15 +215,29 @@ class ClickerProvider extends ChangeNotifier {
         _state = _state.copyWith(
           realTime: DateFormat('HH:mm:ss').format(now),
           currentDate: DateFormat('dd.MM.yy').format(now),
-          batteryLevel: level,
           matchInterval: newMatchInterval,
           duration: newDuration,
+          isSessionActive: sessionEnded ? false : null,
+          isPaused: sessionEnded ? true : null,
+          isActionDelay: sessionEnded ? false : null,
+          delayCountdown: sessionEnded ? 0 : null,
         );
         notifyListeners();
 
         if (shouldTriggerVibe) {
           _triggerVibeFeedback();
         }
+
+        if (shouldPollBattery) {
+          try {
+            _state = _state.copyWith(batteryLevel: await _battery.batteryLevel);
+            notifyListeners();
+          } catch (e) {
+            debugPrint('Battery level error: $e');
+          }
+        }
+
+        await _maybeCaptureWeatherSample(now, force: sessionEnded);
       } catch (e) {
         debugPrint('Timer error: $e');
       }
@@ -316,6 +324,7 @@ class ClickerProvider extends ChangeNotifier {
   }
 
   Future<void> handleIncrement(int type) async {
+    if (_state.matchInterval <= Duration.zero) return;
     if (!ClickerController.canIncrement(
       isPowerOn: _state.isPowerOn,
       isActionDelay: _state.isActionDelay,
@@ -585,7 +594,10 @@ class ClickerProvider extends ChangeNotifier {
     bool force = false,
   }) async {
     if (SessionWeatherService.apiKey.isEmpty) return;
-    if (_weatherCaptureInFlight) return;
+    if (_weatherCaptureInFlight) {
+      if (force) await _weatherCaptureFuture;
+      return;
+    }
     if (!force) {
       if (!_state.isPowerOn || !_state.isSessionActive || _state.isPaused) {
         return;
@@ -597,18 +609,21 @@ class ClickerProvider extends ChangeNotifier {
     }
 
     _weatherCaptureInFlight = true;
-    try {
-      _lastWeatherCaptureAt = now;
-      final snapshot = await _weatherService.fetchCurrentWeather();
-      _state = _state.copyWith(
-        weatherSnapshots: [..._state.weatherSnapshots, snapshot],
-      );
-      notifyListeners();
-    } catch (e) {
-      debugPrint('Weather capture error: $e');
-    } finally {
-      _weatherCaptureInFlight = false;
-    }
+    _weatherCaptureFuture = () async {
+      try {
+        _lastWeatherCaptureAt = now;
+        final snapshot = await _weatherService.fetchCurrentWeather();
+        _state = _state.copyWith(
+          weatherSnapshots: [..._state.weatherSnapshots, snapshot],
+        );
+        notifyListeners();
+      } catch (e) {
+        debugPrint('Weather capture error: $e');
+      } finally {
+        _weatherCaptureInFlight = false;
+      }
+    }();
+    await _weatherCaptureFuture;
   }
 
   void cancelCountdown() {

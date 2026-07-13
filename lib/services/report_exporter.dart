@@ -27,6 +27,10 @@ class ReportExporter {
       ['counters', 'c2', session.c2.toString()],
       ['counters', 'total', session.total.toString()],
       ['counters', 'tries', session.tries.toString()],
+      if (session.finalWeightKg != null)
+        ['result', 'final_weight_kg', session.finalWeightKg!.toStringAsFixed(2)],
+      if (session.finalCount != null)
+        ['result', 'final_count', session.finalCount.toString()],
       ['context', 'athlete', session.athleteName],
       if (isCoach && session.coachName.isNotEmpty)
         ['context', 'coach', session.coachName],
@@ -171,6 +175,12 @@ class ReportExporter {
       ..writeln('C2: ${session.c2}')
       ..writeln('C1+C2: ${session.total}')
       ..writeln('${(l10n?.tryCount ?? 'Tries')}: ${session.tries}');
+
+    _writeSection(buffer, 'Final Result', {
+      if (session.finalWeightKg != null)
+        'Weight': '${session.finalWeightKg!.toStringAsFixed(2)} kg',
+      if (session.finalCount != null) 'Count': session.finalCount.toString(),
+    });
 
     _writeSection(buffer, (l10n?.trainingContext ?? 'Training Context'), {
       (l10n?.athleteName ?? 'Athlete'): session.athleteName,

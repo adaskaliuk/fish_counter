@@ -25,9 +25,10 @@ class AuthGate extends StatefulWidget {
 class _AuthGateState extends State<AuthGate> {
   Future<AthleteProfile>? _profileFuture;
   String? _lastUid;
+  bool _roleSaved = false;
 
-  Future<AthleteProfile> _loadProfile() =>
-      PrefsRepository.create().then((r) => r.loadAthleteProfile());
+  Future<AthleteProfile> _loadProfile(String uid) =>
+      PrefsRepository.create().then((r) => r.loadAthleteProfile(userId: uid));
 
   @override
   Widget build(BuildContext context) {
@@ -44,13 +45,15 @@ class _AuthGateState extends State<AuthGate> {
         if (snapshot.data == null) {
           _profileFuture = null;
           _lastUid = null;
+          _roleSaved = false;
           return const AuthScreen(key: AuthGateKeys.authScreenKey);
         }
 
         final uid = snapshot.data!.uid;
         if (_profileFuture == null || _lastUid != uid) {
-          _profileFuture = _loadProfile();
+          _profileFuture = _loadProfile(uid);
           _lastUid = uid;
+          _roleSaved = false;
         }
 
         return FutureBuilder<AthleteProfile>(
@@ -63,11 +66,14 @@ class _AuthGateState extends State<AuthGate> {
               );
             }
             final profile = roleSnapshot.data!;
-            if (profile.role.isEmpty) {
+            if (profile.role.isEmpty && !_roleSaved) {
               return RoleSetupScreen(
                 key: AuthGateKeys.authScreenKey,
-                onSaved: () =>
-                    setState(() => _profileFuture = _loadProfile()),
+                userId: uid,
+                onSaved: () => setState(() {
+                  _roleSaved = true;
+                  _profileFuture = _loadProfile(uid);
+                }),
               );
             }
             return const StartupSyncedClickerScreen(
@@ -81,8 +87,9 @@ class _AuthGateState extends State<AuthGate> {
 }
 
 class RoleSetupScreen extends StatefulWidget {
-  const RoleSetupScreen({super.key, this.onSaved});
+  const RoleSetupScreen({super.key, this.userId, this.onSaved});
 
+  final String? userId;
   final VoidCallback? onSaved;
 
   @override
@@ -98,8 +105,11 @@ class _RoleSetupScreenState extends State<RoleSetupScreen> {
     setState(() => _saving = true);
     final repo = await PrefsRepository.create();
     // Preserve existing profile fields; only mutate role.
-    final existing = repo.loadAthleteProfile();
-    await repo.saveAthleteProfile(existing.copyWith(role: _role!));
+    final existing = repo.loadAthleteProfile(userId: widget.userId);
+    await repo.saveAthleteProfile(
+      existing.copyWith(role: _role!),
+      userId: widget.userId,
+    );
     if (!mounted) return;
     setState(() => _saving = false);
     widget.onSaved?.call();

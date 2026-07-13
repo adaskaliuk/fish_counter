@@ -1,1 +1,34 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"fish-counter-55a99","appId":"1:662723388518:android:3a9c01d8a06d5cc66079a7","fileOutput":"android/app/google-services.json"}},"ios":{"default":{"projectId":"fish-counter-55a99","appId":"1:662723388518:ios:4ffaa185456264796079a7","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"dart":{"lib/firebase_options.dart":{"projectId":"fish-counter-55a99","configurations":{"android":"1:662723388518:android:3a9c01d8a06d5cc66079a7","ios":"1:662723388518:ios:4ffaa185456264796079a7","web":"1:662723388518:web:4ec50350c641cd866079a7"}}}}}}
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "fish-counter-55a99",
+          "appId": "1:662723388518:android:3a9c01d8a06d5cc66079a7",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "fish-counter-55a99",
+          "appId": "1:662723388518:ios:4ffaa185456264796079a7",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "fish-counter-55a99",
+          "configurations": {
+            "android": "1:662723388518:android:3a9c01d8a06d5cc66079a7",
+            "ios": "1:662723388518:ios:4ffaa185456264796079a7",
+            "web": "1:662723388518:web:4ec50350c641cd866079a7"
+          }
+        }
+      }
+    }
+  }
+}

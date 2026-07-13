@@ -56,6 +56,8 @@ void main() {
         updatedAt: '2026-06-06T10:01:00Z',
         athleteNote: 'Athlete note',
         coachComment: 'Coach comment',
+        finalWeightKg: 12.35,
+        finalCount: 42,
       );
 
       final parsed = GameSession.fromJson(session.toJson());
@@ -88,6 +90,8 @@ void main() {
       expect(parsed.updatedAt, '2026-06-06T10:01:00Z');
       expect(parsed.athleteNote, 'Athlete note');
       expect(parsed.coachComment, 'Coach comment');
+      expect(parsed.finalWeightKg, 12.35);
+      expect(parsed.finalCount, 42);
     });
 
     test('keeps metadata and notes optional for old saved sessions', () {
@@ -122,6 +126,36 @@ void main() {
       expect(parsed.weatherTemperatureCelsius, isNull);
       expect(parsed.athleteNote, isEmpty);
       expect(parsed.coachComment, isEmpty);
+      expect(parsed.finalWeightKg, isNull);
+      expect(parsed.finalCount, isNull);
+    });
+
+
+    test('round-trips weight only, count only, and both result values', () {
+      GameSession base({double? weight, int? count}) => GameSession(
+            id: '1',
+            name: 'Session',
+            date: '06.06.26 10:00',
+            c1: 1,
+            c2: 0,
+            tries: 0,
+            total: 1,
+            matchDuration: '5:00',
+            grid: const [],
+            finalWeightKg: weight,
+            finalCount: count,
+            updatedAt: '2026-06-06T10:00:00Z',
+          );
+
+      final weightOnly = GameSession.fromJson(base(weight: 1.25).toJson());
+      expect(weightOnly.finalWeightKg, 1.25);
+      expect(weightOnly.finalCount, isNull);
+      final countOnly = GameSession.fromJson(base(count: 7).toJson());
+      expect(countOnly.finalWeightKg, isNull);
+      expect(countOnly.finalCount, 7);
+      final both = GameSession.fromJson(base(weight: 2.5, count: 9).toJson());
+      expect(both.finalWeightKg, 2.5);
+      expect(both.finalCount, 9);
     });
 
     test('copyWith updates editable metadata and preserves counters', () {
@@ -135,6 +169,8 @@ void main() {
         total: 3,
         matchDuration: '5:00',
         grid: const [],
+        finalWeightKg: 1.5,
+        finalCount: 4,
         updatedAt: '2026-06-06T10:00:00Z',
       );
 
@@ -149,6 +185,12 @@ void main() {
       expect(updated.c1, 1);
       expect(updated.total, 3);
       expect(updated.updatedAt, '2026-06-06T11:00:00Z');
+      expect(updated.finalWeightKg, 1.5);
+      expect(updated.finalCount, 4);
+
+      final cleared = updated.copyWith(clearFinalWeight: true, clearFinalCount: true);
+      expect(cleared.finalWeightKg, isNull);
+      expect(cleared.finalCount, isNull);
     });
   });
 }

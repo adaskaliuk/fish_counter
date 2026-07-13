@@ -61,8 +61,12 @@ class _AuthScreenState extends State<AuthScreen> {
           password: password,
         );
         final repo = await PrefsRepository.create();
-        final existing = repo.loadAthleteProfile();
-        await repo.saveAthleteProfile(existing.copyWith(role: _role!));
+        final userId = auth.currentUser?.uid;
+        final existing = repo.loadAthleteProfile(userId: userId);
+        await repo.saveAthleteProfile(
+          existing.copyWith(role: _role!),
+          userId: userId,
+        );
       } else {
         await auth.signInWithEmailAndPassword(email: email, password: password);
       }

@@ -1,4 +1,5 @@
 import 'package:fish_counter/game_session.dart';
+import 'package:fish_counter/models/athlete_profile.dart';
 import 'package:fish_counter/services/prefs_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -91,4 +92,28 @@ void main() {
       expect(state.historySessions.single.name, 'New');
     });
   });
+
+  group('PrefsRepository user profile', () {
+    test('stores athlete profile per Firebase user id with global fallback', () async {
+      await useMemoryStorage();
+      addTearDown(resetMemoryStorage);
+      final repo = await PrefsRepository.create();
+
+      await repo.saveAthleteProfile(
+        const AthleteProfile(role: 'coach', athleteName: 'Coach User'),
+        userId: 'u1',
+      );
+      await repo.saveAthleteProfile(
+        const AthleteProfile(role: 'athlete', athleteName: 'Athlete User'),
+        userId: 'u2',
+      );
+
+      expect(repo.loadAthleteProfile(userId: 'u1').role, 'coach');
+      expect(repo.loadAthleteProfile(userId: 'u1').athleteName, 'Coach User');
+      expect(repo.loadAthleteProfile(userId: 'u2').role, 'athlete');
+      expect(repo.loadAthleteProfile(userId: 'u2').athleteName, 'Athlete User');
+      expect(repo.loadAthleteProfile().role, 'athlete');
+    });
+  });
+
 }

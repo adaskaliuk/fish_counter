@@ -13,6 +13,8 @@ void main() {
       c2: 3,
       tries: 1,
       total: 5,
+      finalWeightKg: 3.75,
+      finalCount: 12,
       goalFishCount: 5,
       goalTargetPaceSeconds: 60,
       matchDuration: '5:00',
@@ -47,6 +49,8 @@ void main() {
     expect(text, contains('Target pace: 60s'));
     expect(text, contains('Stability score: 100%'));
     expect(text, contains('Coach comment: Keep pace'));
+    expect(text, contains('Weight: 3.75 kg'));
+    expect(text, contains('Count: 12'));
     expect(text, contains('10:00:00 | C1 | 60s | green'));
   });
 
@@ -59,6 +63,8 @@ void main() {
       c2: 3,
       tries: 1,
       total: 5,
+      finalWeightKg: 3.75,
+      finalCount: 12,
       goalFishCount: 5,
       matchDuration: '5:00',
       athleteName: 'Andrew',

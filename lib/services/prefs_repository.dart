@@ -16,6 +16,9 @@ class PrefsRepository {
 
   PrefsRepository(this._prefs);
 
+  static String _athleteProfileKey(String userId) =>
+      '${PrefsKeys.athleteProfile}_$userId';
+
   static void useTestStorage(LocalStorage? storage) {
     _testStorage = storage;
   }
@@ -92,8 +95,11 @@ class PrefsRepository {
 
   String getSyncLastError() => _prefs.getString(PrefsKeys.syncLastError) ?? '';
 
-  AthleteProfile loadAthleteProfile() {
-    final raw = _prefs.getString(PrefsKeys.athleteProfile);
+  AthleteProfile loadAthleteProfile({String? userId}) {
+    final raw = userId == null
+        ? _prefs.getString(PrefsKeys.athleteProfile)
+        : _prefs.getString(_athleteProfileKey(userId)) ??
+            _prefs.getString(PrefsKeys.athleteProfile);
     if (raw == null) return const AthleteProfile();
     try {
       final decoded = jsonDecode(raw);
@@ -104,11 +110,15 @@ class PrefsRepository {
     return const AthleteProfile();
   }
 
-  Future<void> saveAthleteProfile(AthleteProfile profile) async {
-    await _prefs.setString(
-      PrefsKeys.athleteProfile,
-      jsonEncode(profile.toJson()),
-    );
+  Future<void> saveAthleteProfile(
+    AthleteProfile profile, {
+    String? userId,
+  }) async {
+    final encoded = jsonEncode(profile.toJson());
+    await _prefs.setString(PrefsKeys.athleteProfile, encoded);
+    if (userId != null) {
+      await _prefs.setString(_athleteProfileKey(userId), encoded);
+    }
     await touchSettingsUpdatedAt();
   }
 

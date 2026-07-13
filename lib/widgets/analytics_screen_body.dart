@@ -8,7 +8,9 @@ import 'package:flutter/material.dart';
 import 'analytics_coach_dashboard_section.dart';
 import 'analytics_dashboard_section.dart';
 import 'analytics_charts_section.dart';
+import 'analytics_timeline_section.dart';
 import 'analytics_weather_section.dart';
+import 'weather_during_match_section.dart';
 
 class AnalyticsScreenBody extends StatelessWidget {
   const AnalyticsScreenBody({
@@ -55,6 +57,8 @@ class AnalyticsScreenBody extends StatelessWidget {
             AnalyticsWeatherSection(session: session, l10n: l10n),
             const SizedBox(height: 24),
           ],
+          AnalyticsTimelineSection(activityLogs: activityLogs, l10n: l10n),
+          WeatherDuringMatchSection(session: session, l10n: l10n),
           AnalyticsChartsSection(
             session: session,
             report: report,

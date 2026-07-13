@@ -88,6 +88,19 @@ class AnalyticsDashboardSection extends StatelessWidget {
                   _miniStat('C2', session.c2, Colors.white70),
                 ],
               ),
+              if (session.finalWeightKg != null || session.finalCount != null) ...[
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    if (session.finalWeightKg != null)
+                      _metricTile('Final weight', '${session.finalWeightKg!.toStringAsFixed(2)} kg', Colors.lightBlueAccent),
+                    if (session.finalCount != null)
+                      _metricTile('Final count', session.finalCount.toString(), Colors.lightGreenAccent),
+                  ],
+                ),
+              ],
               const SizedBox(height: 12),
               Row(
                 children: [

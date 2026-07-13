@@ -41,6 +41,8 @@ class _SessionEditDialogState extends State<SessionEditDialog> {
   late final TextEditingController _baitCtrl;
   late final TextEditingController _athleteNoteCtrl;
   late final TextEditingController _coachCommentCtrl;
+  late final TextEditingController _finalWeightCtrl;
+  late final TextEditingController _finalCountCtrl;
 
   @override
   void initState() {
@@ -69,6 +71,12 @@ class _SessionEditDialogState extends State<SessionEditDialog> {
     _coachCommentCtrl = TextEditingController(
       text: widget.session.coachComment,
     );
+    _finalWeightCtrl = TextEditingController(
+      text: widget.session.finalWeightKg?.toString() ?? '',
+    );
+    _finalCountCtrl = TextEditingController(
+      text: widget.session.finalCount?.toString() ?? '',
+    );
   }
 
   @override
@@ -85,10 +93,14 @@ class _SessionEditDialogState extends State<SessionEditDialog> {
     _baitCtrl.dispose();
     _athleteNoteCtrl.dispose();
     _coachCommentCtrl.dispose();
+    _finalWeightCtrl.dispose();
+    _finalCountCtrl.dispose();
     super.dispose();
   }
 
   GameSession getUpdatedSession() {
+    final weightText = _finalWeightCtrl.text.trim();
+    final countText = _finalCountCtrl.text.trim();
     return widget.session.copyWith(
       name: _nameCtrl.text.trim().isEmpty
           ? widget.session.name
@@ -106,6 +118,10 @@ class _SessionEditDialogState extends State<SessionEditDialog> {
       ),
       athleteNote: _athleteNoteCtrl.text.trim(),
       coachComment: _coachCommentCtrl.text.trim(),
+      finalWeightKg: double.tryParse(weightText.replaceAll(',', '.')),
+      finalCount: int.tryParse(countText),
+      clearFinalWeight: weightText.isEmpty,
+      clearFinalCount: countText.isEmpty,
       updatedAt: DateTime.now().toIso8601String(),
     );
   }
@@ -129,6 +145,8 @@ class _SessionEditDialogState extends State<SessionEditDialog> {
             _editField(l10n.targetPace, _paceCtrl),
             _editField(l10n.conditions, _conditionsCtrl),
             _editField(l10n.baitNotes, _baitCtrl),
+            _editField('Final weight (kg)', _finalWeightCtrl, keyboardType: TextInputType.number),
+            _editField('Final count', _finalCountCtrl, keyboardType: TextInputType.number),
             _editField(l10n.athleteNote, _athleteNoteCtrl, maxLines: 3),
             if (widget.isCoach)
               _editField(l10n.coachComment, _coachCommentCtrl, maxLines: 3),
@@ -152,12 +170,14 @@ class _SessionEditDialogState extends State<SessionEditDialog> {
     String label,
     TextEditingController controller, {
     int maxLines = 1,
+    TextInputType? keyboardType,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: TextField(
         controller: controller,
         maxLines: maxLines,
+        keyboardType: keyboardType,
         decoration: InputDecoration(labelText: label),
       ),
     );

@@ -9,7 +9,8 @@ abstract final class SettingsDialogKeys {
 Future<void> _showSettingsDialog(_ClickerScreenState state) async {
   final l10n = AppLocalizations.of(state.context);
   final repo = state._prefsRepository;
-  final profile = repo?.loadAthleteProfile() ?? const AthleteProfile();
+  final userId = FirebaseAuth.instance.currentUser?.uid;
+  final profile = repo?.loadAthleteProfile(userId: userId) ?? const AthleteProfile();
 
   final dialogContext = state.context;
   if (!dialogContext.mounted) return;
@@ -62,6 +63,7 @@ class _SettingsDialogBodyState extends State<_SettingsDialogBody> {
   var _dialogShakeSensitivity = ShakeSensitivity.medium;
   var _dialogSpeciesPreset = FishingPresets.defaultSpecies;
   var _dialogBodyTypePreset = FishingPresets.defaultBodyType;
+  var _dialogRole = 'athlete';
 
   @override
   void initState() {
@@ -79,6 +81,7 @@ class _SettingsDialogBodyState extends State<_SettingsDialogBody> {
     _dialogSyncHistoryEnabled = state.isSyncHistoryEnabled;
     _dialogShakeUndoEnabled = state.isShakeUndoEnabled;
     _dialogShakeSensitivity = state.shakeSensitivity;
+    _dialogRole = widget.profile.isCoach ? 'coach' : 'athlete';
 
     _athleteCtrl = TextEditingController();
     _coachCtrl = TextEditingController();
@@ -179,11 +182,23 @@ class _SettingsDialogBodyState extends State<_SettingsDialogBody> {
             ),
             const Divider(),
             Text(l10n.athleteProfile),
+            DropdownButtonFormField<String>(
+              initialValue: _dialogRole,
+              decoration: InputDecoration(labelText: l10n.roleLabel),
+              items: [
+                DropdownMenuItem(value: 'athlete', child: Text(l10n.roleAthlete)),
+                DropdownMenuItem(value: 'coach', child: Text(l10n.roleCoach)),
+              ],
+              onChanged: (value) {
+                if (value == null) return;
+                setState(() => _dialogRole = value);
+              },
+            ),
             TextField(
               controller: _athleteCtrl,
               decoration: InputDecoration(labelText: l10n.athleteName),
             ),
-            if (widget.profile.isCoach) ...[
+            if (_dialogRole == 'coach') ...[
               TextField(
                 controller: _coachCtrl,
                 decoration: InputDecoration(labelText: l10n.coachName),
@@ -320,7 +335,7 @@ class _SettingsDialogBodyState extends State<_SettingsDialogBody> {
               return;
             }
             final newProfile = AthleteProfile(
-              role: currentProfile.role,
+              role: _dialogRole,
               athleteName: _athleteCtrl.text.trim(),
               coachName: _coachCtrl.text.trim(),
               clubTeam: _clubCtrl.text.trim(),
@@ -382,7 +397,10 @@ class _SettingsDialogBodyState extends State<_SettingsDialogBody> {
               shakeSensitivity: _dialogShakeSensitivity,
             );
             await widget.state._saveData();
-            await repo.saveAthleteProfile(newProfile);
+            await repo.saveAthleteProfile(
+              newProfile,
+              userId: FirebaseAuth.instance.currentUser?.uid,
+            );
             await repo.touchSettingsUpdatedAt();
             try {
               await CloudSettingsService().uploadLocalSettings(repo);

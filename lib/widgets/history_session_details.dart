@@ -37,6 +37,10 @@ class HistorySessionDetails extends StatelessWidget {
             _chip('C2', session.c2.toString()),
             _chip(l10n.tryButton.toUpperCase(), session.tries.toString()),
             _chip('TOTAL', session.total.toString()),
+            if (session.finalWeightKg != null)
+              _chip('WEIGHT', '${session.finalWeightKg!.toStringAsFixed(2)} kg'),
+            if (session.finalCount != null)
+              _chip('COUNT', session.finalCount.toString()),
           ],
         ),
         if (hasWeather) ...[

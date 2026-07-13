@@ -15,6 +15,8 @@ class GameSession {
   final String updatedAt;
   final String athleteNote, coachComment;
   final int c1, c2, tries, total;
+  final double? finalWeightKg;
+  final int? finalCount;
   final List<Map<String, dynamic>> grid;
   final SessionUserInfo userInfo;
   final SessionVenueInfo venueInfo;
@@ -61,6 +63,8 @@ class GameSession {
     required this.c2,
     required this.tries,
     required this.total,
+    this.finalWeightKg,
+    this.finalCount,
     required this.matchDuration,
     required this.grid,
     SessionUserInfo? userInfo,
@@ -113,6 +117,8 @@ class GameSession {
     required int c2,
     required int tries,
     required int total,
+    double? finalWeightKg,
+    int? finalCount,
     required String matchDuration,
     required List<Map<String, dynamic>> grid,
     SessionUserInfo? userInfo,
@@ -162,6 +168,8 @@ class GameSession {
       c2: c2,
       tries: tries,
       total: total,
+      finalWeightKg: finalWeightKg,
+      finalCount: finalCount,
       matchDuration: matchDuration,
       grid: grid,
       userInfo: userInfo ?? SessionUserInfo(
@@ -224,6 +232,10 @@ class GameSession {
     String? coachName,
     String? athleteNote,
     String? coachComment,
+    double? finalWeightKg,
+    int? finalCount,
+    bool clearFinalWeight = false,
+    bool clearFinalCount = false,
     String? updatedAt,
     SessionUserInfo? userInfo,
     SessionVenueInfo? venueInfo,
@@ -240,6 +252,8 @@ class GameSession {
       c2: c2,
       tries: tries,
       total: total,
+      finalWeightKg: clearFinalWeight ? null : finalWeightKg ?? this.finalWeightKg,
+      finalCount: clearFinalCount ? null : finalCount ?? this.finalCount,
       matchDuration: matchDuration,
       grid: List<Map<String, dynamic>>.from(grid),
       userInfo: userInfo ?? this.userInfo,
@@ -285,6 +299,8 @@ class GameSession {
     'c2': c2,
     'tries': tries,
     'total': total,
+    if (finalWeightKg != null) 'finalWeightKg': finalWeightKg,
+    if (finalCount != null) 'finalCount': finalCount,
     'matchDuration': matchDuration,
     'grid': grid,
     'athleteName': athleteName,
@@ -309,6 +325,8 @@ class GameSession {
       c2: TypeUtils.safeInt(json['c2']),
       tries: TypeUtils.safeInt(json['tries']),
       total: TypeUtils.safeInt(json['total']),
+      finalWeightKg: TypeUtils.safeDouble(json['finalWeightKg']),
+      finalCount: json['finalCount'] == null ? null : TypeUtils.safeInt(json['finalCount']),
       matchDuration: TypeUtils.safeString(
         json['matchDuration'],
         defaultValue: '00:00:00',
@@ -343,6 +361,8 @@ class GameSession {
 class GameSessionBuilder {
   String? _id, _name, _date, _matchDuration;
   int? _c1, _c2, _tries, _total;
+  double? _finalWeightKg;
+  int? _finalCount;
   List<Map<String, dynamic>>? _grid;
   SessionUserInfo? _userInfo;
   SessionVenueInfo? _venueInfo;
@@ -384,6 +404,12 @@ class GameSessionBuilder {
     _c2 = c2;
     _tries = tries;
     _total = total;
+    return this;
+  }
+
+  GameSessionBuilder result({double? finalWeightKg, int? finalCount}) {
+    _finalWeightKg = finalWeightKg;
+    _finalCount = finalCount;
     return this;
   }
 
@@ -508,6 +534,8 @@ class GameSessionBuilder {
       c2: _c2 ?? 0,
       tries: _tries ?? 0,
       total: _total ?? 0,
+      finalWeightKg: _finalWeightKg,
+      finalCount: _finalCount,
       matchDuration: _matchDuration ?? '00:00:00',
       grid: _grid ?? [],
       userInfo: _userInfo ?? const SessionUserInfo(),
