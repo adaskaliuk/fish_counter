@@ -57,8 +57,6 @@ class WeatherInfo {
     'weatherPlace': place,
     'weatherDescription': description,
     'weatherFetchedAt': fetchedAt,
-    'latitude': latitude,
-    'longitude': longitude,
     'weatherTemperatureCelsius': temperatureCelsius,
     'weatherFeelsLikeCelsius': feelsLikeCelsius,
     'weatherPressureHpa': pressureHpa,

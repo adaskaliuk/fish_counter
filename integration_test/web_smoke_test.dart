@@ -23,8 +23,7 @@ void main() {
           find.byKey(ClickerScreenKeys.signOutButtonKey),
           or: find.byKey(ClickerScreenKeys.powerButtonKey),
         );
-        await tester.tap(find.byKey(ClickerScreenKeys.signOutButtonKey));
-        await _pumpUntilVisible(tester, find.byKey(AuthGateKeys.authScreenKey));
+        await _signOut(tester);
       }
 
       expect(find.byKey(AuthScreenStateKeys.emailFieldKey), findsOneWidget);
@@ -34,7 +33,10 @@ void main() {
       expect(find.byKey(AuthScreenStateKeys.guestButtonKey), findsOneWidget);
 
       await tester.tap(find.byKey(AuthScreenStateKeys.guestButtonKey));
-      await _pumpUntilVisible(tester, find.byKey(AuthGateKeys.clickerScreenKey));
+      await _pumpUntilVisible(
+        tester,
+        find.byKey(AuthGateKeys.clickerScreenKey),
+      );
       await _pumpUntilVisible(
         tester,
         find.byKey(ClickerScreenKeys.powerButtonKey),
@@ -51,10 +53,25 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byKey(ClickerScreenKeys.signOutButtonKey), findsOneWidget);
 
-      await tester.tap(find.byKey(ClickerScreenKeys.signOutButtonKey));
-      await _pumpUntilVisible(tester, find.byKey(AuthGateKeys.authScreenKey));
+      await _signOut(tester, deleteAccountVisible: false);
     });
   });
+}
+
+Future<void> _signOut(WidgetTester tester, {bool? deleteAccountVisible}) async {
+  await tester.tap(find.byKey(ClickerScreenKeys.signOutButtonKey));
+  await _pumpUntilVisible(
+    tester,
+    find.byKey(ClickerScreenKeys.accountSignOutButtonKey),
+  );
+  if (deleteAccountVisible != null) {
+    expect(
+      find.byKey(ClickerScreenKeys.deleteAccountButtonKey),
+      deleteAccountVisible ? findsOneWidget : findsNothing,
+    );
+  }
+  await tester.tap(find.byKey(ClickerScreenKeys.accountSignOutButtonKey));
+  await _pumpUntilVisible(tester, find.byKey(AuthGateKeys.authScreenKey));
 }
 
 Future<void> _pumpUntilVisible(

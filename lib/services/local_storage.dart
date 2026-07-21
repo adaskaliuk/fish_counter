@@ -14,6 +14,7 @@ abstract interface class LocalStorage {
   Future<bool> setBool(String key, bool value);
   Future<bool> setString(String key, String value);
   Future<bool> setStringList(String key, List<String> value);
+  Future<bool> clear();
 }
 
 class HiveLocalStorage implements LocalStorage {
@@ -113,6 +114,12 @@ class HiveLocalStorage implements LocalStorage {
   Future<bool> setStringList(String key, List<String> value) async {
     final copy = List<String>.from(value);
     await _box.put(key, copy);
+    return true;
+  }
+
+  @override
+  Future<bool> clear() async {
+    await _box.clear();
     return true;
   }
 }

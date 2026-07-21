@@ -1,0 +1,19 @@
+{
+  "$schema": "https://raw.githubusercontent.com/can1357/oh-my-pi/main/packages/coding-agent/src/config/mcp-schema.json",
+  "mcpServers": {
+    "linear": {
+      "type": "http",
+      "url": "https://mcp.linear.app/mcp",
+      "auth": {
+        "type": "oauth",
+        "credentialId": "mcp_oauth:profile:default:https://mcp.linear.app/mcp",
+        "tokenUrl": "https://mcp.linear.app/token",
+        "clientId": "tE986vS9sYTqgzAE",
+        "resource": "https://mcp.linear.app/mcp"
+      },
+      "oauth": {
+        "clientId": "tE986vS9sYTqgzAE"
+      }
+    }
+  }
+}

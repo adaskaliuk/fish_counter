@@ -202,6 +202,15 @@ class AppLocalizations {
       'shareTextReport': 'Share text report',
       'shareCsvReport': 'Share CSV report',
       'copyCsvReport': 'Copy CSV report',
+      'exportPrivacyNotice':
+          'Reports can include names, notes, venues, and weather. Review before sharing.',
+      'deleteAccount': 'Delete account and data',
+      'deleteAccountQuestion': 'Delete your account and all data?',
+      'deleteAccountWarning':
+          'Permanently deletes cloud sessions, cloud settings, and data on this device. This cannot be undone.',
+      'accountDeletionFailed':
+          'Could not delete account. Sign in again and retry.',
+      'authenticationFailed': 'Authentication failed. Try again.',
       'noActivityRecorded': 'No activity recorded',
       'precisionGuide': 'Precision Guide',
       'ok': 'OK',
@@ -393,6 +402,15 @@ class AppLocalizations {
       'shareTextReport': 'Textbericht teilen',
       'shareCsvReport': 'CSV-Bericht teilen',
       'copyCsvReport': 'CSV-Bericht kopieren',
+      'exportPrivacyNotice':
+          'Berichte können Namen, Notizen, Orte und Wetterdaten enthalten. Vor dem Teilen prüfen.',
+      'deleteAccount': 'Konto und Daten löschen',
+      'deleteAccountQuestion': 'Konto und alle Daten löschen?',
+      'deleteAccountWarning':
+          'Cloud-Sitzungen, Cloud-Einstellungen und Daten auf diesem Gerät werden dauerhaft gelöscht. Dies kann nicht rückgängig gemacht werden.',
+      'accountDeletionFailed':
+          'Konto konnte nicht gelöscht werden. Melde dich erneut an und versuche es noch einmal.',
+      'authenticationFailed': 'Anmeldung fehlgeschlagen. Versuche es erneut.',
       'noActivityRecorded': 'Keine Aktivität aufgezeichnet',
       'precisionGuide': 'Präzisionshilfe',
       'ok': 'OK',
@@ -582,6 +600,15 @@ class AppLocalizations {
       'shareTextReport': 'Partager le rapport texte',
       'shareCsvReport': 'Partager le rapport CSV',
       'copyCsvReport': 'Copier le rapport CSV',
+      'exportPrivacyNotice':
+          'Les rapports peuvent contenir des noms, notes, lieux et données météo. Vérifiez-les avant de les partager.',
+      'deleteAccount': 'Supprimer le compte et les données',
+      'deleteAccountQuestion': 'Supprimer votre compte et toutes les données ?',
+      'deleteAccountWarning':
+          'Supprime définitivement les sessions et réglages cloud ainsi que les données de cet appareil. Cette action est irréversible.',
+      'accountDeletionFailed':
+          'Impossible de supprimer le compte. Reconnectez-vous et réessayez.',
+      'authenticationFailed': 'Échec de l’authentification. Réessayez.',
       'noActivityRecorded': 'Aucune activité enregistrée',
       'precisionGuide': 'Guide de précision',
       'ok': 'OK',
@@ -771,6 +798,16 @@ class AppLocalizations {
       'shareTextReport': 'Udostępnij raport tekstowy',
       'shareCsvReport': 'Udostępnij raport CSV',
       'copyCsvReport': 'Kopiuj raport CSV',
+      'exportPrivacyNotice':
+          'Raporty mogą zawierać imiona, notatki, miejsca i dane pogodowe. Sprawdź je przed udostępnieniem.',
+      'deleteAccount': 'Usuń konto i dane',
+      'deleteAccountQuestion': 'Usunąć konto i wszystkie dane?',
+      'deleteAccountWarning':
+          'Trwale usuwa sesje i ustawienia w chmurze oraz dane na tym urządzeniu. Tej czynności nie można cofnąć.',
+      'accountDeletionFailed':
+          'Nie udało się usunąć konta. Zaloguj się ponownie i spróbuj jeszcze raz.',
+      'authenticationFailed':
+          'Uwierzytelnianie nie powiodło się. Spróbuj ponownie.',
       'noActivityRecorded': 'Brak zapisanej aktywności',
       'precisionGuide': 'Przewodnik precyzji',
       'ok': 'OK',
@@ -958,6 +995,15 @@ class AppLocalizations {
       'shareTextReport': 'Condividi report testuale',
       'shareCsvReport': 'Condividi report CSV',
       'copyCsvReport': 'Copia report CSV',
+      'exportPrivacyNotice':
+          'I report possono includere nomi, note, luoghi e dati meteo. Controllali prima di condividerli.',
+      'deleteAccount': 'Elimina account e dati',
+      'deleteAccountQuestion': "Eliminare l'account e tutti i dati?",
+      'deleteAccountWarning':
+          'Elimina definitivamente sessioni e impostazioni cloud e i dati su questo dispositivo. L’azione non può essere annullata.',
+      'accountDeletionFailed':
+          "Impossibile eliminare l'account. Accedi di nuovo e riprova.",
+      'authenticationFailed': 'Autenticazione non riuscita. Riprova.',
       'noActivityRecorded': 'Nessuna attività registrata',
       'precisionGuide': 'Guida precisione',
       'ok': 'OK',
@@ -1147,6 +1193,15 @@ class AppLocalizations {
       'shareTextReport': 'Tekstrapport delen',
       'shareCsvReport': 'CSV-rapport delen',
       'copyCsvReport': 'CSV-rapport kopiëren',
+      'exportPrivacyNotice':
+          'Rapporten kunnen namen, notities, locaties en weergegevens bevatten. Controleer ze vóór het delen.',
+      'deleteAccount': 'Account en gegevens verwijderen',
+      'deleteAccountQuestion': 'Account en alle gegevens verwijderen?',
+      'deleteAccountWarning':
+          'Verwijdert cloudsessies, cloudinstellingen en gegevens op dit apparaat definitief. Dit kan niet ongedaan worden gemaakt.',
+      'accountDeletionFailed':
+          'Account verwijderen mislukt. Meld je opnieuw aan en probeer het nogmaals.',
+      'authenticationFailed': 'Aanmelden mislukt. Probeer het opnieuw.',
       'noActivityRecorded': 'Geen activiteit geregistreerd',
       'precisionGuide': 'Precisiegids',
       'ok': 'OK',
@@ -1335,6 +1390,15 @@ class AppLocalizations {
       'shareTextReport': 'Partajează raport text',
       'shareCsvReport': 'Partajează raport CSV',
       'copyCsvReport': 'Copiază raport CSV',
+      'exportPrivacyNotice':
+          'Rapoartele pot include nume, notițe, locații și date meteo. Verifică-le înainte de partajare.',
+      'deleteAccount': 'Șterge contul și datele',
+      'deleteAccountQuestion': 'Ștergi contul și toate datele?',
+      'deleteAccountWarning':
+          'Șterge definitiv sesiunile și setările din cloud și datele de pe acest dispozitiv. Acțiunea nu poate fi anulată.',
+      'accountDeletionFailed':
+          'Contul nu a putut fi șters. Autentifică-te din nou și reîncearcă.',
+      'authenticationFailed': 'Autentificarea a eșuat. Încearcă din nou.',
       'noActivityRecorded': 'Nicio activitate înregistrată',
       'precisionGuide': 'Ghid precizie',
       'ok': 'OK',
@@ -1526,6 +1590,15 @@ class AppLocalizations {
       'shareTextReport': 'Поділитися текстовим звітом',
       'shareCsvReport': 'Поділитися CSV звітом',
       'copyCsvReport': 'Скопіювати CSV звіт',
+      'exportPrivacyNotice':
+          'Звіти можуть містити імена, нотатки, місця й дані про погоду. Перевірте їх перед поширенням.',
+      'deleteAccount': 'Видалити обліковий запис і дані',
+      'deleteAccountQuestion': 'Видалити обліковий запис і всі дані?',
+      'deleteAccountWarning':
+          'Назавжди видаляє хмарні сесії, хмарні налаштування та дані на цьому пристрої. Цю дію неможливо скасувати.',
+      'accountDeletionFailed':
+          'Не вдалося видалити обліковий запис. Увійдіть знову та повторіть спробу.',
+      'authenticationFailed': 'Не вдалося увійти. Повторіть спробу.',
       'noActivityRecorded': 'Активність не записана',
       'precisionGuide': 'Підказка точності',
       'ok': 'OK',
@@ -1723,6 +1796,12 @@ class AppLocalizations {
   String get shareTextReport => t('shareTextReport');
   String get shareCsvReport => t('shareCsvReport');
   String get copyCsvReport => t('copyCsvReport');
+  String get exportPrivacyNotice => t('exportPrivacyNotice');
+  String get deleteAccount => t('deleteAccount');
+  String get deleteAccountQuestion => t('deleteAccountQuestion');
+  String get deleteAccountWarning => t('deleteAccountWarning');
+  String get accountDeletionFailed => t('accountDeletionFailed');
+  String get authenticationFailed => t('authenticationFailed');
   String get noActivityRecorded => t('noActivityRecorded');
   String get precisionGuide => t('precisionGuide');
   String get ok => t('ok');

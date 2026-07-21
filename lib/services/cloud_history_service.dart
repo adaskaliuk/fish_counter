@@ -39,7 +39,7 @@ class CloudHistoryService {
     await _sessionsRef(user.uid).doc(session.id).set({
       ...session.toJson(),
       'syncedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    });
   }
 
   Future<void> deleteSession(String sessionId) async {
@@ -47,6 +47,25 @@ class CloudHistoryService {
     if (user == null || user.isAnonymous) return;
 
     await _sessionsRef(user.uid).doc(sessionId).delete();
+  }
+
+  Future<void> deleteAllSessions() async {
+    final user = _user;
+    if (user == null || user.isAnonymous) {
+      throw StateError('Authenticated account required');
+    }
+
+    final sessions = _sessionsRef(user.uid);
+    while (true) {
+      final snapshot = await sessions.limit(400).get();
+      if (snapshot.docs.isEmpty) return;
+
+      final batch = _firestore.batch();
+      for (final document in snapshot.docs) {
+        batch.delete(document.reference);
+      }
+      await batch.commit();
+    }
   }
 
   Future<List<GameSession>> loadSessions() async {
@@ -62,7 +81,9 @@ class CloudHistoryService {
         .toList();
   }
 
-  Future<CloudHistorySyncResult> syncLocalAndRemote(PrefsRepository repo) async {
+  Future<CloudHistorySyncResult> syncLocalAndRemote(
+    PrefsRepository repo,
+  ) async {
     try {
       if (!canSync) {
         await repo.saveSyncStatus(status: 'localOnly');
@@ -111,7 +132,7 @@ class CloudHistoryService {
         skipped: false,
       );
     } catch (e) {
-      await repo.saveSyncStatus(status: 'failed', error: e.toString());
+      await repo.saveSyncStatus(status: 'failed', error: cloudSyncErrorCode(e));
       await repo.setSyncPending(isRetryableCloudSyncError(e));
       rethrow;
     }

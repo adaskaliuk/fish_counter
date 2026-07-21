@@ -69,6 +69,8 @@ void main() {
       matchDuration: '5:00',
       athleteName: 'Andrew',
       fishingMethod: 'Feeder',
+      latitude: 50.45,
+      longitude: 30.52,
       grid: [
         {
           'type': 1,
@@ -88,6 +90,10 @@ void main() {
     expect(csv, contains('"goals","fish_count","5"'));
     expect(csv, contains('"analytics","stability_score","100"'));
     expect(csv, contains('"10:00:00","C1","60","green"'));
+    expect(csv, isNot(contains('latitude')));
+    expect(csv, isNot(contains('longitude')));
+    expect(csv, isNot(contains('50.45')));
+    expect(csv, isNot(contains('30.52')));
   });
 
   test('hides coach-only details and summaries for athlete exports', () {

@@ -2,6 +2,7 @@
 // MAIN SCREEN
 // ==========================================
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fish_counter/services/account_data_deletion_service.dart';
 import 'package:fish_counter/models/athlete_profile.dart';
 import 'package:fish_counter/models/fishing_presets.dart';
 import 'package:fish_counter/widgets/sync_badge_button.dart';
@@ -34,6 +35,12 @@ abstract final class ClickerScreenKeys {
   static const syncBadgeButtonKey = ValueKey('clicker_sync_badge_button');
   static const powerButtonKey = ValueKey('clicker_power_button');
   static const signOutButtonKey = ValueKey('clicker_sign_out_button');
+  static const accountSignOutButtonKey = ValueKey(
+    'clicker_account_sign_out_button',
+  );
+  static const deleteAccountButtonKey = ValueKey(
+    'clicker_delete_account_button',
+  );
 }
 
 // ==========================================
@@ -114,8 +121,8 @@ class _ClickerScreenState extends State<ClickerScreen> {
       if (await repo.isSyncHistoryEnabled()) {
         await CloudHistoryService().syncLocalAndRemote(repo);
       }
-    } catch (e) {
-      debugPrint('Manual sync retry error: $e');
+    } catch (_) {
+      debugPrint('Manual sync retry failed');
     } finally {
       if (mounted) {
         setState(() {
@@ -133,6 +140,91 @@ class _ClickerScreenState extends State<ClickerScreen> {
       _syncPending = repo.isSyncPending();
       _syncError = repo.getSyncLastError();
     });
+  }
+
+  Future<void> _showAccountActions() async {
+    final l10n = AppLocalizations.of(context);
+    final user = FirebaseAuth.instance.currentUser;
+    final canDeleteAccount = user != null && !user.isAnonymous;
+    final deleteAccount = await showModalBottomSheet<bool>(
+      context: context,
+      showDragHandle: true,
+      constraints: const BoxConstraints(maxWidth: 420),
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              key: ClickerScreenKeys.accountSignOutButtonKey,
+              leading: const Icon(Icons.logout),
+              title: Text(l10n.signOut),
+              onTap: () => Navigator.pop(sheetContext, false),
+            ),
+            if (canDeleteAccount)
+              ListTile(
+                key: ClickerScreenKeys.deleteAccountButtonKey,
+                leading: const Icon(Icons.delete_forever, color: Colors.red),
+                title: Text(
+                  l10n.deleteAccount,
+                  style: const TextStyle(color: Colors.red),
+                ),
+                onTap: () => Navigator.pop(sheetContext, true),
+              ),
+          ],
+        ),
+      ),
+    );
+
+    if (deleteAccount == null || !mounted) return;
+    if (!deleteAccount) {
+      await _signOut();
+      return;
+    }
+
+    await _confirmAccountDeletion();
+  }
+
+  Future<void> _signOut() async {
+    await FirebaseAuth.instance.signOut();
+    try {
+      await GoogleSignIn.instance.signOut();
+    } catch (_) {
+      debugPrint('Google sign-out failed');
+    }
+  }
+
+  Future<void> _confirmAccountDeletion() async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.deleteAccountQuestion),
+        content: Text(l10n.deleteAccountWarning),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: Text(l10n.delete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    try {
+      final repo = _prefsRepository ?? await PrefsRepository.create();
+      await AccountDataDeletionService().deleteCurrentAccount(repo);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.accountDeletionFailed)));
+    }
   }
 
   Future<ClickerProvider> _ensureProvider() async {
@@ -451,10 +543,13 @@ class _ClickerScreenState extends State<ClickerScreen> {
                             onPressed: () => Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (c) =>
-                                    HistoryScreen(onHistoryUpdate: () {
-                                      context.read<ClickerProvider>().initialize();
-                                    }),
+                                builder: (c) => HistoryScreen(
+                                  onHistoryUpdate: () {
+                                    context
+                                        .read<ClickerProvider>()
+                                        .initialize();
+                                  },
+                                ),
                               ),
                             ),
                           ),
@@ -504,14 +599,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
                             size: 34,
                             color: Colors.white54,
                           ),
-                          onPressed: () async {
-                            await FirebaseAuth.instance.signOut();
-                            try {
-                              await GoogleSignIn.instance.signOut();
-                            } catch (e) {
-                              debugPrint('Google sign-out error: $e');
-                            }
-                          },
+                          onPressed: _showAccountActions,
                         ),
                       ],
                     ),
@@ -542,7 +630,11 @@ class _ClickerScreenState extends State<ClickerScreen> {
             child: Stack(
               children: [
                 const Center(
-                  child: Icon(Icons.hourglass_top, color: Colors.white54, size: 36),
+                  child: Icon(
+                    Icons.hourglass_top,
+                    color: Colors.white54,
+                    size: 36,
+                  ),
                 ),
                 if (_syncError.isNotEmpty)
                   Align(
@@ -609,7 +701,10 @@ class _ClickerScreenState extends State<ClickerScreen> {
   }) {
     final isDisabled =
         (!state.isPowerOn && !enabledWhenPowerOff) ||
-        (isActionBtn && (!state.isSessionActive || state.isPaused || state.isActionDelay)) ||
+        (isActionBtn &&
+            (!state.isSessionActive ||
+                state.isPaused ||
+                state.isActionDelay)) ||
         (isUndoBtn && !state.activityGrid.isNotEmpty);
 
     return GestureDetector(
@@ -624,7 +719,9 @@ class _ClickerScreenState extends State<ClickerScreen> {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: isAccent
-                ? (state.isPaused ? Colors.green.shade100 : Colors.orange.shade100)
+                ? (state.isPaused
+                      ? Colors.green.shade100
+                      : Colors.orange.shade100)
                 : Colors.white,
             shape: BoxShape.circle,
             border: Border.all(width: 3, color: Colors.black),
@@ -648,7 +745,7 @@ class _ClickerScreenState extends State<ClickerScreen> {
   Future<void> _handlePower() async {
     final provider = _providerOrThrow;
     final state = provider.state;
-    
+
     if (state.isPowerOn) {
       if (state.isSessionActive ||
           state.activityGrid.isNotEmpty ||
@@ -675,7 +772,8 @@ class _ClickerScreenState extends State<ClickerScreen> {
   Duration get matchInterval => _clickerStateOrDefault.matchInterval;
   bool get isSyncHistoryEnabled => _clickerStateOrDefault.isSyncHistoryEnabled;
   bool get isShakeUndoEnabled => _clickerStateOrDefault.isShakeUndoEnabled;
-  ShakeSensitivity get shakeSensitivity => _clickerStateOrDefault.shakeSensitivity;
+  ShakeSensitivity get shakeSensitivity =>
+      _clickerStateOrDefault.shakeSensitivity;
   int get counter1 => _clickerStateOrDefault.counter1;
   int get counter2 => _clickerStateOrDefault.counter2;
   int get tries => _clickerStateOrDefault.tries;

@@ -39,7 +39,7 @@ class SessionWeatherService {
         windDirectionDegrees: weather.windDegree,
         fetchedAt: DateTime.now().toIso8601String(),
       );
-    } catch (e) {
+    } catch (_) {
       // Fallback to direct OpenWeather API call. This keeps the app usable if
       // the package request fails while the API key itself is valid.
       return _fetchDirect(latitude, longitude);

@@ -10,7 +10,8 @@ Future<void> _showSettingsDialog(_ClickerScreenState state) async {
   final l10n = AppLocalizations.of(state.context);
   final repo = state._prefsRepository;
   final userId = FirebaseAuth.instance.currentUser?.uid;
-  final profile = repo?.loadAthleteProfile(userId: userId) ?? const AthleteProfile();
+  final profile =
+      repo?.loadAthleteProfile(userId: userId) ?? const AthleteProfile();
 
   final dialogContext = state.context;
   if (!dialogContext.mounted) return;
@@ -153,14 +154,16 @@ class _SettingsDialogBodyState extends State<_SettingsDialogBody> {
               title: Text(l10n.syncHistory),
               subtitle: Text(l10n.syncHistoryDescription),
               value: _dialogSyncHistoryEnabled,
-              onChanged: (value) => setState(() => _dialogSyncHistoryEnabled = value),
+              onChanged: (value) =>
+                  setState(() => _dialogSyncHistoryEnabled = value),
             ),
             const Divider(),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: Text(l10n.shakeUndo),
               value: _dialogShakeUndoEnabled,
-              onChanged: (value) => setState(() => _dialogShakeUndoEnabled = value),
+              onChanged: (value) =>
+                  setState(() => _dialogShakeUndoEnabled = value),
             ),
             DropdownButtonFormField<ShakeSensitivity>(
               initialValue: _dialogShakeSensitivity,
@@ -186,7 +189,10 @@ class _SettingsDialogBodyState extends State<_SettingsDialogBody> {
               initialValue: _dialogRole,
               decoration: InputDecoration(labelText: l10n.roleLabel),
               items: [
-                DropdownMenuItem(value: 'athlete', child: Text(l10n.roleAthlete)),
+                DropdownMenuItem(
+                  value: 'athlete',
+                  child: Text(l10n.roleAthlete),
+                ),
                 DropdownMenuItem(value: 'coach', child: Text(l10n.roleCoach)),
               ],
               onChanged: (value) {
@@ -351,10 +357,12 @@ class _SettingsDialogBodyState extends State<_SettingsDialogBody> {
                 newResetDelay != widget.state.resetDelay ||
                 newVibeInterval != widget.state.vibeInterval ||
                 newMatchInterval != widget.state.matchInterval ||
-                _dialogSyncHistoryEnabled != widget.state.isSyncHistoryEnabled ||
+                _dialogSyncHistoryEnabled !=
+                    widget.state.isSyncHistoryEnabled ||
                 _dialogShakeUndoEnabled != widget.state.isShakeUndoEnabled ||
                 _dialogShakeSensitivity != widget.state.shakeSensitivity ||
-                newProfile.toJson().toString() != currentProfile.toJson().toString();
+                newProfile.toJson().toString() !=
+                    currentProfile.toJson().toString();
 
             if (!changed) {
               navigator.pop();
@@ -404,14 +412,14 @@ class _SettingsDialogBodyState extends State<_SettingsDialogBody> {
             await repo.touchSettingsUpdatedAt();
             try {
               await CloudSettingsService().uploadLocalSettings(repo);
-            } catch (e) {
-              debugPrint('Error syncing settings: $e');
+            } catch (_) {
+              debugPrint('Settings sync failed');
             }
             if (widget.state.isSyncHistoryEnabled) {
               try {
                 await CloudHistoryService().syncLocalAndRemote(repo);
-              } catch (e) {
-                debugPrint('Error syncing history: $e');
+              } catch (_) {
+                debugPrint('History sync failed');
               }
             }
             await widget.state._refreshSyncState(repo);

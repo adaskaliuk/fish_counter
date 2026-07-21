@@ -20,4 +20,16 @@ void main() {
       isTrue,
     );
   });
+
+  test('sync status omits exception messages and personal data', () {
+    final error = FirebaseException(
+      plugin: 'cloud_firestore',
+      code: 'permission-denied',
+      message: 'Denied for athlete@example.com at users/private-user',
+    );
+
+    expect(cloudSyncErrorCode(error), 'cloud_firestore/permission-denied');
+    expect(cloudSyncErrorCode(error), isNot(contains('athlete@example.com')));
+    expect(cloudSyncErrorCode(error), isNot(contains('private-user')));
+  });
 }

@@ -83,6 +83,10 @@ class AnalyticsScreen extends StatelessWidget {
               subtitle: Text(session.name),
             ),
             ListTile(
+              leading: const Icon(Icons.privacy_tip_outlined),
+              title: Text(l10n.exportPrivacyNotice),
+            ),
+            ListTile(
               leading: const Icon(Icons.ios_share),
               title: Text(l10n.shareTextReport),
               onTap: () {
@@ -122,7 +126,6 @@ class AnalyticsScreen extends StatelessWidget {
         tuning: tuning,
         isCoach: isCoach,
       ),
-      debugLabel: l10n.shareTextReport,
       successMessage: l10n.reportShared,
       fallbackMessage: l10n.reportCopied,
     );
@@ -138,7 +141,6 @@ class AnalyticsScreen extends StatelessWidget {
         tuning: tuning,
         isCoach: isCoach,
       ),
-      debugLabel: l10n.shareCsvReport,
       successMessage: l10n.csvShared,
       fallbackMessage: l10n.csvCopied,
     );
@@ -165,7 +167,6 @@ class AnalyticsScreen extends StatelessWidget {
   Future<void> _shareOrCopy(
     BuildContext context, {
     required String text,
-    required String debugLabel,
     required String successMessage,
     required String fallbackMessage,
   }) async {
@@ -181,8 +182,8 @@ class AnalyticsScreen extends StatelessWidget {
         return;
       }
       if (result.status == ShareResultStatus.dismissed) return;
-    } catch (e) {
-      debugPrint('$debugLabel error: $e');
+    } catch (_) {
+      debugPrint('Report sharing failed');
     }
 
     await Clipboard.setData(ClipboardData(text: text));

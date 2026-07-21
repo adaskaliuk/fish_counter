@@ -24,12 +24,22 @@ class CloudSettingsService {
         ...settings.toJson(),
         'syncedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
+      await repo.saveSyncStatus(status: 'synced');
       await repo.setSyncPending(false);
     } catch (e) {
-      await repo.saveSyncStatus(status: 'failed', error: e.toString());
+      await repo.saveSyncStatus(status: 'failed', error: cloudSyncErrorCode(e));
       await repo.setSyncPending(isRetryableCloudSyncError(e));
       rethrow;
     }
+  }
+
+  Future<void> deleteRemoteSettings() async {
+    final user = _user;
+    if (user == null || user.isAnonymous) {
+      throw StateError('Authenticated account required');
+    }
+
+    await _settingsRef(user.uid).delete();
   }
 
   Future<void> syncLocalAndRemote(PrefsRepository repo) async {
@@ -47,12 +57,13 @@ class CloudSettingsService {
       final remote = AppSettings.fromJson(snapshot.data() ?? {});
       if (_isRemoteNewer(local, remote)) {
         await repo.applyAppSettings(remote);
+        await repo.saveSyncStatus(status: 'synced');
       } else {
         await uploadLocalSettings(repo);
       }
       await repo.setSyncPending(false);
     } catch (e) {
-      await repo.saveSyncStatus(status: 'failed', error: e.toString());
+      await repo.saveSyncStatus(status: 'failed', error: cloudSyncErrorCode(e));
       await repo.setSyncPending(isRetryableCloudSyncError(e));
       rethrow;
     }

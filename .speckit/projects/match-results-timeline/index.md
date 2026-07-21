@@ -1,6 +1,6 @@
 # match-results-timeline / Інформативні результати матчу
 
-**Status:** active project
+**Status:** ✓ done (2026-07-15)
 
 Goal: make match results useful for a fisherman, not just totals.
 

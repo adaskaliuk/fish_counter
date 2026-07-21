@@ -28,7 +28,11 @@ class ReportExporter {
       ['counters', 'total', session.total.toString()],
       ['counters', 'tries', session.tries.toString()],
       if (session.finalWeightKg != null)
-        ['result', 'final_weight_kg', session.finalWeightKg!.toStringAsFixed(2)],
+        [
+          'result',
+          'final_weight_kg',
+          session.finalWeightKg!.toStringAsFixed(2),
+        ],
       if (session.finalCount != null)
         ['result', 'final_count', session.finalCount.toString()],
       ['context', 'athlete', session.athleteName],
@@ -37,7 +41,8 @@ class ReportExporter {
       ['context', 'venue', session.venueInfo.venue],
       ['context', 'sector_peg', session.venueInfo.sectorPeg],
       if (isCoach) ['context', 'training_type', session.venueInfo.trainingType],
-      if (isCoach) ['context', 'fishing_method', session.venueInfo.fishingMethod],
+      if (isCoach)
+        ['context', 'fishing_method', session.venueInfo.fishingMethod],
       ['context', 'target_pace', session.venueInfo.targetPace],
       ['goals', 'fish_count', session.goals.goalFishCount.toString()],
       [
@@ -61,7 +66,11 @@ class ReportExporter {
           'temperature_celsius',
           _num(session.weatherTemperatureCelsius),
         ],
-        ['weather', 'feels_like_celsius', _num(session.weatherFeelsLikeCelsius)],
+        [
+          'weather',
+          'feels_like_celsius',
+          _num(session.weatherFeelsLikeCelsius),
+        ],
         ['weather', 'pressure_hpa', _num(session.weatherPressureHpa)],
         ['weather', 'humidity_percent', _num(session.weatherHumidityPercent)],
         ['weather', 'wind_speed_ms', _num(session.weatherWindSpeedMs)],
@@ -70,8 +79,6 @@ class ReportExporter {
           'wind_direction_degrees',
           _num(session.weatherWindDirectionDegrees),
         ],
-        ['weather', 'latitude', _num(session.latitude)],
-        ['weather', 'longitude', _num(session.longitude)],
         ['weather', 'fetched_at', session.weatherFetchedAt],
       ],
       ['analytics', 'stability_score', report.stabilityScore.toString()],

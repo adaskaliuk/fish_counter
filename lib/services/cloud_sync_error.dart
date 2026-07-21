@@ -7,3 +7,11 @@ bool isRetryableCloudSyncError(Object error) {
 
   return !error.toString().contains('permission-denied');
 }
+
+String cloudSyncErrorCode(Object error) {
+  if (error is FirebaseException) {
+    return '${error.plugin}/${error.code}';
+  }
+
+  return error.runtimeType.toString();
+}

@@ -1,5 +1,6 @@
 import 'package:fish_counter/game_session.dart';
 import 'package:fish_counter/l10n/app_localizations.dart';
+import 'package:fish_counter/models/match_insight_summary.dart';
 import 'package:fish_counter/models/weather_snapshot.dart';
 import 'package:flutter/material.dart';
 
@@ -43,7 +44,8 @@ class WeatherDuringMatchSection extends StatelessWidget {
 
   List<WeatherSnapshot> _snapshots() {
     if (session.weatherSnapshots.isNotEmpty) return session.weatherSnapshots;
-    final hasSessionWeather = session.weatherDescription.isNotEmpty ||
+    final hasSessionWeather =
+        session.weatherDescription.isNotEmpty ||
         session.weatherTemperatureCelsius != null ||
         session.weatherPressureHpa != null ||
         session.weatherHumidityPercent != null ||
@@ -67,23 +69,52 @@ class WeatherDuringMatchSection extends StatelessWidget {
   }
 
   Widget _fishermanSummary(List<WeatherSnapshot> snapshots) {
-    final events = session.grid.where((entry) => entry['type'] != 0).toList();
-    if (events.isEmpty) {
+    final insight = MatchInsightSummary.fromSession(
+      session,
+      snapshots: snapshots,
+    );
+    if (insight == null) {
       return const Text(
         'No activity events recorded for match insight.',
         style: TextStyle(color: Colors.white70, fontSize: 12),
       );
     }
-    int interval(Map<String, dynamic> entry) =>
-        int.tryParse(entry['interval']?.toString() ?? '') ?? 0;
-    final active = [...events]..sort((a, b) => interval(a).compareTo(interval(b)));
-    final quiet = [...events]..sort((a, b) => interval(b).compareTo(interval(a)));
-    final best = active.first;
-    final slow = quiet.first;
-    final weather = snapshots.isEmpty ? '' : ' Weather samples available across the match.';
+
+    final best = insight.bestWindow;
+    final buffer = StringBuffer(
+      'Match insight: highest activity window ${best.label} '
+      '(${best.eventCount} ${best.eventCount == 1 ? 'event' : 'events'}).',
+    );
+    final quietest = insight.quietestWindow;
+    if (quietest.startSeconds != best.startSeconds) {
+      buffer.write(
+        ' Quietest window ${quietest.label} '
+        '(${quietest.eventCount} ${quietest.eventCount == 1 ? 'event' : 'events'}).',
+      );
+    }
+
+    final weather = insight.nearestWeather;
+    if (weather != null) {
+      final details = <String>[
+        if (weather.description.isNotEmpty) weather.description,
+        if (weather.temperatureCelsius != null)
+          '${weather.temperatureCelsius!.toStringAsFixed(1)}°C',
+        if (weather.description.isEmpty &&
+            weather.temperatureCelsius == null &&
+            weather.placeName.isNotEmpty)
+          weather.placeName,
+      ];
+      if (details.isNotEmpty) {
+        buffer.write(' Nearby weather: ${details.join(', ')}');
+        if (insight.nearestWeatherTimeLabel.isNotEmpty) {
+          buffer.write(' at ${insight.nearestWeatherTimeLabel}');
+        }
+        buffer.write('.');
+      }
+    }
+
     return Text(
-      'Match insight: highest activity near ${best['timestamp'] ?? '--:--'} after ${interval(best)}s. '
-      'Quietest gap before ${slow['timestamp'] ?? '--:--'} was ${interval(slow)}s.$weather',
+      buffer.toString(),
       style: const TextStyle(color: Colors.white70, fontSize: 12, height: 1.35),
     );
   }
@@ -92,7 +123,11 @@ class WeatherDuringMatchSection extends StatelessWidget {
     final first = snapshots.first;
     final last = snapshots.last;
     final parts = <String>[];
-    final temp = _delta(first.temperatureCelsius, last.temperatureCelsius, 'temp');
+    final temp = _delta(
+      first.temperatureCelsius,
+      last.temperatureCelsius,
+      'temp',
+    );
     if (temp.isNotEmpty) parts.add(temp);
     final pressure = _delta(first.pressureHpa, last.pressureHpa, 'pressure');
     if (pressure.isNotEmpty) parts.add(pressure);

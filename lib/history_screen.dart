@@ -8,6 +8,7 @@ import 'package:fish_counter/models/historical_catch_tuning_report.dart';
 import 'package:fish_counter/progress_screen.dart';
 import 'package:fish_counter/session_comparison_screen.dart';
 import 'package:fish_counter/services/cloud_history_service.dart';
+import 'package:fish_counter/services/cloud_sync_error.dart';
 import 'package:fish_counter/services/prefs_repository.dart';
 import 'package:fish_counter/utils/error_handler.dart';
 import 'package:fish_counter/widgets/history_session_details.dart';
@@ -79,9 +80,12 @@ class _HistoryScreenState extends State<HistoryScreen>
           container = await repo.loadInitialState();
         } catch (e) {
           syncError = e;
-          await repo.saveSyncStatus(status: 'failed', error: e.toString());
+          await repo.saveSyncStatus(
+            status: 'failed',
+            error: cloudSyncErrorCode(e),
+          );
           container = await repo.loadInitialState();
-          debugPrint('Cloud history load error: $e');
+          debugPrint('Cloud history load failed');
         }
       } else {
         await repo.saveSyncStatus(status: 'off');
@@ -96,7 +100,7 @@ class _HistoryScreenState extends State<HistoryScreen>
         _sessions = sessions.reversed.toList(); // Display newest first
         _syncWarning = syncError == null
             ? null
-            : '${AppLocalizations.of(context).cloudSyncFailed}: $syncError';
+            : AppLocalizations.of(context).cloudSyncFailed;
         _syncError = repo.getSyncLastError();
         _syncPending = repo.isSyncPending();
         _isLoading = false;
@@ -104,11 +108,10 @@ class _HistoryScreenState extends State<HistoryScreen>
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error =
-            '${AppLocalizations.of(context).errorLoadingHistory}: ${e.toString()}';
+        _error = AppLocalizations.of(context).errorLoadingHistory;
         _isLoading = false;
       });
-      debugPrint('Error loading history: $e');
+      debugPrint('History load failed');
     }
   }
 
@@ -131,7 +134,7 @@ class _HistoryScreenState extends State<HistoryScreen>
         _isSyncing = false;
       });
     } catch (e) {
-      await repo.saveSyncStatus(status: 'failed', error: e.toString());
+      await repo.saveSyncStatus(status: 'failed', error: cloudSyncErrorCode(e));
       final state = await repo.loadInitialState();
       final sessions = state.historySessions.cast<GameSession>().toList();
       _rebuildTuning(sessions);
@@ -140,7 +143,7 @@ class _HistoryScreenState extends State<HistoryScreen>
         _sessions = sessions.reversed.toList();
         _syncError = repo.getSyncLastError();
         _syncPending = repo.isSyncPending();
-        _syncWarning = '${AppLocalizations.of(context).cloudSyncFailed}: $e';
+        _syncWarning = AppLocalizations.of(context).cloudSyncFailed;
         _isSyncing = false;
       });
     }
@@ -191,7 +194,7 @@ class _HistoryScreenState extends State<HistoryScreen>
           await CloudHistoryService().deleteSession(session.id);
         } catch (e) {
           syncError = e;
-          debugPrint('Cloud history delete error: $e');
+          debugPrint('Cloud history delete failed');
         }
       }
 
@@ -199,17 +202,15 @@ class _HistoryScreenState extends State<HistoryScreen>
       await _refreshLocalSessions();
       if (!mounted) return;
       setState(() {
-        _syncWarning = syncError == null
-            ? null
-            : '${AppLocalizations.of(context).cloudDeleteFailed}: $syncError';
+        _syncWarning = syncError == null ? null : l10n.cloudDeleteFailed;
       });
       widget.onHistoryUpdate();
       // ignore: use_build_context_synchronously
       ErrorHandler.showSuccess(context, l10n.sessionDeleted);
-    } catch (e) {
-      debugPrint('Error deleting session: $e');
+    } catch (_) {
+      debugPrint('Session deletion failed');
       if (!mounted) return;
-      ErrorHandler.showError(context, '${l10n.deleteSession}: $e');
+      ErrorHandler.showError(context, l10n.deleteSession);
     }
   }
 
@@ -237,24 +238,22 @@ class _HistoryScreenState extends State<HistoryScreen>
           await CloudHistoryService().uploadSession(updated);
         } catch (e) {
           syncError = e;
-          debugPrint('Cloud history update error: $e');
+          debugPrint('Cloud history update failed');
         }
       }
       if (!mounted) return;
       await _refreshLocalSessions();
       if (!mounted) return;
       setState(() {
-        _syncWarning = syncError == null
-            ? null
-            : '${AppLocalizations.of(context).cloudUpdateFailed}: $syncError';
+        _syncWarning = syncError == null ? null : l10n.cloudUpdateFailed;
       });
       widget.onHistoryUpdate();
       // ignore: use_build_context_synchronously
       ErrorHandler.showSuccess(context, l10n.save);
-    } catch (e) {
-      debugPrint('Error updating session: $e');
+    } catch (_) {
+      debugPrint('Session update failed');
       if (!mounted) return;
-      ErrorHandler.showError(context, '${l10n.editSession}: $e');
+      ErrorHandler.showError(context, l10n.errorSavingSession);
     }
   }
 

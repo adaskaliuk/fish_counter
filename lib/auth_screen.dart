@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fish_counter/l10n/app_localizations.dart';
 import 'package:fish_counter/services/prefs_repository.dart';
-import 'package:fish_counter/utils/error_handler.dart';
 import 'package:fish_counter/widgets/auth_widgets.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -45,8 +44,8 @@ class _AuthScreenState extends State<AuthScreen> {
       _error = null;
     });
 
+    final l10n = AppLocalizations.of(context);
     try {
-      final l10n = AppLocalizations.of(context);
       final auth = widget.auth ?? FirebaseAuth.instance;
       final email = _emailCtrl.text.trim();
       final password = _passwordCtrl.text;
@@ -70,12 +69,8 @@ class _AuthScreenState extends State<AuthScreen> {
       } else {
         await auth.signInWithEmailAndPassword(email: email, password: password);
       }
-    } on FirebaseAuthException catch (e) {
-      setState(() => _error = e.message ?? e.code);
-    } catch (e) {
-      if (mounted) {
-        ErrorHandler.showError(context, 'Authentication failed: ${e.toString()}');
-      }
+    } catch (_) {
+      if (mounted) setState(() => _error = l10n.authenticationFailed);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -87,6 +82,7 @@ class _AuthScreenState extends State<AuthScreen> {
       _error = null;
     });
 
+    final l10n = AppLocalizations.of(context);
     try {
       final provider = GoogleAuthProvider();
 
@@ -101,14 +97,8 @@ class _AuthScreenState extends State<AuthScreen> {
         );
         await FirebaseAuth.instance.signInWithCredential(credential);
       }
-    } on FirebaseAuthException catch (e) {
-      setState(() => _error = e.message ?? e.code);
-    } on GoogleSignInException catch (e) {
-      setState(() => _error = e.description ?? e.code.name);
-    } catch (e) {
-      if (mounted) {
-        ErrorHandler.showError(context, 'Google sign-in failed: ${e.toString()}');
-      }
+    } catch (_) {
+      if (mounted) setState(() => _error = l10n.authenticationFailed);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -120,14 +110,11 @@ class _AuthScreenState extends State<AuthScreen> {
       _error = null;
     });
 
+    final l10n = AppLocalizations.of(context);
     try {
       await FirebaseAuth.instance.signInAnonymously();
-    } on FirebaseAuthException catch (e) {
-      setState(() => _error = e.message ?? e.code);
-    } catch (e) {
-      if (mounted) {
-        ErrorHandler.showError(context, 'Guest sign-in failed: ${e.toString()}');
-      }
+    } catch (_) {
+      if (mounted) setState(() => _error = l10n.authenticationFailed);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

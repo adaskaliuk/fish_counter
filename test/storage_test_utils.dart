@@ -4,6 +4,8 @@ import 'package:fish_counter/services/prefs_repository.dart';
 class MemoryLocalStorage implements LocalStorage {
   final Map<String, Object?> _values = {};
 
+  Map<String, Object?> get values => Map.unmodifiable(_values);
+
   void seed(Map<String, Object?> values) {
     _values.addAll(values);
   }
@@ -12,7 +14,8 @@ class MemoryLocalStorage implements LocalStorage {
   int? getInt(String key) => _values[key] is int ? _values[key] as int : null;
 
   @override
-  bool? getBool(String key) => _values[key] is bool ? _values[key] as bool : null;
+  bool? getBool(String key) =>
+      _values[key] is bool ? _values[key] as bool : null;
 
   @override
   String? getString(String key) =>
@@ -48,6 +51,12 @@ class MemoryLocalStorage implements LocalStorage {
   @override
   Future<bool> setStringList(String key, List<String> value) async {
     _values[key] = List<String>.from(value);
+    return true;
+  }
+
+  @override
+  Future<bool> clear() async {
+    _values.clear();
     return true;
   }
 }

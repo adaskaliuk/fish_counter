@@ -89,25 +89,25 @@ class GameSession {
     this.coachName = '',
     this.athleteNote = '',
     this.coachComment = '',
-  })  : userInfo = userInfo ?? const SessionUserInfo(),
-        venueInfo = venueInfo ?? const SessionVenueInfo(),
-        goals = goals ?? const SessionGoals(),
-        astronomyInfo = astronomyInfo ?? const AstronomyInfo.empty(),
-        weatherInfo =
-            weatherInfo ??
-            WeatherInfo(
-              place: weatherPlace,
-              description: weatherDescription,
-              fetchedAt: weatherFetchedAt,
-              latitude: latitude,
-              longitude: longitude,
-              temperatureCelsius: weatherTemperatureCelsius,
-              feelsLikeCelsius: weatherFeelsLikeCelsius,
-              pressureHpa: weatherPressureHpa,
-              humidityPercent: weatherHumidityPercent,
-              windSpeedMs: weatherWindSpeedMs,
-              windDirectionDegrees: weatherWindDirectionDegrees,
-            );
+  }) : userInfo = userInfo ?? const SessionUserInfo(),
+       venueInfo = venueInfo ?? const SessionVenueInfo(),
+       goals = goals ?? const SessionGoals(),
+       astronomyInfo = astronomyInfo ?? const AstronomyInfo.empty(),
+       weatherInfo =
+           weatherInfo ??
+           WeatherInfo(
+             place: weatherPlace,
+             description: weatherDescription,
+             fetchedAt: weatherFetchedAt,
+             latitude: latitude,
+             longitude: longitude,
+             temperatureCelsius: weatherTemperatureCelsius,
+             feelsLikeCelsius: weatherFeelsLikeCelsius,
+             pressureHpa: weatherPressureHpa,
+             humidityPercent: weatherHumidityPercent,
+             windSpeedMs: weatherWindSpeedMs,
+             windDirectionDegrees: weatherWindDirectionDegrees,
+           );
 
   factory GameSession({
     required String id,
@@ -172,42 +172,50 @@ class GameSession {
       finalCount: finalCount,
       matchDuration: matchDuration,
       grid: grid,
-      userInfo: userInfo ?? SessionUserInfo(
-        userId: userId,
-        userEmail: userEmail,
-        userDisplayName: userDisplayName,
-      ),
-      venueInfo: venueInfo ?? SessionVenueInfo(
-        venue: venue,
-        sectorPeg: sectorPeg,
-        trainingType: trainingType,
-        fishingMethod: fishingMethod,
-        targetPace: targetPace,
-        speciesPreset: speciesPreset,
-        bodyTypePreset: bodyTypePreset,
-        conditions: conditions,
-        baitNotes: baitNotes,
-      ),
-      goals: goals ?? SessionGoals(
-        goalFishCount: goalFishCount,
-        goalTargetPaceSeconds: goalTargetPaceSeconds,
-        goalMaxTries: goalMaxTries,
-        goalStabilityPercent: goalStabilityPercent,
-      ),
+      userInfo:
+          userInfo ??
+          SessionUserInfo(
+            userId: userId,
+            userEmail: userEmail,
+            userDisplayName: userDisplayName,
+          ),
+      venueInfo:
+          venueInfo ??
+          SessionVenueInfo(
+            venue: venue,
+            sectorPeg: sectorPeg,
+            trainingType: trainingType,
+            fishingMethod: fishingMethod,
+            targetPace: targetPace,
+            speciesPreset: speciesPreset,
+            bodyTypePreset: bodyTypePreset,
+            conditions: conditions,
+            baitNotes: baitNotes,
+          ),
+      goals:
+          goals ??
+          SessionGoals(
+            goalFishCount: goalFishCount,
+            goalTargetPaceSeconds: goalTargetPaceSeconds,
+            goalMaxTries: goalMaxTries,
+            goalStabilityPercent: goalStabilityPercent,
+          ),
       astronomyInfo: astronomyInfo ?? const AstronomyInfo.empty(),
-      weatherInfo: weatherInfo ?? WeatherInfo(
-        place: weatherPlace,
-        description: weatherDescription,
-        fetchedAt: weatherFetchedAt,
-        latitude: latitude,
-        longitude: longitude,
-        temperatureCelsius: weatherTemperatureCelsius,
-        feelsLikeCelsius: weatherFeelsLikeCelsius,
-        pressureHpa: weatherPressureHpa,
-        humidityPercent: weatherHumidityPercent,
-        windSpeedMs: weatherWindSpeedMs,
-        windDirectionDegrees: weatherWindDirectionDegrees,
-      ),
+      weatherInfo:
+          weatherInfo ??
+          WeatherInfo(
+            place: weatherPlace,
+            description: weatherDescription,
+            fetchedAt: weatherFetchedAt,
+            latitude: latitude,
+            longitude: longitude,
+            temperatureCelsius: weatherTemperatureCelsius,
+            feelsLikeCelsius: weatherFeelsLikeCelsius,
+            pressureHpa: weatherPressureHpa,
+            humidityPercent: weatherHumidityPercent,
+            windSpeedMs: weatherWindSpeedMs,
+            windDirectionDegrees: weatherWindDirectionDegrees,
+          ),
       weatherSnapshots: weatherSnapshots ?? const [],
       updatedAt: updatedAt ?? DateTime.now().toIso8601String(),
       athleteName: athleteName,
@@ -252,12 +260,15 @@ class GameSession {
       c2: c2,
       tries: tries,
       total: total,
-      finalWeightKg: clearFinalWeight ? null : finalWeightKg ?? this.finalWeightKg,
+      finalWeightKg: clearFinalWeight
+          ? null
+          : finalWeightKg ?? this.finalWeightKg,
       finalCount: clearFinalCount ? null : finalCount ?? this.finalCount,
       matchDuration: matchDuration,
       grid: List<Map<String, dynamic>>.from(grid),
       userInfo: userInfo ?? this.userInfo,
-      venueInfo: venueInfo ??
+      venueInfo:
+          venueInfo ??
           (venue == null &&
                   sectorPeg == null &&
                   trainingType == null &&
@@ -308,12 +319,13 @@ class GameSession {
     'updatedAt': updatedAt,
     'athleteNote': athleteNote,
     'coachComment': coachComment,
-    ...userInfo.toJson(),
     ...venueInfo.toJson(),
     ...goals.toJson(),
     ...astronomyInfo.toJson(),
     ...weatherInfo.toJson(),
-    'weatherSnapshots': weatherSnapshots.map((snapshot) => snapshot.toJson()).toList(),
+    'weatherSnapshots': weatherSnapshots
+        .map((snapshot) => snapshot.toJson())
+        .toList(),
   };
 
   factory GameSession.fromJson(Map<String, dynamic> json) {
@@ -326,7 +338,9 @@ class GameSession {
       tries: TypeUtils.safeInt(json['tries']),
       total: TypeUtils.safeInt(json['total']),
       finalWeightKg: TypeUtils.safeDouble(json['finalWeightKg']),
-      finalCount: json['finalCount'] == null ? null : TypeUtils.safeInt(json['finalCount']),
+      finalCount: json['finalCount'] == null
+          ? null
+          : TypeUtils.safeInt(json['finalCount']),
       matchDuration: TypeUtils.safeString(
         json['matchDuration'],
         defaultValue: '00:00:00',
@@ -353,7 +367,9 @@ class GameSession {
     if (value is! List) return const [];
     return value
         .whereType<Map>()
-        .map((entry) => WeatherSnapshot.fromJson(Map<String, dynamic>.from(entry)))
+        .map(
+          (entry) => WeatherSnapshot.fromJson(Map<String, dynamic>.from(entry)),
+        )
         .toList();
   }
 }
@@ -506,10 +522,7 @@ class GameSessionBuilder {
     return this;
   }
 
-  GameSessionBuilder notes({
-    String? athleteNote,
-    String? coachComment,
-  }) {
+  GameSessionBuilder notes({String? athleteNote, String? coachComment}) {
     _athleteNote = athleteNote;
     _coachComment = coachComment;
     return this;

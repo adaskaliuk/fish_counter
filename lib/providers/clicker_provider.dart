@@ -147,9 +147,9 @@ class ClickerProvider extends ChangeNotifier {
     required PrefsRepository prefs,
     Battery? battery,
     TimerManager? timerManager,
-  })  : _prefs = prefs,
-        _battery = battery ?? Battery(),
-        _timerManager = timerManager ?? TimerManager();
+  }) : _prefs = prefs,
+       _battery = battery ?? Battery(),
+       _timerManager = timerManager ?? TimerManager();
 
   Future<void> initialize() async {
     final initialState = await _prefs.loadInitialState();
@@ -208,8 +208,8 @@ class ClickerProvider extends ChangeNotifier {
           newDuration = _state.duration + const Duration(seconds: 1);
           shouldTriggerVibe =
               _state.vibeInterval > 0 &&
-                  newDuration.inSeconds != 0 &&
-                  newDuration.inSeconds % _state.vibeInterval == 0;
+              newDuration.inSeconds != 0 &&
+              newDuration.inSeconds % _state.vibeInterval == 0;
         }
 
         _state = _state.copyWith(
@@ -232,14 +232,14 @@ class ClickerProvider extends ChangeNotifier {
           try {
             _state = _state.copyWith(batteryLevel: await _battery.batteryLevel);
             notifyListeners();
-          } catch (e) {
-            debugPrint('Battery level error: $e');
+          } catch (_) {
+            debugPrint('Battery level read failed');
           }
         }
 
         await _maybeCaptureWeatherSample(now, force: sessionEnded);
-      } catch (e) {
-        debugPrint('Timer error: $e');
+      } catch (_) {
+        debugPrint('Timer update failed');
       }
     });
   }
@@ -281,8 +281,8 @@ class ClickerProvider extends ChangeNotifier {
         _lastShakeUndoAt = now;
         undoLastAction(fromShake: true);
       },
-      onError: (Object error) {
-        debugPrint('Shake listener error: $error');
+      onError: (Object _) {
+        debugPrint('Shake listener failed');
       },
     );
   }
@@ -377,10 +377,7 @@ class ClickerProvider extends ChangeNotifier {
         _state = _state.copyWith(delayCountdown: _state.delayCountdown - 1);
         notifyListeners();
       } else {
-        _state = _state.copyWith(
-          isActionDelay: false,
-          delayCountdown: 0,
-        );
+        _state = _state.copyWith(isActionDelay: false, delayCountdown: 0);
         notifyListeners();
         t.cancel();
       }
@@ -519,8 +516,8 @@ class ClickerProvider extends ChangeNotifier {
       if (await _prefs.isSyncHistoryEnabled()) {
         try {
           await CloudHistoryService().uploadSession(session);
-        } catch (e) {
-          debugPrint('Cloud history upload error: $e');
+        } catch (_) {
+          debugPrint('Cloud history upload failed');
         }
       }
     }
@@ -556,7 +553,9 @@ class ClickerProvider extends ChangeNotifier {
       isActionDelay: powerState.isActionDelay,
       delayCountdown: powerState.delayCountdown,
       duration: powerState.duration,
-      resetDelay: powerState.matchInterval == null ? _state.resetDelay : _state.resetDelay,
+      resetDelay: powerState.matchInterval == null
+          ? _state.resetDelay
+          : _state.resetDelay,
       matchInterval: powerState.matchInterval ?? _state.matchInterval,
       counter1: powerState.shouldResetCounters ? 0 : _state.counter1,
       counter2: powerState.shouldResetCounters ? 0 : _state.counter2,
@@ -603,7 +602,8 @@ class ClickerProvider extends ChangeNotifier {
         return;
       }
       final lastCapture = _lastWeatherCaptureAt;
-      if (lastCapture != null && now.difference(lastCapture) < const Duration(minutes: 15)) {
+      if (lastCapture != null &&
+          now.difference(lastCapture) < const Duration(minutes: 15)) {
         return;
       }
     }
@@ -617,8 +617,8 @@ class ClickerProvider extends ChangeNotifier {
           weatherSnapshots: [..._state.weatherSnapshots, snapshot],
         );
         notifyListeners();
-      } catch (e) {
-        debugPrint('Weather capture error: $e');
+      } catch (_) {
+        debugPrint('Weather capture failed');
       } finally {
         _weatherCaptureInFlight = false;
       }
@@ -670,7 +670,9 @@ class ClickerProvider extends ChangeNotifier {
       shakeUndoEnabled: _state.isShakeUndoEnabled,
       shakeSensitivity: _state.shakeSensitivity.value,
       activityGrid: _state.activityGrid,
-      weatherSnapshots: _state.weatherSnapshots.map((snapshot) => snapshot.toJson()).toList(),
+      weatherSnapshots: _state.weatherSnapshots
+          .map((snapshot) => snapshot.toJson())
+          .toList(),
     );
   }
 

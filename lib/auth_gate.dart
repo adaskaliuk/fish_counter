@@ -134,8 +134,14 @@ class _RoleSetupScreenState extends State<RoleSetupScreen> {
                   initialValue: _role,
                   hint: Text(l10n.roleLabel),
                   items: [
-                    DropdownMenuItem(value: 'athlete', child: Text(l10n.roleAthlete)),
-                    DropdownMenuItem(value: 'coach', child: Text(l10n.roleCoach)),
+                    DropdownMenuItem(
+                      value: 'athlete',
+                      child: Text(l10n.roleAthlete),
+                    ),
+                    DropdownMenuItem(
+                      value: 'coach',
+                      child: Text(l10n.roleCoach),
+                    ),
                   ],
                   onChanged: (value) => setState(() => _role = value),
                   decoration: InputDecoration(labelText: l10n.roleLabel),
@@ -171,8 +177,8 @@ class StartupSyncedClickerScreen extends StatefulWidget {
       _StartupSyncedClickerScreenState();
 }
 
-class _StartupSyncedClickerScreenState
-    extends State<StartupSyncedClickerScreen> with WidgetsBindingObserver {
+class _StartupSyncedClickerScreenState extends State<StartupSyncedClickerScreen>
+    with WidgetsBindingObserver {
   late final Future<void> _startupSync;
   var _startupFinished = false;
   var _foregroundSyncRunning = false;
@@ -207,8 +213,8 @@ class _StartupSyncedClickerScreenState
       if (!enabled) return;
 
       await CloudHistoryService().syncLocalAndRemote(repo);
-    } catch (e) {
-      debugPrint('Startup history sync error: $e');
+    } catch (_) {
+      debugPrint('Startup history sync failed');
     }
   }
 
@@ -217,8 +223,8 @@ class _StartupSyncedClickerScreenState
     _foregroundSyncRunning = true;
     try {
       await (widget.foregroundSyncBuilder ?? _syncPendingSync)();
-    } catch (e) {
-      debugPrint('Foreground sync error: $e');
+    } catch (_) {
+      debugPrint('Foreground sync failed');
     } finally {
       _foregroundSyncRunning = false;
     }
@@ -233,8 +239,8 @@ class _StartupSyncedClickerScreenState
       if (await repo.isSyncHistoryEnabled()) {
         await CloudHistoryService().syncLocalAndRemote(repo);
       }
-    } catch (e) {
-      debugPrint('Foreground pending sync retry error: $e');
+    } catch (_) {
+      debugPrint('Foreground sync retry failed');
     }
   }
 

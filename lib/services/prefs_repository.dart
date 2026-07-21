@@ -37,6 +37,10 @@ class PrefsRepository {
     return repo.loadInitialState();
   }
 
+  Future<void> clearAllData() async {
+    await _prefs.clear();
+  }
+
   Future<void> saveCounterState({
     required int c1,
     required int c2,
@@ -99,7 +103,7 @@ class PrefsRepository {
     final raw = userId == null
         ? _prefs.getString(PrefsKeys.athleteProfile)
         : _prefs.getString(_athleteProfileKey(userId)) ??
-            _prefs.getString(PrefsKeys.athleteProfile);
+              _prefs.getString(PrefsKeys.athleteProfile);
     if (raw == null) return const AthleteProfile();
     try {
       final decoded = jsonDecode(raw);
@@ -125,21 +129,35 @@ class PrefsRepository {
   AppSettings loadAppSettings() {
     final profile = loadAthleteProfile();
     return AppSettings(
-      syncHistoryEnabled:
-          TypeUtils.safeBool(_prefs.getBool(PrefsKeys.syncHistoryEnabled), defaultValue: Defaults.defaultSyncHistoryEnabled),
-      resetDelay:
-          TypeUtils.safeInt(_prefs.getInt(PrefsKeys.resetDelay), defaultValue: Defaults.defaultResetDelaySeconds),
-      vibeInterval:
-          TypeUtils.safeInt(_prefs.getInt(PrefsKeys.vibeInterval), defaultValue: Defaults.defaultVibeIntervalSeconds),
-      matchSeconds:
-          TypeUtils.safeInt(_prefs.getInt(PrefsKeys.matchSeconds), defaultValue: Defaults.defaultMatchDurationSeconds),
-      shakeUndoEnabled:
-          TypeUtils.safeBool(_prefs.getBool(PrefsKeys.shakeUndoEnabled), defaultValue: Defaults.defaultShakeUndoEnabled),
-      shakeSensitivity:
-          TypeUtils.safeString(_prefs.getString(PrefsKeys.shakeSensitivity), defaultValue: Defaults.defaultShakeSensitivity),
+      syncHistoryEnabled: TypeUtils.safeBool(
+        _prefs.getBool(PrefsKeys.syncHistoryEnabled),
+        defaultValue: Defaults.defaultSyncHistoryEnabled,
+      ),
+      resetDelay: TypeUtils.safeInt(
+        _prefs.getInt(PrefsKeys.resetDelay),
+        defaultValue: Defaults.defaultResetDelaySeconds,
+      ),
+      vibeInterval: TypeUtils.safeInt(
+        _prefs.getInt(PrefsKeys.vibeInterval),
+        defaultValue: Defaults.defaultVibeIntervalSeconds,
+      ),
+      matchSeconds: TypeUtils.safeInt(
+        _prefs.getInt(PrefsKeys.matchSeconds),
+        defaultValue: Defaults.defaultMatchDurationSeconds,
+      ),
+      shakeUndoEnabled: TypeUtils.safeBool(
+        _prefs.getBool(PrefsKeys.shakeUndoEnabled),
+        defaultValue: Defaults.defaultShakeUndoEnabled,
+      ),
+      shakeSensitivity: TypeUtils.safeString(
+        _prefs.getString(PrefsKeys.shakeSensitivity),
+        defaultValue: Defaults.defaultShakeSensitivity,
+      ),
       role: profile.role,
       athleteProfile: profile,
-      updatedAt: TypeUtils.safeString(_prefs.getString(PrefsKeys.settingsUpdatedAt)),
+      updatedAt: TypeUtils.safeString(
+        _prefs.getString(PrefsKeys.settingsUpdatedAt),
+      ),
     );
   }
 
@@ -216,7 +234,10 @@ class PrefsRepository {
     await _prefs.setBool(PrefsKeys.shakeUndoEnabled, shakeUndoEnabled);
     await _prefs.setString(PrefsKeys.shakeSensitivity, shakeSensitivity);
     await _prefs.setString(PrefsKeys.activityGrid, jsonEncode(activityGrid));
-    await _prefs.setString(PrefsKeys.weatherSnapshots, jsonEncode(weatherSnapshots));
+    await _prefs.setString(
+      PrefsKeys.weatherSnapshots,
+      jsonEncode(weatherSnapshots),
+    );
   }
 
   Future<void> addHistorySession(GameSession session) async {
@@ -272,9 +293,9 @@ class PrefsRepository {
 
     final merged = byId.values.toList();
     merged.sort((a, b) {
-      final timestampCompare = _sessionSortTimestamp(a).compareTo(
-        _sessionSortTimestamp(b),
-      );
+      final timestampCompare = _sessionSortTimestamp(
+        a,
+      ).compareTo(_sessionSortTimestamp(b));
       if (timestampCompare != 0) return timestampCompare;
       return a.id.compareTo(b.id);
     });
@@ -282,7 +303,10 @@ class PrefsRepository {
   }
 
   static bool _isNewer(GameSession candidate, GameSession existing) {
-    return _sessionFreshness(candidate).compareTo(_sessionFreshness(existing)) >= 0;
+    return _sessionFreshness(
+          candidate,
+        ).compareTo(_sessionFreshness(existing)) >=
+        0;
   }
 
   static DateTime _sessionFreshness(GameSession session) {
@@ -374,23 +398,51 @@ class PrefsRepository {
       c2: TypeUtils.safeInt(_prefs.getInt(PrefsKeys.counter2)),
       tries: TypeUtils.safeInt(_prefs.getInt(PrefsKeys.tries)),
       total: TypeUtils.safeInt(_prefs.getInt(PrefsKeys.total)),
-      powerOn: TypeUtils.safeBool(_prefs.getBool(PrefsKeys.isPowerOn), defaultValue: true),
-      paused: TypeUtils.safeBool(_prefs.getBool(PrefsKeys.isPaused), defaultValue: true),
-      sessionActive: TypeUtils.safeBool(_prefs.getBool(PrefsKeys.isSessionActive)),
-      dataHidden: TypeUtils.safeBool(_prefs.getBool(PrefsKeys.isDataHidden), defaultValue: true),
-      resetDelay: TypeUtils.safeInt(_prefs.getInt(PrefsKeys.resetDelay), defaultValue: Defaults.defaultResetDelaySeconds),
-      vibeInterval: TypeUtils.safeInt(_prefs.getInt(PrefsKeys.vibeInterval), defaultValue: Defaults.defaultVibeIntervalSeconds),
-      matchSeconds: TypeUtils.safeInt(_prefs.getInt(PrefsKeys.matchSeconds), defaultValue: Defaults.defaultMatchDurationSeconds),
+      powerOn: TypeUtils.safeBool(
+        _prefs.getBool(PrefsKeys.isPowerOn),
+        defaultValue: true,
+      ),
+      paused: TypeUtils.safeBool(
+        _prefs.getBool(PrefsKeys.isPaused),
+        defaultValue: true,
+      ),
+      sessionActive: TypeUtils.safeBool(
+        _prefs.getBool(PrefsKeys.isSessionActive),
+      ),
+      dataHidden: TypeUtils.safeBool(
+        _prefs.getBool(PrefsKeys.isDataHidden),
+        defaultValue: true,
+      ),
+      resetDelay: TypeUtils.safeInt(
+        _prefs.getInt(PrefsKeys.resetDelay),
+        defaultValue: Defaults.defaultResetDelaySeconds,
+      ),
+      vibeInterval: TypeUtils.safeInt(
+        _prefs.getInt(PrefsKeys.vibeInterval),
+        defaultValue: Defaults.defaultVibeIntervalSeconds,
+      ),
+      matchSeconds: TypeUtils.safeInt(
+        _prefs.getInt(PrefsKeys.matchSeconds),
+        defaultValue: Defaults.defaultMatchDurationSeconds,
+      ),
       activityGrid: activityLogs,
       rawActivityGrid: rawActivityGrid,
       weatherSnapshots: weatherSnapshots,
       historySessions: enrichedSessions,
-      syncHistoryEnabled: TypeUtils.safeBool(_prefs.getBool(PrefsKeys.syncHistoryEnabled), defaultValue: Defaults.defaultSyncHistoryEnabled),
-      shakeUndoEnabled: TypeUtils.safeBool(_prefs.getBool(PrefsKeys.shakeUndoEnabled), defaultValue: Defaults.defaultShakeUndoEnabled),
-      shakeSensitivity: TypeUtils.safeString(_prefs.getString(PrefsKeys.shakeSensitivity), defaultValue: Defaults.defaultShakeSensitivity),
+      syncHistoryEnabled: TypeUtils.safeBool(
+        _prefs.getBool(PrefsKeys.syncHistoryEnabled),
+        defaultValue: Defaults.defaultSyncHistoryEnabled,
+      ),
+      shakeUndoEnabled: TypeUtils.safeBool(
+        _prefs.getBool(PrefsKeys.shakeUndoEnabled),
+        defaultValue: Defaults.defaultShakeUndoEnabled,
+      ),
+      shakeSensitivity: TypeUtils.safeString(
+        _prefs.getString(PrefsKeys.shakeSensitivity),
+        defaultValue: Defaults.defaultShakeSensitivity,
+      ),
     );
   }
-
 }
 
 /// Container class for loaded app state.

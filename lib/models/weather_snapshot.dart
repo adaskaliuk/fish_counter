@@ -26,8 +26,6 @@ class WeatherSnapshot {
   });
 
   Map<String, dynamic> toJson() => {
-    'latitude': latitude,
-    'longitude': longitude,
     'placeName': placeName,
     'description': description,
     'temperatureCelsius': temperatureCelsius,

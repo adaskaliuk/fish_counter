@@ -1,7 +1,7 @@
 # Tasks / Задачі
 
 ## Phase 0 — safety / Безпека
-- [ ] Keep current auth-role fixes separate from this feature commit.
+- [x] Keep current auth-role fixes separate from this feature commit.
 - [x] Run `flutter analyze --no-pub` before final review.
 - [x] Run `flutter test` before final review.
 
@@ -21,10 +21,10 @@
 - [x] Wire section into analytics/history result UI.
 
 ## Phase 3 — fisherman summary / Рибацький висновок
-- [ ] Add small pure helper/model for match insight summary.
+- [x] Add small pure helper/model for match insight summary.
 - [x] Derive best activity window from `grid`/`ActivityLog`.
 - [x] Derive quietest window.
-- [ ] Link nearest weather snapshot when available.
+- [x] Link nearest weather snapshot when available.
 - [x] Keep text cautious: correlation, not causation.
 - [x] Render summary near timeline/weather.
 
@@ -48,10 +48,10 @@
 - [x] Timeline widget shows C1/C2/try/pause + time.
 - [x] Weather section shows temp/pressure/wind/humidity.
 - [x] Weather section handles no snapshots/no weather.
-- [ ] Session edit saves result element values.
+- [x] Session edit saves result element values.
 - [x] Report exporter includes result values when present.
 
 ## Phase 6 — review gate / Ревʼю
-- [ ] Run review gate after implementation.
-- [ ] Fix blockers only; defer polish.
-- [ ] Stop when analyze/test green and reviewers find no blockers.
+- [x] Run review gate after implementation.
+- [x] Fix blockers only; defer polish.
+- [x] Stop when analyze/test green and reviewers find no blockers.

@@ -11,12 +11,31 @@ import 'package:flutter_test/flutter_test.dart';
 const l10n = AppLocalizations(Locale('en'));
 
 void main() {
-
-  testWidgets('shows event labels and timestamps in match timeline', (tester) async {
+  testWidgets('shows event labels and timestamps in match timeline', (
+    tester,
+  ) async {
     final grid = [
-      {'type': ActivityType.c1Click.value, 'status': 'green', 'interval': 60, 'target': 60, 'timestamp': '10:01:00'},
-      {'type': ActivityType.c2Click.value, 'status': 'orange', 'interval': 90, 'target': 60, 'timestamp': '10:02:30'},
-      {'type': ActivityType.tryClick.value, 'status': 'red', 'interval': 30, 'target': 60, 'timestamp': '10:03:00'},
+      {
+        'type': ActivityType.c1Click.value,
+        'status': 'green',
+        'interval': 60,
+        'target': 60,
+        'timestamp': '10:01:00',
+      },
+      {
+        'type': ActivityType.c2Click.value,
+        'status': 'orange',
+        'interval': 90,
+        'target': 60,
+        'timestamp': '10:02:30',
+      },
+      {
+        'type': ActivityType.tryClick.value,
+        'status': 'red',
+        'interval': 30,
+        'target': 60,
+        'timestamp': '10:03:00',
+      },
     ];
     final session = _session(grid: grid);
     await _pump(tester, session);
@@ -30,38 +49,112 @@ void main() {
     expect(find.text('10:01:00'), findsOneWidget);
     expect(find.text('10:02:30'), findsOneWidget);
     expect(find.text('10:03:00'), findsOneWidget);
-    expect(find.textContaining('Match insight: highest activity near 10:03:00'), findsOneWidget);
+    expect(
+      find.textContaining('highest activity window 10:00–10:04 (3 events)'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('summarizes real five-minute activity windows', (tester) async {
+    final session = _session(
+      grid: [
+        {'type': ActivityType.c1Click.value, 'timestamp': '10:01:00'},
+        {'type': ActivityType.c2Click.value, 'timestamp': '10:02:00'},
+        {'type': ActivityType.c1Click.value, 'timestamp': '10:06:00'},
+        {'type': ActivityType.tryClick.value, 'timestamp': '10:16:00'},
+      ],
+    );
+
+    await _pump(tester, session);
+
+    expect(
+      find.textContaining('highest activity window 10:00–10:04 (2 events)'),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('Quietest window 10:10–10:14 (0 events)'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('associates nearest weather with the best window', (
+    tester,
+  ) async {
+    final session = _session(
+      grid: [
+        {'type': ActivityType.c1Click.value, 'timestamp': '10:01:00'},
+        {'type': ActivityType.c1Click.value, 'timestamp': '10:10:00'},
+        {'type': ActivityType.c2Click.value, 'timestamp': '10:11:00'},
+      ],
+      weatherSnapshots: const [
+        WeatherSnapshot(
+          latitude: 50,
+          longitude: 30,
+          placeName: 'Lake',
+          description: 'calm',
+          temperatureCelsius: 16,
+          feelsLikeCelsius: 16,
+          pressureHpa: 1012,
+          humidityPercent: 70,
+          windSpeedMs: 1,
+          windDirectionDegrees: 90,
+          fetchedAt: '2026-06-06T10:02:00',
+        ),
+        WeatherSnapshot(
+          latitude: 50,
+          longitude: 30,
+          placeName: 'Lake',
+          description: 'windy',
+          temperatureCelsius: 20,
+          feelsLikeCelsius: 19,
+          pressureHpa: 1008,
+          humidityPercent: 60,
+          windSpeedMs: 5,
+          windDirectionDegrees: 180,
+          fetchedAt: '2026-06-06T10:12:00',
+        ),
+      ],
+    );
+
+    await _pump(tester, session);
+
+    expect(
+      find.textContaining('Nearby weather: windy, 20.0°C at 10:12'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('shows weather snapshots during match', (tester) async {
-    final session = _session(weatherSnapshots: const [
-      WeatherSnapshot(
-        latitude: 50,
-        longitude: 30,
-        placeName: 'Lake',
-        description: 'cloudy',
-        temperatureCelsius: 18,
-        feelsLikeCelsius: 17,
-        pressureHpa: 1010,
-        humidityPercent: 70,
-        windSpeedMs: 3,
-        windDirectionDegrees: 180,
-        fetchedAt: '10:00',
-      ),
-      WeatherSnapshot(
-        latitude: 50,
-        longitude: 30,
-        placeName: 'Lake',
-        description: 'windy',
-        temperatureCelsius: 20,
-        feelsLikeCelsius: 18,
-        pressureHpa: 1008,
-        humidityPercent: 65,
-        windSpeedMs: 5,
-        windDirectionDegrees: 200,
-        fetchedAt: '10:15',
-      ),
-    ]);
+    final session = _session(
+      weatherSnapshots: const [
+        WeatherSnapshot(
+          latitude: 50,
+          longitude: 30,
+          placeName: 'Lake',
+          description: 'cloudy',
+          temperatureCelsius: 18,
+          feelsLikeCelsius: 17,
+          pressureHpa: 1010,
+          humidityPercent: 70,
+          windSpeedMs: 3,
+          windDirectionDegrees: 180,
+          fetchedAt: '10:00',
+        ),
+        WeatherSnapshot(
+          latitude: 50,
+          longitude: 30,
+          placeName: 'Lake',
+          description: 'windy',
+          temperatureCelsius: 20,
+          feelsLikeCelsius: 18,
+          pressureHpa: 1008,
+          humidityPercent: 65,
+          windSpeedMs: 5,
+          windDirectionDegrees: 200,
+          fetchedAt: '10:15',
+        ),
+      ],
+    );
 
     await _pump(tester, session);
 

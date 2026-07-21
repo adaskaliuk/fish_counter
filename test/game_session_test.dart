@@ -60,11 +60,15 @@ void main() {
         finalCount: 42,
       );
 
-      final parsed = GameSession.fromJson(session.toJson());
+      final json = session.toJson();
+      final parsed = GameSession.fromJson(json);
 
-      expect(parsed.userId, 'uid-1');
-      expect(parsed.userEmail, 'athlete@example.com');
-      expect(parsed.userDisplayName, 'Athlete');
+      expect(json, isNot(contains('userId')));
+      expect(json, isNot(contains('userEmail')));
+      expect(json, isNot(contains('userDisplayName')));
+      expect(parsed.userId, isEmpty);
+      expect(parsed.userEmail, isEmpty);
+      expect(parsed.userDisplayName, isEmpty);
       expect(parsed.goalFishCount, 10);
       expect(parsed.goalTargetPaceSeconds, 60);
       expect(parsed.goalMaxTries, 2);
@@ -81,8 +85,13 @@ void main() {
       expect(parsed.weatherPlace, 'Kyiv');
       expect(parsed.weatherDescription, 'clear sky');
       expect(parsed.weatherFetchedAt, '2026-06-06T10:00:00Z');
-      expect(parsed.latitude, 50.45);
-      expect(parsed.longitude, 30.52);
+      expect(json, isNot(contains('latitude')));
+      expect(json, isNot(contains('longitude')));
+      expect(json['weatherSnapshots'], hasLength(1));
+      expect(json['weatherSnapshots'].first, isNot(contains('latitude')));
+      expect(json['weatherSnapshots'].first, isNot(contains('longitude')));
+      expect(parsed.latitude, isNull);
+      expect(parsed.longitude, isNull);
       expect(parsed.weatherTemperatureCelsius, 21.5);
       expect(parsed.weatherWindSpeedMs, 3.2);
       expect(parsed.weatherSnapshots, hasLength(1));
@@ -130,22 +139,21 @@ void main() {
       expect(parsed.finalCount, isNull);
     });
 
-
     test('round-trips weight only, count only, and both result values', () {
       GameSession base({double? weight, int? count}) => GameSession(
-            id: '1',
-            name: 'Session',
-            date: '06.06.26 10:00',
-            c1: 1,
-            c2: 0,
-            tries: 0,
-            total: 1,
-            matchDuration: '5:00',
-            grid: const [],
-            finalWeightKg: weight,
-            finalCount: count,
-            updatedAt: '2026-06-06T10:00:00Z',
-          );
+        id: '1',
+        name: 'Session',
+        date: '06.06.26 10:00',
+        c1: 1,
+        c2: 0,
+        tries: 0,
+        total: 1,
+        matchDuration: '5:00',
+        grid: const [],
+        finalWeightKg: weight,
+        finalCount: count,
+        updatedAt: '2026-06-06T10:00:00Z',
+      );
 
       final weightOnly = GameSession.fromJson(base(weight: 1.25).toJson());
       expect(weightOnly.finalWeightKg, 1.25);
@@ -188,7 +196,10 @@ void main() {
       expect(updated.finalWeightKg, 1.5);
       expect(updated.finalCount, 4);
 
-      final cleared = updated.copyWith(clearFinalWeight: true, clearFinalCount: true);
+      final cleared = updated.copyWith(
+        clearFinalWeight: true,
+        clearFinalCount: true,
+      );
       expect(cleared.finalWeightKg, isNull);
       expect(cleared.finalCount, isNull);
     });
